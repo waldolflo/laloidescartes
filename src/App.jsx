@@ -86,7 +86,7 @@ function Navbar({ user, onLogout }) {
 }
 
 // --- Container pour animations ---
-function AnimatedRoutes({ user, setUser }) {
+function AnimatedRoutes({ user, setUser, handleLogout }) {
   const location = useLocation();
 
   return (
@@ -111,7 +111,7 @@ function AnimatedRoutes({ user, setUser }) {
               />
               <Route
                 path="/profil"
-                element={<Profils user={user} onLogin={setUser} />}
+                element={<Profils user={user} onLogin={setUser} onLogout={handleLogout} />}
               />
               <Route path="*" element={<Navigate to="/" />} />
             </>

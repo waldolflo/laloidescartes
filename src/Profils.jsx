@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { v4 as uuidv4 } from "uuid";
 
-export default function Profils({ user, onLogin }) {
+export default function Profils({ user, onLogin, onLogout }) {
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -217,6 +217,15 @@ export default function Profils({ user, onLogin }) {
                   </div>
                 );
               })}
+          </div>
+          {/* Bouton deconnexion */}
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onLogout}
+              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
+            >
+              Déconnexion
+            </button>
           </div>
         </>
       )}
