@@ -36,7 +36,6 @@ export default function EditPartie({ partie, onClose, onUpdate }) {
         description: formData.description,
         lieu: formData.lieu,
         nom: nomDefault,
-        duree: jeu.duree || 0,
         max_joueurs: jeu.max_joueurs || 0,
       })
       .eq("id", partie.id)
