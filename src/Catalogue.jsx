@@ -134,7 +134,7 @@ export default function Catalogue({ user }) {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Jeux de l'association</h1>
+      <h1 className="text-2xl font-bold mb-4">Jeux</h1>
 
       {/* Barre de recherche + tri */}
       <div className="flex gap-2 mb-4">
@@ -144,6 +144,8 @@ export default function Catalogue({ user }) {
           value={searchText}
           onChange={e => setSearchText(e.target.value)}
         />
+      </div>
+      <div className="flex gap-2 mb-4">
         <select
           className="border p-2 rounded"
           value={sortOption}
@@ -156,13 +158,13 @@ export default function Catalogue({ user }) {
         </select>
         </div>
         <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setAddingJeu(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Ajouter un jeu
-        </button>
-      </div>
+          <button
+            onClick={() => setAddingJeu(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Ajouter un jeu
+          </button>
+        </div>
 
       {/* Liste des jeux */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
