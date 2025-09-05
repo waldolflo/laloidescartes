@@ -10,6 +10,7 @@ export default function Profils({ user, onLogin, onLogout }) {
   const [profil, setProfil] = useState(null);
   const [jeux, setJeux] = useState([]);
 
+  // Récupération du profil connecté
   useEffect(() => {
     if (user) {
       fetchProfil();
@@ -23,8 +24,12 @@ export default function Profils({ user, onLogin, onLogout }) {
       .select("id, nom, email, role, jeufavoris1, jeufavoris2")
       .eq("id", user.id)
       .single();
-    if (error) console.error("Erreur fetch profil :", error);
-    else setProfil(data);
+
+    if (error) {
+      console.error("Erreur fetch profil :", error);
+    } else {
+      setProfil(data);
+    }
   };
 
   const fetchJeux = async () => {
@@ -32,6 +37,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .from("jeux")
       .select("id, nom, couverture_url")
       .order("nom", { ascending: true });
+
     if (error) console.error("Erreur fetch jeux :", error);
     else setJeux(data || []);
   };
@@ -44,8 +50,12 @@ export default function Profils({ user, onLogin, onLogout }) {
       .eq("id", profil.id)
       .select()
       .single();
-    if (error) console.error("Erreur update favoris :", error);
-    else setProfil(data);
+
+    if (error) {
+      console.error("Erreur update favoris :", error);
+    } else {
+      setProfil(data);
+    }
   };
 
   const handleLogin = async () => {
@@ -55,13 +65,16 @@ export default function Profils({ user, onLogin, onLogout }) {
     }
     setLoading(true);
     setErrorMsg("");
+
     try {
+      // Vérifier si un profil existe déjà
       const { data: existing, error: fetchError } = await supabase
         .from("profils")
         .select("*")
         .eq("nom", nom)
         .eq("email", email)
         .single();
+
       if (fetchError && fetchError.code !== "PGRST116") {
         console.error(fetchError);
         setErrorMsg("Erreur lors de la recherche de profil.");
@@ -70,8 +83,9 @@ export default function Profils({ user, onLogin, onLogout }) {
       }
 
       let newUser;
-      if (existing) newUser = existing;
-      else {
+      if (existing) {
+        newUser = existing;
+      } else {
         const newProfil = {
           id: uuidv4(),
           nom,
@@ -106,10 +120,12 @@ export default function Profils({ user, onLogin, onLogout }) {
 
   // ------------------ RENDU ------------------
   if (!user) {
+    // ✅ Formulaire visible seulement si pas connecté
     return (
       <div className="p-4 border rounded bg-white shadow max-w-md mx-auto">
         <h2 className="text-xl font-bold mb-4">Connexion / Inscription</h2>
         {errorMsg && <p className="text-red-600 mb-2">{errorMsg}</p>}
+
         <input
           type="text"
           placeholder="Votre Prénom N."
@@ -124,6 +140,7 @@ export default function Profils({ user, onLogin, onLogout }) {
           onChange={(e) => setEmail(e.target.value)}
           className="w-full border p-2 rounded mb-2"
         />
+
         <button
           onClick={handleLogin}
           disabled={loading}
@@ -157,7 +174,9 @@ export default function Profils({ user, onLogin, onLogout }) {
             >
               <option value="">-- Choisir un jeu --</option>
               {jeux.map((j) => (
-                <option key={j.id} value={j.id}>{j.nom}</option>
+                <option key={j.id} value={j.id}>
+                  {j.nom}
+                </option>
               ))}
             </select>
           </div>
@@ -171,31 +190,35 @@ export default function Profils({ user, onLogin, onLogout }) {
             >
               <option value="">-- Choisir un jeu --</option>
               {jeux.map((j) => (
-                <option key={j.id} value={j.id}>{j.nom}</option>
+                <option key={j.id} value={j.id}>
+                  {j.nom}
+                </option>
               ))}
             </select>
           </div>
 
+          {/* ✅ Affichage des jeux favoris */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map((id) => {
-              const jeu = jeux.find((j) => j.id === id);
-              if (!jeu) return null;
-              return (
-                <div key={id} className="border rounded p-2 bg-white shadow">
-                  <p className="font-semibold">{jeu.nom}</p>
-                  {jeu.couverture_url && (
-                    <img
-                      src={jeu.couverture_url}
-                      alt={jeu.nom}
-                      className="w-full h-32 object-contain mt-2"
-                    />
-                  )}
-                </div>
-              );
-            })}
+            {[profil.jeufavoris1, profil.jeufavoris2]
+              .filter((id) => !!id)
+              .map((id) => {
+                const jeu = jeux.find((j) => j.id === id);
+                if (!jeu) return null;
+                return (
+                  <div key={id} className="border rounded p-2 bg-white shadow">
+                    <p className="font-semibold">{jeu.nom}</p>
+                    {jeu.couverture_url && (
+                      <img
+                        src={jeu.couverture_url}
+                        alt={jeu.nom}
+                        className="w-full h-32 object-contain mt-2"
+                      />
+                    )}
+                  </div>
+                );
+              })}
           </div>
-
-          {/* Bouton Déconnexion */}
+          {/* Bouton deconnexion */}
           <div className="mt-6 flex justify-end">
             <button
               onClick={onLogout}
