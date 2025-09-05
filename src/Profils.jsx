@@ -128,7 +128,7 @@ export default function Profils({ user, onLogin }) {
 
         <input
           type="text"
-          placeholder="Votre nom"
+          placeholder="Votre Prénom N."
           value={nom}
           onChange={(e) => setNom(e.target.value)}
           className="w-full border p-2 rounded mb-2"
@@ -157,7 +157,7 @@ export default function Profils({ user, onLogin }) {
       {profil && (
         <>
           <h2 className="text-2xl font-bold mb-4">Mon profil</h2>
-          <p><strong>Nom :</strong> {profil.nom}</p>
+          <p><strong>Prénom :</strong> {profil.nom}</p>
           <p><strong>Email :</strong> {profil.email}</p>
           <p><strong>Rôle :</strong> {profil.role}</p>
 

@@ -163,7 +163,7 @@ export default function Catalogue({ user }) {
       </div>
 
       {/* Liste des jeux */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
         {filteredJeux.map(j => (
           <div key={j.id} className="border rounded p-4 bg-white shadow">
             <h2 className="text-lg font-bold">{j.nom}</h2>
