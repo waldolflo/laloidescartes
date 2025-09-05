@@ -154,6 +154,8 @@ export default function Catalogue({ user }) {
           <option value="max-joueurs-asc">Joueurs max ↑</option>
           <option value="max-joueurs-desc">Joueurs max ↓</option>
         </select>
+        </div>
+        <div className="flex gap-2 mb-4">
         <button
           onClick={() => setAddingJeu(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -163,7 +165,7 @@ export default function Catalogue({ user }) {
       </div>
 
       {/* Liste des jeux */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredJeux.map(j => (
           <div key={j.id} className="border rounded p-4 bg-white shadow">
             <h2 className="text-lg font-bold">{j.nom}</h2>
