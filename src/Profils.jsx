@@ -166,7 +166,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
 
     try {
       const res = await fetch(
-        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user", // <-- remplace <PROJECT_REF>
+        "https://jahbkwrftliquqziwwva.functions.supabase.co/delete-user", // <-- remplace <PROJECT_REF>
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
