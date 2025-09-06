@@ -52,7 +52,7 @@ function Navbar({ user, onLogout }) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm">
-              Bonjour <strong>{user.user_metadata?.nom || user.email}</strong>
+              Bonjour <strong>{user.nom || user.email}</strong>
             </span>
             <button
               onClick={onLogout}
