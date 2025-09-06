@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
-import { v4 as uuidv4 } from "uuid";
 
-export default function Profils({ user, setUser, onLogout }) {
-  const [nom, setNom] = useState("");
+export default function Profils({ user, onLogin, onLogout }) {
   const [email, setEmail] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [nom, setNom] = useState("");
   const [profil, setProfil] = useState(null);
   const [jeux, setJeux] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
+  // 🔹 Charger profil et jeux
   useEffect(() => {
     if (user) {
       fetchProfil();
@@ -20,11 +22,13 @@ export default function Profils({ user, setUser, onLogout }) {
   const fetchProfil = async () => {
     const { data, error } = await supabase
       .from("profils")
-      .select("id, nom, email, role, jeufavoris1, jeufavoris2")
+      .select("id, nom, role, jeufavoris1, jeufavoris2")
       .eq("id", user.id)
       .single();
     if (error) console.error("Erreur fetch profil :", error);
     else setProfil(data);
+
+    if (data?.role === "admin") fetchAllUsers();
   };
 
   const fetchJeux = async () => {
@@ -32,8 +36,74 @@ export default function Profils({ user, setUser, onLogout }) {
       .from("jeux")
       .select("id, nom, couverture_url")
       .order("nom", { ascending: true });
-    if (error) console.error("Erreur fetch jeux :", error);
+    if (error) console.error(error);
     else setJeux(data || []);
+  };
+
+  const fetchAllUsers = async () => {
+    const { data, error } = await supabase
+      .from("profils")
+      .select("id, nom, role")
+      .order("nom", { ascending: true });
+    if (error) console.error(error);
+    else setAllUsers(data || []);
+  };
+
+  // 🔹 Connexion / inscription avec email + mot de passe
+  const handleLogin = async () => {
+    if (!email || !password || !nom) {
+      setErrorMsg("Veuillez entrer un nom, un email et un mot de passe.");
+      return;
+    }
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      // Tentative de connexion
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      let currentUser;
+      if (loginError) {
+        // Si utilisateur inexistant → inscription
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (signUpError) throw signUpError;
+        currentUser = signUpData.user;
+
+        // Création du profil lié
+        await supabase.from("profils").insert([
+          { id: currentUser.id, nom, role: "user", email }
+        ]);
+      } else {
+        currentUser = loginData.user;
+      }
+
+      // Charger le profil depuis la DB
+      const { data: profilData, error: profilError } = await supabase
+        .from("profils")
+        .select("*")
+        .eq("id", currentUser.id)
+        .single();
+
+      if (profilError) throw profilError;
+
+      setProfil(profilData);
+      onLogin(profilData);
+
+      setNom("");
+      setEmail("");
+      setPassword("");
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Erreur lors de la connexion / inscription.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateFavoris = async (field, value) => {
@@ -44,68 +114,19 @@ export default function Profils({ user, setUser, onLogout }) {
       .eq("id", profil.id)
       .select()
       .single();
-    if (error) console.error("Erreur update favoris :", error);
+    if (error) console.error(error);
     else setProfil(data);
   };
 
-  const handleLogin = async () => {
-    if (!nom || !email) {
-      setErrorMsg("Veuillez entrer votre nom et votre email.");
-      return;
-    }
-    setLoading(true);
-    setErrorMsg("");
-    try {
-      const { data: existing, error: fetchError } = await supabase
-        .from("profils")
-        .select("*")
-        .eq("nom", nom)
-        .eq("email", email)
-        .single();
-
-      if (fetchError && fetchError.code !== "PGRST116") {
-        console.error(fetchError);
-        setErrorMsg("Erreur lors de la recherche de profil.");
-        setLoading(false);
-        return;
-      }
-
-      let newUser;
-      if (existing) {
-        newUser = existing;
-      } else {
-        const newProfil = {
-          id: uuidv4(),
-          nom,
-          email,
-          role: "user",
-          created_at: new Date().toISOString(),
-        };
-        const { data, error: insertError } = await supabase
-          .from("profils")
-          .insert([newProfil])
-          .select()
-          .single();
-        if (insertError) {
-          console.error(insertError);
-          setErrorMsg("Erreur lors de la création du compte.");
-          setLoading(false);
-          return;
-        }
-        newUser = data;
-      }
-
-      // ✅ on met directement à jour l'utilisateur global
-      if (setUser) setUser(newUser);
-
-      setNom("");
-      setEmail("");
-    } catch (err) {
-      console.error(err);
-      setErrorMsg("Erreur inattendue.");
-    } finally {
-      setLoading(false);
-    }
+  const updateUserRole = async (userId, newRole) => {
+    const { data, error } = await supabase
+      .from("profils")
+      .update({ role: newRole })
+      .eq("id", userId)
+      .select()
+      .single();
+    if (error) console.error(error);
+    else setAllUsers(prev => prev.map(u => (u.id === userId ? data : u)));
   };
 
   // ------------------ RENDU ------------------
@@ -128,6 +149,13 @@ export default function Profils({ user, setUser, onLogout }) {
           onChange={(e) => setEmail(e.target.value)}
           className="w-full border p-2 rounded mb-2"
         />
+        <input
+          type="password"
+          placeholder="Votre mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full border p-2 rounded mb-2"
+        />
         <button
           onClick={handleLogin}
           disabled={loading}
@@ -139,22 +167,12 @@ export default function Profils({ user, setUser, onLogout }) {
     );
   }
 
-  // --- si le profil existe mais rôle non validé ---
-  if (profil && profil.role === "user") {
+  if (profil?.role === "user") {
     return (
-      <div className="p-6 text-center bg-white shadow rounded max-w-lg mx-auto">
-        <h2 className="text-xl font-bold mb-4">Compte en attente</h2>
-        <p className="text-gray-700">
-          Demandez dans Messenger à l’administrateur de valider votre compte.
+      <div className="p-4 max-w-2xl mx-auto text-center">
+        <p className="text-lg text-red-600">
+          Demandez dans Messenger à l'administrateur de valider votre compte.
         </p>
-        <div className="mt-6">
-          <button
-            onClick={onLogout}
-            className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
-          >
-            Déconnexion
-          </button>
-        </div>
       </div>
     );
   }
@@ -165,11 +183,10 @@ export default function Profils({ user, setUser, onLogout }) {
         <>
           <h2 className="text-2xl font-bold mb-4">Mon profil</h2>
           <p><strong>Prénom :</strong> {profil.nom}</p>
-          <p><strong>Email :</strong> {profil.email}</p>
           <p><strong>Rôle :</strong> {profil.role}</p>
 
           <h3 className="text-xl font-semibold mt-6 mb-2">
-            🎲 Les jeux auxquels j’ai le plus envie de jouer
+            🎲 Mes jeux favoris
           </h3>
 
           <div className="mb-4">
@@ -219,12 +236,54 @@ export default function Profils({ user, setUser, onLogout }) {
             })}
           </div>
 
-          {/* Bouton Déconnexion */}
+          {profil.role === "admin" && (
+            <div className="mt-10">
+              <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border border-gray-300 p-2">Nom</th>
+                    <th className="border border-gray-300 p-2">Rôle</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allUsers.map((u) => {
+                    const isCurrentAdmin = u.id === profil.id;
+                    const isAdminUser = u.role === "admin";
+                    return (
+                      <tr key={u.id} className="text-center">
+                        <td className="border border-gray-300 p-2">{u.nom}</td>
+                        <td className="border border-gray-300 p-2">
+                          {isCurrentAdmin || isAdminUser ? (
+                            <span className="px-2 py-1 bg-gray-200 rounded">{u.role}</span>
+                          ) : (
+                            <select
+                              value={u.role}
+                              onChange={(e) => {
+                                const newRole = e.target.value;
+                                if (window.confirm(`Changer le rôle de ${u.nom} en "${newRole}" ?`)) {
+                                  updateUserRole(u.id, newRole);
+                                } else e.target.value = u.role;
+                              }}
+                              className="border p-1 rounded"
+                            >
+                              <option value="user">user</option>
+                              <option value="membre">membre</option>
+                              <option value="ludo">ludo</option>
+                              <option value="admin">admin</option>
+                            </select>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           <div className="mt-6 flex justify-end">
-            <button
-              onClick={onLogout}
-              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
-            >
+            <button onClick={onLogout} className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800">
               Déconnexion
             </button>
           </div>
