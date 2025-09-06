@@ -3,20 +3,20 @@ import { supabase } from "./supabaseClient";
 
 export default function Profils({ user, onLogin, onLogout }) {
   const [email, setEmail] = useState("");
-  const [nom, setNom] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
   const [profil, setProfil] = useState(null);
   const [jeux, setJeux] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
 
-  // 🔹 Charger profil et jeux
   useEffect(() => {
     if (user) {
       fetchProfil();
       fetchJeux();
+      if (profil?.role === "admin") fetchAllUsers();
     }
-  }, [user]);
+  }, [user, profil?.role]);
 
   const fetchProfil = async () => {
     const { data, error } = await supabase
@@ -24,11 +24,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .select("id, nom, role, jeufavoris1, jeufavoris2")
       .eq("id", user.id)
       .single();
-    if (error) console.error("Erreur fetch profil :", error);
-    else setProfil(data);
-
-    // Si admin, charger tous les utilisateurs
-    if (data?.role === "admin") fetchAllUsers();
+    if (!error) setProfil(data);
   };
 
   const fetchJeux = async () => {
@@ -36,8 +32,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .from("jeux")
       .select("id, nom, couverture_url")
       .order("nom", { ascending: true });
-    if (error) console.error(error);
-    else setJeux(data || []);
+    if (!error) setJeux(data || []);
   };
 
   const fetchAllUsers = async () => {
@@ -45,53 +40,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .from("profils")
       .select("id, nom, role")
       .order("nom", { ascending: true });
-    if (error) console.error(error);
-    else setAllUsers(data || []);
-  };
-
-  const handleLogin = async () => {
-    if (!email || !nom) {
-      setErrorMsg("Veuillez entrer votre nom et votre email.");
-      return;
-    }
-    setLoading(true);
-    setErrorMsg("");
-
-    try {
-      // 🔹 Login / Inscription via magic link
-      const { error: authError } = await supabase.auth.signInWithOtp({ email });
-      if (authError) throw authError;
-
-      // Vérifier si le profil existe déjà
-      const { data: existing, error: fetchError } = await supabase
-        .from("profils")
-        .select("*")
-        .eq("email", email)
-        .single();
-
-      if (!existing) {
-        // Créer le profil
-        const { data: newProfil, error: insertError } = await supabase
-          .from("profils")
-          .insert([{ nom, email, role: "user" }])
-          .select()
-          .single();
-        if (insertError) throw insertError;
-        setProfil(newProfil);
-        onLogin(newProfil);
-      } else {
-        setProfil(existing);
-        onLogin(existing);
-      }
-      setNom("");
-      setEmail("");
-      alert("Un email de connexion a été envoyé !");
-    } catch (err) {
-      console.error(err);
-      setErrorMsg("Erreur lors de la connexion / inscription.");
-    } finally {
-      setLoading(false);
-    }
+    if (!error) setAllUsers(data || []);
   };
 
   const updateFavoris = async (field, value) => {
@@ -102,8 +51,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .eq("id", profil.id)
       .select()
       .single();
-    if (error) console.error(error);
-    else setProfil(data);
+    if (!error) setProfil(data);
   };
 
   const updateUserRole = async (userId, newRole) => {
@@ -113,8 +61,54 @@ export default function Profils({ user, onLogin, onLogout }) {
       .eq("id", userId)
       .select()
       .single();
-    if (error) console.error(error);
-    else setAllUsers(prev => prev.map(u => (u.id === userId ? data : u)));
+    if (!error) setAllUsers(prev => prev.map(u => (u.id === userId ? data : u)));
+  };
+
+  // ------------------ LOGIN / SIGNUP ------------------
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setErrorMsg("Email et mot de passe requis");
+      return;
+    }
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        if (error.status === 400) {
+          // Inscription automatique
+          const { data: signupData, error: signupError } = await supabase.auth.signUp({ email, password });
+          if (signupError) { setErrorMsg(signupError.message); setLoading(false); return; }
+
+          // Créer profil
+          const { data: profilData, error: profilError } = await supabase
+            .from("profils")
+            .insert([{ id: signupData.user.id, nom: "", role: "user" }])
+            .select()
+            .single();
+          if (profilError) { setErrorMsg(profilError.message); setLoading(false); return; }
+
+          onLogin({ ...signupData.user, role: "user" });
+        } else {
+          setErrorMsg(error.message);
+        }
+      } else {
+        // Récupérer rôle
+        const { data: profilData } = await supabase
+          .from("profils")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
+        onLogin({ ...data.user, role: profilData.role });
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Erreur inattendue");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ------------------ RENDU ------------------
@@ -124,17 +118,17 @@ export default function Profils({ user, onLogin, onLogout }) {
         <h2 className="text-xl font-bold mb-4">Connexion / Inscription</h2>
         {errorMsg && <p className="text-red-600 mb-2">{errorMsg}</p>}
         <input
-          type="text"
-          placeholder="Votre Prénom N."
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
           className="w-full border p-2 rounded mb-2"
         />
         <input
-          type="email"
-          placeholder="Votre email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="password"
+          placeholder="Mot de passe"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
           className="w-full border p-2 rounded mb-2"
         />
         <button
@@ -142,13 +136,13 @@ export default function Profils({ user, onLogin, onLogout }) {
           disabled={loading}
           className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
         >
-          {loading ? "Connexion..." : "Se connecter / Recevoir le lien de connexion"}
+          {loading ? "Connexion..." : "Se connecter / Créer un compte"}
         </button>
       </div>
     );
   }
 
-  if (profil?.role === "user") {
+  if (profil.role === "user") {
     return (
       <div className="p-4 max-w-2xl mx-auto text-center">
         <p className="text-lg text-red-600">
@@ -158,6 +152,7 @@ export default function Profils({ user, onLogin, onLogout }) {
     );
   }
 
+  // ------------------ PROFIL + FAVORIS + ADMIN ------------------
   return (
     <div className="p-4 max-w-2xl mx-auto">
       {profil && (
@@ -167,18 +162,18 @@ export default function Profils({ user, onLogin, onLogout }) {
           <p><strong>Rôle :</strong> {profil.role}</p>
 
           <h3 className="text-xl font-semibold mt-6 mb-2">
-            🎲 Mes jeux favoris
+            🎲 Les jeux auxquels j’ai le plus envie de jouer
           </h3>
 
           <div className="mb-4">
             <label className="block font-medium mb-1">Jeu favori 1 :</label>
             <select
               value={profil.jeufavoris1 || ""}
-              onChange={(e) => updateFavoris("jeufavoris1", e.target.value)}
+              onChange={e => updateFavoris("jeufavoris1", e.target.value)}
               className="border p-2 rounded w-full"
             >
               <option value="">-- Choisir un jeu --</option>
-              {jeux.map((j) => (
+              {jeux.map(j => (
                 <option key={j.id} value={j.id}>{j.nom}</option>
               ))}
             </select>
@@ -188,17 +183,40 @@ export default function Profils({ user, onLogin, onLogout }) {
             <label className="block font-medium mb-1">Jeu favori 2 :</label>
             <select
               value={profil.jeufavoris2 || ""}
-              onChange={(e) => updateFavoris("jeufavoris2", e.target.value)}
+              onChange={e => updateFavoris("jeufavoris2", e.target.value)}
               className="border p-2 rounded w-full"
             >
               <option value="">-- Choisir un jeu --</option>
-              {jeux.map((j) => (
+              {jeux.map(j => (
                 <option key={j.id} value={j.id}>{j.nom}</option>
               ))}
             </select>
           </div>
 
-          {/* Tableau admin */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map(id => {
+              const jeu = jeux.find(j => j.id === id);
+              if (!jeu) return null;
+              return (
+                <div key={id} className="border rounded p-2 bg-white shadow">
+                  <p className="font-semibold">{jeu.nom}</p>
+                  {jeu.couverture_url && (
+                    <img src={jeu.couverture_url} alt={jeu.nom} className="w-full h-32 object-contain mt-2" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onLogout}
+              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
+            >
+              Déconnexion
+            </button>
+          </div>
+
           {profil.role === "admin" && (
             <div className="mt-10">
               <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
@@ -210,7 +228,7 @@ export default function Profils({ user, onLogin, onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {allUsers.map((u) => {
+                  {allUsers.map(u => {
                     const isCurrentAdmin = u.id === profil.id;
                     const isAdminUser = u.role === "admin";
                     return (
@@ -222,9 +240,9 @@ export default function Profils({ user, onLogin, onLogout }) {
                           ) : (
                             <select
                               value={u.role}
-                              onChange={(e) => {
+                              onChange={e => {
                                 const newRole = e.target.value;
-                                if (window.confirm(`Changer le rôle de ${u.nom} en "${newRole}" ?`)) {
+                                if (window.confirm(`Changer rôle de ${u.nom} en "${newRole}" ?`)) {
                                   updateUserRole(u.id, newRole);
                                 } else e.target.value = u.role;
                               }}
@@ -244,12 +262,6 @@ export default function Profils({ user, onLogin, onLogout }) {
               </table>
             </div>
           )}
-
-          <div className="mt-6 flex justify-end">
-            <button onClick={onLogout} className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800">
-              Déconnexion
-            </button>
-          </div>
         </>
       )}
     </div>
