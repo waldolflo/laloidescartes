@@ -77,21 +77,40 @@ export default function Profils({ user, onLogin, onLogout }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setErrorMsg("Veuillez entrer email et mot de passe.");
+      setErrorMsg("Veuillez entrer votre email et votre mot de passe.");
       return;
     }
     setLoading(true);
     setErrorMsg("");
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (error) throw error;
-      if (onLogin) onLogin(data.user);
+
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          setErrorMsg("Veuillez confirmer votre email avant de vous connecter.");
+        } else {
+          setErrorMsg("Erreur de connexion : " + error.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      const { user } = data;
+      if (!user.email_confirmed_at) {
+        setErrorMsg("Veuillez confirmer votre email avant de vous connecter.");
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+
+      onLogin(user);
     } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || "Erreur de connexion.");
+      setErrorMsg("Erreur inattendue.");
     } finally {
       setLoading(false);
     }
@@ -109,15 +128,20 @@ export default function Profils({ user, onLogin, onLogout }) {
         email,
         password,
       });
-      if (error) throw error;
-      if (onLogin) onLogin(data.user);
-    } catch (err) {
-      console.error(err);
-      setErrorMsg(err.message || "Erreur d'inscription.");
-    } finally {
+      if (error) {
+      setErrorMsg("Erreur lors de l'inscription : " + error.message);
       setLoading(false);
+      return;
     }
-  };
+    if (onLogin) onLogin(data.user);
+    setErrorMsg("✅ Un email de confirmation vous a été envoyé. Veuillez valider votre compte avant de vous connecter.");
+  } catch (err) {
+    console.error(err);
+    setErrorMsg("Erreur inattendue.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const saveNom = async () => {
     if (!newNom.trim()) {
