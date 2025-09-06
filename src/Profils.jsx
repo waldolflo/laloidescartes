@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
-import { v4 as uuidv4 } from "uuid";
 
 export default function Profils({ user, onLogin, onLogout }) {
-  const [nom, setNom] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [profil, setProfil] = useState(null);
   const [jeux, setJeux] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
 
-  // Charger profil et jeux
   useEffect(() => {
     if (user) {
       fetchProfil();
       fetchJeux();
       if (profil?.role === "admin") fetchAllUsers();
     }
-  }, [user]);
+  }, [user, profil?.role]);
 
   const fetchProfil = async () => {
     const { data, error } = await supabase
@@ -25,8 +24,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .select("id, nom, role, jeufavoris1, jeufavoris2")
       .eq("id", user.id)
       .single();
-    if (error) console.error("Erreur fetch profil :", error);
-    else setProfil(data);
+    if (!error) setProfil(data);
   };
 
   const fetchJeux = async () => {
@@ -34,8 +32,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .from("jeux")
       .select("id, nom, couverture_url")
       .order("nom", { ascending: true });
-    if (error) console.error("Erreur fetch jeux :", error);
-    else setJeux(data || []);
+    if (!error) setJeux(data || []);
   };
 
   const fetchAllUsers = async () => {
@@ -43,8 +40,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .from("profils")
       .select("id, nom, role")
       .order("nom", { ascending: true });
-    if (error) console.error("Erreur fetch users :", error);
-    else setAllUsers(data || []);
+    if (!error) setAllUsers(data || []);
   };
 
   const updateFavoris = async (field, value) => {
@@ -55,8 +51,7 @@ export default function Profils({ user, onLogin, onLogout }) {
       .eq("id", profil.id)
       .select()
       .single();
-    if (error) console.error("Erreur update favoris :", error);
-    else setProfil(data);
+    if (!error) setProfil(data);
   };
 
   const updateUserRole = async (userId, newRole) => {
@@ -66,59 +61,51 @@ export default function Profils({ user, onLogin, onLogout }) {
       .eq("id", userId)
       .select()
       .single();
-    if (error) console.error("Erreur update role :", error);
-    else setAllUsers(prev => prev.map(u => (u.id === userId ? data : u)));
+    if (!error) setAllUsers(prev => prev.map(u => (u.id === userId ? data : u)));
   };
 
+  // ------------------ LOGIN / SIGNUP ------------------
   const handleLogin = async () => {
-    if (!nom) {
-      setErrorMsg("Veuillez entrer votre nom.");
+    if (!email || !password) {
+      setErrorMsg("Email et mot de passe requis");
       return;
     }
     setLoading(true);
     setErrorMsg("");
+
     try {
-      const { data: existing, error: fetchError } = await supabase
-        .from("profils")
-        .select("*")
-        .eq("nom", nom)
-        .single();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-      if (fetchError && fetchError.code !== "PGRST116") {
-        console.error(fetchError);
-        setErrorMsg("Erreur lors de la recherche de profil.");
-        setLoading(false);
-        return;
-      }
+      if (error) {
+        if (error.status === 400) {
+          // Inscription automatique
+          const { data: signupData, error: signupError } = await supabase.auth.signUp({ email, password });
+          if (signupError) { setErrorMsg(signupError.message); setLoading(false); return; }
 
-      let newUser;
-      if (existing) newUser = existing;
-      else {
-        const newProfil = {
-          id: uuidv4(),
-          nom,
-          role: "user",
-          created_at: new Date().toISOString(),
-        };
-        const { data, error: insertError } = await supabase
-          .from("profils")
-          .insert([newProfil])
-          .select()
-          .single();
-        if (insertError) {
-          console.error(insertError);
-          setErrorMsg("Erreur lors de la création du compte.");
-          setLoading(false);
-          return;
+          // Créer profil
+          const { data: profilData, error: profilError } = await supabase
+            .from("profils")
+            .insert([{ id: signupData.user.id, nom: "", role: "user" }])
+            .select()
+            .single();
+          if (profilError) { setErrorMsg(profilError.message); setLoading(false); return; }
+
+          onLogin({ ...signupData.user, role: "user" });
+        } else {
+          setErrorMsg(error.message);
         }
-        newUser = data;
+      } else {
+        // Récupérer rôle
+        const { data: profilData } = await supabase
+          .from("profils")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
+        onLogin({ ...data.user, role: profilData.role });
       }
-
-      if (onLogin) onLogin(newUser);
-      setNom("");
     } catch (err) {
       console.error(err);
-      setErrorMsg("Erreur inattendue.");
+      setErrorMsg("Erreur inattendue");
     } finally {
       setLoading(false);
     }
@@ -131,10 +118,17 @@ export default function Profils({ user, onLogin, onLogout }) {
         <h2 className="text-xl font-bold mb-4">Connexion / Inscription</h2>
         {errorMsg && <p className="text-red-600 mb-2">{errorMsg}</p>}
         <input
-          type="text"
-          placeholder="Votre Prénom N."
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="w-full border p-2 rounded mb-2"
+        />
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
           className="w-full border p-2 rounded mb-2"
         />
         <button
@@ -158,6 +152,7 @@ export default function Profils({ user, onLogin, onLogout }) {
     );
   }
 
+  // ------------------ PROFIL + FAVORIS + ADMIN ------------------
   return (
     <div className="p-4 max-w-2xl mx-auto">
       {profil && (
@@ -174,11 +169,11 @@ export default function Profils({ user, onLogin, onLogout }) {
             <label className="block font-medium mb-1">Jeu favori 1 :</label>
             <select
               value={profil.jeufavoris1 || ""}
-              onChange={(e) => updateFavoris("jeufavoris1", e.target.value)}
+              onChange={e => updateFavoris("jeufavoris1", e.target.value)}
               className="border p-2 rounded w-full"
             >
               <option value="">-- Choisir un jeu --</option>
-              {jeux.map((j) => (
+              {jeux.map(j => (
                 <option key={j.id} value={j.id}>{j.nom}</option>
               ))}
             </select>
@@ -188,36 +183,31 @@ export default function Profils({ user, onLogin, onLogout }) {
             <label className="block font-medium mb-1">Jeu favori 2 :</label>
             <select
               value={profil.jeufavoris2 || ""}
-              onChange={(e) => updateFavoris("jeufavoris2", e.target.value)}
+              onChange={e => updateFavoris("jeufavoris2", e.target.value)}
               className="border p-2 rounded w-full"
             >
               <option value="">-- Choisir un jeu --</option>
-              {jeux.map((j) => (
+              {jeux.map(j => (
                 <option key={j.id} value={j.id}>{j.nom}</option>
               ))}
             </select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map((id) => {
-              const jeu = jeux.find((j) => j.id === id);
+            {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map(id => {
+              const jeu = jeux.find(j => j.id === id);
               if (!jeu) return null;
               return (
                 <div key={id} className="border rounded p-2 bg-white shadow">
                   <p className="font-semibold">{jeu.nom}</p>
                   {jeu.couverture_url && (
-                    <img
-                      src={jeu.couverture_url}
-                      alt={jeu.nom}
-                      className="w-full h-32 object-contain mt-2"
-                    />
+                    <img src={jeu.couverture_url} alt={jeu.nom} className="w-full h-32 object-contain mt-2" />
                   )}
                 </div>
               );
             })}
           </div>
 
-          {/* Bouton Déconnexion */}
           <div className="mt-6 flex justify-end">
             <button
               onClick={onLogout}
@@ -227,7 +217,6 @@ export default function Profils({ user, onLogin, onLogout }) {
             </button>
           </div>
 
-          {/* Tableau des utilisateurs (admin) */}
           {profil.role === "admin" && (
             <div className="mt-10">
               <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
@@ -239,7 +228,7 @@ export default function Profils({ user, onLogin, onLogout }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {allUsers.map((u) => {
+                  {allUsers.map(u => {
                     const isCurrentAdmin = u.id === profil.id;
                     const isAdminUser = u.role === "admin";
                     return (
@@ -251,9 +240,9 @@ export default function Profils({ user, onLogin, onLogout }) {
                           ) : (
                             <select
                               value={u.role}
-                              onChange={(e) => {
+                              onChange={e => {
                                 const newRole = e.target.value;
-                                if (window.confirm(`Voulez-vous changer le rôle de ${u.nom} en "${newRole}" ?`)) {
+                                if (window.confirm(`Changer rôle de ${u.nom} en "${newRole}" ?`)) {
                                   updateUserRole(u.id, newRole);
                                 } else e.target.value = u.role;
                               }}

@@ -17,7 +17,6 @@ import { AnimatePresence, motion } from "framer-motion";
 // --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
   const location = useLocation();
-
   const tabs = [
     { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
@@ -106,6 +105,7 @@ function AnimatedRoutes({ user, setUser }) {
             />
           ) : (
             <>
+              {/* Routes accessibles uniquement si rôle !== "user" */}
               {user.role !== "user" ? (
                 <>
                   <Route path="/" element={<Catalogue user={user} />} />
@@ -117,12 +117,13 @@ function AnimatedRoutes({ user, setUser }) {
                   />
                 </>
               ) : (
-                // Si role = "user" → redirige vers profil pour afficher message
+                // Les "user" voient uniquement le message dans Profils
                 <Route
                   path="/*"
                   element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
                 />
               )}
+              {/* Redirection générique */}
               <Route path="*" element={<Navigate to="/" />} />
             </>
           )}
