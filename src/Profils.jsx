@@ -3,6 +3,7 @@ import { supabase } from "./supabaseClient";
 
 export default function Profils({ user, onLogin, onLogout }) {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [nom, setNom] = useState("");
   const [profil, setProfil] = useState(null);
   const [jeux, setJeux] = useState([]);
@@ -27,7 +28,6 @@ export default function Profils({ user, onLogin, onLogout }) {
     if (error) console.error("Erreur fetch profil :", error);
     else setProfil(data);
 
-    // Si admin, charger tous les utilisateurs
     if (data?.role === "admin") fetchAllUsers();
   };
 
@@ -49,43 +49,55 @@ export default function Profils({ user, onLogin, onLogout }) {
     else setAllUsers(data || []);
   };
 
+  // 🔹 Connexion / inscription avec email + mot de passe
   const handleLogin = async () => {
-    if (!email || !nom) {
-      setErrorMsg("Veuillez entrer votre nom et votre email.");
+    if (!email || !password || !nom) {
+      setErrorMsg("Veuillez entrer un nom, un email et un mot de passe.");
       return;
     }
     setLoading(true);
     setErrorMsg("");
 
     try {
-      // 🔹 Login / Inscription via magic link
-      const { error: authError } = await supabase.auth.signInWithOtp({ email });
-      if (authError) throw authError;
+      // Tentative de connexion
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      // Vérifier si le profil existe déjà
-      const { data: existing, error: fetchError } = await supabase
+      let currentUser;
+      if (loginError) {
+        // Si utilisateur inexistant → inscription
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (signUpError) throw signUpError;
+        currentUser = signUpData.user;
+
+        // Création du profil lié
+        await supabase.from("profils").insert([
+          { id: currentUser.id, nom, role: "user", email }
+        ]);
+      } else {
+        currentUser = loginData.user;
+      }
+
+      // Charger le profil depuis la DB
+      const { data: profilData, error: profilError } = await supabase
         .from("profils")
         .select("*")
-        .eq("email", email)
+        .eq("id", currentUser.id)
         .single();
 
-      if (!existing) {
-        // Créer le profil
-        const { data: newProfil, error: insertError } = await supabase
-          .from("profils")
-          .insert([{ nom, email, role: "user" }])
-          .select()
-          .single();
-        if (insertError) throw insertError;
-        setProfil(newProfil);
-        onLogin(newProfil);
-      } else {
-        setProfil(existing);
-        onLogin(existing);
-      }
+      if (profilError) throw profilError;
+
+      setProfil(profilData);
+      onLogin(profilData);
+
       setNom("");
       setEmail("");
-      alert("Un email de connexion a été envoyé !");
+      setPassword("");
     } catch (err) {
       console.error(err);
       setErrorMsg("Erreur lors de la connexion / inscription.");
@@ -137,12 +149,19 @@ export default function Profils({ user, onLogin, onLogout }) {
           onChange={(e) => setEmail(e.target.value)}
           className="w-full border p-2 rounded mb-2"
         />
+        <input
+          type="password"
+          placeholder="Votre mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full border p-2 rounded mb-2"
+        />
         <button
           onClick={handleLogin}
           disabled={loading}
           className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
         >
-          {loading ? "Connexion..." : "Se connecter / Recevoir le lien de connexion"}
+          {loading ? "Connexion..." : "Se connecter / Créer un compte"}
         </button>
       </div>
     );
@@ -198,7 +217,6 @@ export default function Profils({ user, onLogin, onLogout }) {
             </select>
           </div>
 
-          {/* Tableau admin */}
           {profil.role === "admin" && (
             <div className="mt-10">
               <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
