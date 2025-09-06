@@ -18,6 +18,24 @@ export default function Parties({ user }) {
   const [selectedPartie, setSelectedPartie] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+      if (!user) return;
+  
+      const fetchRole = async () => {
+        const { data, error } = await supabase
+          .from("profils")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+  
+        if (!error) setUserRole(data?.role || "");
+      };
+  
+      fetchRole();
+      fetchJeux();
+    }, [user]);
 
   // filtres
   const [search, setSearch] = useState("");
@@ -285,7 +303,7 @@ export default function Parties({ user }) {
               )}
 
               <div className="flex gap-2 mt-2">
-                {(p.utilisateur_id === user.id || user.role === "admin") && (
+                {(p.utilisateur_id === user.id || userRole === "admin") && (
                   <button
                     onClick={() => setEditingPartie(p)}
                     className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
