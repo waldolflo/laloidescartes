@@ -1,24 +1,15 @@
 import React, { useState, useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Link,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
+import { supabase } from "./supabaseClient";
 import Catalogue from "./Catalogue";
 import Profils from "./Profils";
 import Parties from "./Parties";
 import Inscriptions from "./Inscriptions";
-import { supabase } from "./supabaseClient";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-// --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
   const location = useLocation();
-
   const tabs = [
     { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
@@ -38,14 +29,13 @@ function Navbar({ user, onLogout }) {
                 <Link
                   key={to}
                   to={to}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors
-                    ${active ? "bg-slate-700" : "hover:bg-slate-700"}`}
+                  className={`relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    active ? "bg-slate-700" : "hover:bg-slate-700"
+                  }`}
                 >
                   <Icon size={18} />
                   {label}
-                  {active && (
-                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-rose-500 rounded-t"></span>
-                  )}
+                  {active && <span className="absolute bottom-0 left-0 w-full h-[2px] bg-rose-500 rounded-t"></span>}
                 </Link>
               );
             })}
@@ -54,10 +44,7 @@ function Navbar({ user, onLogout }) {
             <span className="text-sm">
               Bonjour <strong>{user.nom}</strong>
             </span>
-            <button
-              onClick={onLogout}
-              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
-            >
+            <button onClick={onLogout} className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm">
               Déconnexion
             </button>
           </div>
@@ -86,7 +73,6 @@ function Navbar({ user, onLogout }) {
   );
 }
 
-// --- Animated Routes ---
 function AnimatedRoutes({ user, setUser }) {
   const location = useLocation();
 
@@ -101,10 +87,7 @@ function AnimatedRoutes({ user, setUser }) {
       >
         <Routes location={location}>
           {!user ? (
-            <Route
-              path="/*"
-              element={<Profils onLogin={setUser} onLogout={() => setUser(null)} />}
-            />
+            <Route path="/*" element={<Profils onLogin={setUser} onLogout={() => setUser(null)} />} />
           ) : (
             <>
               {user.role !== "user" ? (
@@ -112,16 +95,10 @@ function AnimatedRoutes({ user, setUser }) {
                   <Route path="/" element={<Catalogue user={user} />} />
                   <Route path="/parties" element={<Parties user={user} />} />
                   <Route path="/inscriptions" element={<Inscriptions user={user} />} />
-                  <Route
-                    path="/profil"
-                    element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
-                  />
+                  <Route path="/profil" element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />} />
                 </>
               ) : (
-                <Route
-                  path="/*"
-                  element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
-                />
+                <Route path="/*" element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />} />
               )}
               <Route path="*" element={<Navigate to="/" />} />
             </>
@@ -132,49 +109,38 @@ function AnimatedRoutes({ user, setUser }) {
   );
 }
 
-// --- App principale ---
 export default function App() {
   const [user, setUser] = useState(null);
 
-  // Charger la session Supabase
+  // 🔹 À chaque reload, récupérer le user depuis Supabase
   useEffect(() => {
-    const initSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        fetchProfil(session.user.id);
+    const initUser = async () => {
+      const supabaseUser = supabase.auth.user();
+      if (!supabaseUser) return setUser(null);
+
+      // Récupérer le profil complet (id, nom, role)
+      const { data, error } = await supabase
+        .from("profils")
+        .select("id, nom, role")
+        .eq("id", supabaseUser.id)
+        .single();
+
+      if (error) {
+        console.error("Erreur fetch profil au reload :", error);
+        setUser(null);
+      } else {
+        setUser(data);
       }
     };
+    initUser();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          fetchProfil(session.user.id);
-        } else {
-          setUser(null);
-        }
-      }
-    );
+    // Écoute des changements de session Supabase
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) setUser(null);
+    });
 
-    initSession();
-
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    return () => listener.unsubscribe();
   }, []);
-
-  // Récupérer le profil lié à l’utilisateur
-  const fetchProfil = async (userId) => {
-    const { data, error } = await supabase
-      .from("profils")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    if (error) {
-      console.error("Erreur récupération profil:", error);
-    } else {
-      setUser(data);
-    }
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

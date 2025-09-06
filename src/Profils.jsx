@@ -217,6 +217,25 @@ export default function Profils({ user, onLogin, onLogout }) {
             </select>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map((id) => {
+              const jeu = jeux.find((j) => j.id === id);
+              if (!jeu) return null;
+              return (
+                <div key={id} className="border rounded p-2 bg-white shadow">
+                  <p className="font-semibold">{jeu.nom}</p>
+                  {jeu.couverture_url && (
+                    <img
+                      src={jeu.couverture_url}
+                      alt={jeu.nom}
+                      className="w-full h-32 object-contain mt-2"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
           {profil.role === "admin" && (
             <div className="mt-10">
               <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
