@@ -11,7 +11,6 @@ import Catalogue from "./Catalogue";
 import Profils from "./Profils";
 import Parties from "./Parties";
 import Inscriptions from "./Inscriptions";
-import { supabase } from "./supabaseClient";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -52,7 +51,7 @@ function Navbar({ user, onLogout }) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm">
-              Bonjour <strong>{user?.nom}</strong>
+              Bonjour <strong>{user.nom}</strong>
             </span>
             <button
               onClick={onLogout}
@@ -87,19 +86,8 @@ function Navbar({ user, onLogout }) {
 }
 
 // --- Animated Routes ---
-function AnimatedRoutes({ user, setUser, profil, onLogout }) {
+function AnimatedRoutes({ user, setUser }) {
   const location = useLocation();
-
-  // 🔴 Bloquer si role = "user"
-  if (user && profil && profil.role === "user") {
-    return (
-      <div className="flex items-center justify-center h-96 text-center p-6">
-        <p className="text-lg font-semibold text-red-700">
-          Demandez dans messenger à l'administrateur de valider votre compte
-        </p>
-      </div>
-    );
-  }
 
   return (
     <AnimatePresence mode="wait">
@@ -114,7 +102,7 @@ function AnimatedRoutes({ user, setUser, profil, onLogout }) {
           {!user ? (
             <Route
               path="/*"
-              element={<Profils setUser={setUser} onLogout={onLogout} />}
+              element={<Profils user={user} setUser={setUser} onLogout={() => setUser(null)} />}
             />
           ) : (
             <>
@@ -123,7 +111,7 @@ function AnimatedRoutes({ user, setUser, profil, onLogout }) {
               <Route path="/inscriptions" element={<Inscriptions user={user} />} />
               <Route
                 path="/profil"
-                element={<Profils user={user} setUser={setUser} onLogout={onLogout} />}
+                element={<Profils user={user} setUser={setUser} onLogout={() => setUser(null)} />}
               />
               <Route path="*" element={<Navigate to="/" />} />
             </>
@@ -137,66 +125,25 @@ function AnimatedRoutes({ user, setUser, profil, onLogout }) {
 // --- App principale ---
 export default function App() {
   const [user, setUser] = useState(null);
-  const [profil, setProfil] = useState(null);
 
   useEffect(() => {
-    // Récup session initiale
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user || null);
-    });
-
-    // Abonnement aux changements de session
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user || null);
-      }
-    );
-
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
   useEffect(() => {
-    const fetchProfil = async () => {
-      if (!user) {
-        setProfil(null);
-        return;
-      }
-      const { data, error } = await supabase
-        .from("profils")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      if (error) {
-        console.error("Erreur fetch profil:", error);
-        setProfil(null);
-      } else {
-        setProfil(data);
-      }
-    };
-    fetchProfil();
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+    else localStorage.removeItem("user");
   }, [user]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfil(null);
-  };
+  const handleLogout = () => setUser(null);
 
   return (
     <Router>
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
-        {user && profil && profil.role !== "user" && (
-          <Navbar user={profil} onLogout={handleLogout} />
-        )}
+        {user && <Navbar user={user} onLogout={handleLogout} />}
         <div className="p-4">
-          <AnimatedRoutes
-            user={user}
-            setUser={setUser}
-            profil={profil}
-            onLogout={handleLogout}
-          />
+          <AnimatedRoutes user={user} setUser={setUser} />
         </div>
       </div>
     </Router>
