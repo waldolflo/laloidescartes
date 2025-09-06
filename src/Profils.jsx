@@ -2,25 +2,27 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { v4 as uuidv4 } from "uuid";
 
-export default function Profils({ user, setUser, onLogout }) {
+export default function Profils({ user, onLogin, onLogout }) {
   const [nom, setNom] = useState("");
-  const [email, setEmail] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [profil, setProfil] = useState(null);
   const [jeux, setJeux] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
 
+  // Charger profil et jeux
   useEffect(() => {
     if (user) {
       fetchProfil();
       fetchJeux();
+      if (profil?.role === "admin") fetchAllUsers();
     }
   }, [user]);
 
   const fetchProfil = async () => {
     const { data, error } = await supabase
       .from("profils")
-      .select("id, nom, email, role, jeufavoris1, jeufavoris2")
+      .select("id, nom, role, jeufavoris1, jeufavoris2")
       .eq("id", user.id)
       .single();
     if (error) console.error("Erreur fetch profil :", error);
@@ -36,6 +38,15 @@ export default function Profils({ user, setUser, onLogout }) {
     else setJeux(data || []);
   };
 
+  const fetchAllUsers = async () => {
+    const { data, error } = await supabase
+      .from("profils")
+      .select("id, nom, role")
+      .order("nom", { ascending: true });
+    if (error) console.error("Erreur fetch users :", error);
+    else setAllUsers(data || []);
+  };
+
   const updateFavoris = async (field, value) => {
     if (!profil) return;
     const { data, error } = await supabase
@@ -48,9 +59,20 @@ export default function Profils({ user, setUser, onLogout }) {
     else setProfil(data);
   };
 
+  const updateUserRole = async (userId, newRole) => {
+    const { data, error } = await supabase
+      .from("profils")
+      .update({ role: newRole })
+      .eq("id", userId)
+      .select()
+      .single();
+    if (error) console.error("Erreur update role :", error);
+    else setAllUsers(prev => prev.map(u => (u.id === userId ? data : u)));
+  };
+
   const handleLogin = async () => {
-    if (!nom || !email) {
-      setErrorMsg("Veuillez entrer votre nom et votre email.");
+    if (!nom) {
+      setErrorMsg("Veuillez entrer votre nom.");
       return;
     }
     setLoading(true);
@@ -60,7 +82,6 @@ export default function Profils({ user, setUser, onLogout }) {
         .from("profils")
         .select("*")
         .eq("nom", nom)
-        .eq("email", email)
         .single();
 
       if (fetchError && fetchError.code !== "PGRST116") {
@@ -71,13 +92,11 @@ export default function Profils({ user, setUser, onLogout }) {
       }
 
       let newUser;
-      if (existing) {
-        newUser = existing;
-      } else {
+      if (existing) newUser = existing;
+      else {
         const newProfil = {
           id: uuidv4(),
           nom,
-          email,
           role: "user",
           created_at: new Date().toISOString(),
         };
@@ -95,11 +114,8 @@ export default function Profils({ user, setUser, onLogout }) {
         newUser = data;
       }
 
-      // ✅ on met directement à jour l'utilisateur global
-      if (setUser) setUser(newUser);
-
+      if (onLogin) onLogin(newUser);
       setNom("");
-      setEmail("");
     } catch (err) {
       console.error(err);
       setErrorMsg("Erreur inattendue.");
@@ -121,13 +137,6 @@ export default function Profils({ user, setUser, onLogout }) {
           onChange={(e) => setNom(e.target.value)}
           className="w-full border p-2 rounded mb-2"
         />
-        <input
-          type="email"
-          placeholder="Votre email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border p-2 rounded mb-2"
-        />
         <button
           onClick={handleLogin}
           disabled={loading}
@@ -139,22 +148,12 @@ export default function Profils({ user, setUser, onLogout }) {
     );
   }
 
-  // --- si le profil existe mais rôle non validé ---
-  if (profil && profil.role === "user") {
+  if (profil.role === "user") {
     return (
-      <div className="p-6 text-center bg-white shadow rounded max-w-lg mx-auto">
-        <h2 className="text-xl font-bold mb-4">Compte en attente</h2>
-        <p className="text-gray-700">
-          Demandez dans Messenger à l’administrateur de valider votre compte.
+      <div className="p-4 max-w-2xl mx-auto text-center">
+        <p className="text-lg text-red-600">
+          Demandez dans Messenger à l'administrateur de valider votre compte.
         </p>
-        <div className="mt-6">
-          <button
-            onClick={onLogout}
-            className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
-          >
-            Déconnexion
-          </button>
-        </div>
       </div>
     );
   }
@@ -165,7 +164,6 @@ export default function Profils({ user, setUser, onLogout }) {
         <>
           <h2 className="text-2xl font-bold mb-4">Mon profil</h2>
           <p><strong>Prénom :</strong> {profil.nom}</p>
-          <p><strong>Email :</strong> {profil.email}</p>
           <p><strong>Rôle :</strong> {profil.role}</p>
 
           <h3 className="text-xl font-semibold mt-6 mb-2">
@@ -228,6 +226,53 @@ export default function Profils({ user, setUser, onLogout }) {
               Déconnexion
             </button>
           </div>
+
+          {/* Tableau des utilisateurs (admin) */}
+          {profil.role === "admin" && (
+            <div className="mt-10">
+              <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border border-gray-300 p-2">Nom</th>
+                    <th className="border border-gray-300 p-2">Rôle</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allUsers.map((u) => {
+                    const isCurrentAdmin = u.id === profil.id;
+                    const isAdminUser = u.role === "admin";
+                    return (
+                      <tr key={u.id} className="text-center">
+                        <td className="border border-gray-300 p-2">{u.nom}</td>
+                        <td className="border border-gray-300 p-2">
+                          {isCurrentAdmin || isAdminUser ? (
+                            <span className="px-2 py-1 bg-gray-200 rounded">{u.role}</span>
+                          ) : (
+                            <select
+                              value={u.role}
+                              onChange={(e) => {
+                                const newRole = e.target.value;
+                                if (window.confirm(`Voulez-vous changer le rôle de ${u.nom} en "${newRole}" ?`)) {
+                                  updateUserRole(u.id, newRole);
+                                } else e.target.value = u.role;
+                              }}
+                              className="border p-1 rounded"
+                            >
+                              <option value="user">user</option>
+                              <option value="membre">membre</option>
+                              <option value="ludo">ludo</option>
+                              <option value="admin">admin</option>
+                            </select>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
     </div>
