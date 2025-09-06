@@ -78,7 +78,12 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
 
       if (fetchError && fetchError.code === "PGRST116") {
         await supabase.from("profils").insert([
-          { id: data.user.id, nom: "", role: "user", created_at: new Date().toISOString() },
+          {
+            id: data.user.id,
+            nom: "",
+            role: "user",
+            created_at: new Date().toISOString(),
+          },
         ]);
       }
       onLogin(data.user);
@@ -104,7 +109,9 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
     if (error) {
       setErrorMsg("Erreur d'inscription : " + error.message);
     } else {
-      setErrorMsg("✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter.");
+      setErrorMsg(
+        "✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter."
+      );
     }
 
     setLoading(false);
@@ -147,36 +154,38 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
       .eq("id", userId)
       .select()
       .single();
-    if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
+    if (!error)
+      setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
   };
 
-    // Supprimer mon compte
-    const handleDeleteAccount = async () => {
-    if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ? Cette action est irréversible.")) {
-        return;
+  // Supprimer son compte
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("⚠️ Voulez-vous vraiment supprimer votre compte ? Cette action est irréversible.")) {
+      return;
     }
 
     try {
-        // invoke la fonction (le SDK ajoute le token automatiquement)
-        const { error } = await supabase.functions.invoke("delete-user", {
-        body: { userId: profil.id } // facultatif : la fonction vérifie l'autorisation côté serveur
-        });
-
-        if (error) {
-        alert("Erreur lors de la suppression : " + error.message);
-        return;
+      const res = await fetch(
+        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user", // <-- remplace <PROJECT_REF>
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id }),
         }
+      );
 
-        // succès : déconnexion + mise à jour du profil global si nécessaire
-        alert("Votre compte a été supprimé.");
-        await supabase.auth.signOut();
-        if (setProfilGlobal) setProfilGlobal(null);
-        onLogout();
+      if (!res.ok) {
+        throw new Error("Erreur lors de la suppression.");
+      }
+
+      alert("✅ Compte supprimé avec succès.");
+      await supabase.auth.signOut();
+      onLogout();
     } catch (err) {
-        console.error(err);
-        alert("Erreur inattendue lors de la suppression du compte.");
+      console.error(err);
+      alert("❌ Échec de la suppression du compte.");
     }
-    };
+  };
 
   // ---------------- Rendu ----------------
   if (!user) {
@@ -248,7 +257,9 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
               placeholder="Entrez votre prénom"
             />
           </div>
-          <p><strong>Rôle :</strong> {profil.role}</p>
+          <p>
+            <strong>Rôle :</strong> {profil.role}
+          </p>
 
           {/* Déconnexion */}
           <div className="mt-6 flex justify-end">
@@ -261,9 +272,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
           </div>
 
           {/* Jeux Favoris */}
-          <h3 className="text-xl font-semibold mt-6 mb-2">
-            🎲 Mes jeux favoris
-          </h3>
+          <h3 className="text-xl font-semibold mt-6 mb-2">🎲 Mes jeux favoris</h3>
 
           <div className="mb-4">
             <label className="block font-medium mb-1">Jeu favori 1 :</label>
@@ -274,7 +283,9 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
             >
               <option value="">-- Choisir un jeu --</option>
               {jeux.map((j) => (
-                <option key={j.id} value={j.id}>{j.nom}</option>
+                <option key={j.id} value={j.id}>
+                  {j.nom}
+                </option>
               ))}
             </select>
           </div>
@@ -288,34 +299,40 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
             >
               <option value="">-- Choisir un jeu --</option>
               {jeux.map((j) => (
-                <option key={j.id} value={j.id}>{j.nom}</option>
+                <option key={j.id} value={j.id}>
+                  {j.nom}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map((id) => {
-              const jeu = jeux.find((j) => j.id === id);
-              if (!jeu) return null;
-              return (
-                <div key={id} className="border rounded p-2 bg-white shadow">
-                  <p className="font-semibold">{jeu.nom}</p>
-                  {jeu.couverture_url && (
-                    <img
-                      src={jeu.couverture_url}
-                      alt={jeu.nom}
-                      className="w-full h-32 object-contain mt-2"
-                    />
-                  )}
-                </div>
-              );
-            })}
+            {[profil.jeufavoris1, profil.jeufavoris2]
+              .filter(Boolean)
+              .map((id) => {
+                const jeu = jeux.find((j) => j.id === id);
+                if (!jeu) return null;
+                return (
+                  <div key={id} className="border rounded p-2 bg-white shadow">
+                    <p className="font-semibold">{jeu.nom}</p>
+                    {jeu.couverture_url && (
+                      <img
+                        src={jeu.couverture_url}
+                        alt={jeu.nom}
+                        className="w-full h-32 object-contain mt-2"
+                      />
+                    )}
+                  </div>
+                );
+              })}
           </div>
 
           {/* Gestion des utilisateurs pour admin */}
           {profil.role === "admin" && (
             <div className="mt-10">
-              <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
+              <h3 className="text-xl font-semibold mb-4">
+                Gestion des utilisateurs
+              </h3>
               <table className="w-full border-collapse border border-gray-300">
                 <thead className="bg-gray-100">
                   <tr>
@@ -332,13 +349,19 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
                         <td className="border border-gray-300 p-2">{u.nom}</td>
                         <td className="border border-gray-300 p-2">
                           {isCurrentAdmin || isAdminUser ? (
-                            <span className="px-2 py-1 bg-gray-200 rounded">{u.role}</span>
+                            <span className="px-2 py-1 bg-gray-200 rounded">
+                              {u.role}
+                            </span>
                           ) : (
                             <select
                               value={u.role}
                               onChange={(e) => {
                                 const newRole = e.target.value;
-                                if (window.confirm(`Changer le rôle de ${u.nom} en "${newRole}" ?`)) {
+                                if (
+                                  window.confirm(
+                                    `Changer le rôle de ${u.nom} en "${newRole}" ?`
+                                  )
+                                ) {
                                   updateUserRole(u.id, newRole);
                                 } else e.target.value = u.role;
                               }}
@@ -360,12 +383,12 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
           )}
 
           {/* Supprimer mon compte */}
-          <div className="mt-10 border-t pt-6">
+          <div className="mt-10 text-center">
             <button
               onClick={handleDeleteAccount}
-              className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
             >
-              Supprimer mon compte
+              ❌ Supprimer mon compte
             </button>
           </div>
         </>
