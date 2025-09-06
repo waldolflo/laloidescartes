@@ -19,37 +19,40 @@ export default function Parties({ user }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [userRole, setUserRole] = useState("");
-  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (!user) return;
+      if (!user) return;
+  
+      const fetchRole = async () => {
+        const { data, error } = await supabase
+          .from("profils")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+  
+        if (!error) setUserRole(data?.role || "");
+      };
+  
+      fetchRole();
+      fetchJeux();
+    }, [user]);
 
-    const fetchRole = async () => {
-    const { data, error } = await supabase
-        .from("profils")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-    if (!error) setUserRole(data?.role || "");
-    };
-    fetchRole();
-}, [user]);
+  // filtres
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchJeux();
     fetchParties();
   }, []);
 
-
   // -------------------- FETCH JEUX --------------------
   const fetchJeux = async () => {
     const { data, error } = await supabase.from("jeux").select("*");
-    if (error) console.error("Erreur fetch jeux :", error);
+    if (error) console.error(error);
     else setJeux(data || []);
   };
 
-  // -------------------- FETCH PARTIES --------------------
+  // -------------------- FETCH PARTIES + INSCRIPTIONS --------------------
   const fetchParties = async () => {
     const { data, error } = await supabase
       .from("parties")
@@ -103,7 +106,6 @@ export default function Parties({ user }) {
     }
     setErrorMsg("");
 
-    // Comparer les id en string
     const jeu = jeux.find((j) => j.id === newPartie.jeu_id);
     if (!jeu) {
       setErrorMsg("Jeu sélectionné introuvable");
@@ -117,6 +119,7 @@ export default function Parties({ user }) {
       .insert([
         {
           ...newPartie,
+          jeu_id: Number(newPartie.jeu_id),
           nom: nomDefault,
           max_joueurs: jeu.max_joueurs || 0,
           nombredejoueurs: 0,
@@ -142,18 +145,18 @@ export default function Parties({ user }) {
 
   // -------------------- CALLBACK POUR INCRIPTIONS --------------------
   const handleUpdateInscrits = () => {
-    fetchParties();
+    fetchParties(); // rafraîchit les inscrits et nombredejoueurs
   };
 
   // -------------------- FORMATTING --------------------
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
-    return d.toLocaleDateString("fr-FR");
+    return d.toLocaleDateString("fr-FR"); // JJ/MM/AAAA
   };
 
   const formatHeure = (timeStr) => {
     if (!timeStr) return "";
-    return timeStr.slice(0, 5);
+    return timeStr.slice(0, 5); // HH:MM
   };
 
   // -------------------- FILTRAGE --------------------
@@ -176,19 +179,21 @@ export default function Parties({ user }) {
 
       {/* Barre de recherche */}
       <div className="flex gap-2 mb-4">
-        <input
-          className="flex-1 border p-2 rounded"
-          type="text"
-          placeholder="Rechercher par jeu, date, organisateur, lieu..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Créer une partie
-        </button>
+      <input
+        className="flex-1 border p-2 rounded"
+        type="text"
+        placeholder="Rechercher par jeu, date, organisateur, lieu..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {/* Bouton ouvrir modal */}
+      <button
+        onClick={() => setShowModal(true)}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Créer une partie
+      </button>
       </div>
 
       {/* Modal création */}
