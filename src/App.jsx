@@ -87,7 +87,7 @@ function Navbar({ user, onLogout }) {
 }
 
 // --- Animated Routes ---
-function AnimatedRoutes({ user, setUser }) {
+function AnimatedRoutes({ user, setUser, setProfil }) {
   const location = useLocation();
 
   return (
@@ -103,7 +103,7 @@ function AnimatedRoutes({ user, setUser }) {
           {!user ? (
             <Route
               path="/*"
-              element={<Profils onLogin={setUser} onLogout={() => setUser(null)} />}
+              element={<Profils onLogin={setUser} onLogout={() => setUser(null)} setProfilGlobal={setProfil} />}
             />
           ) : (
             <>
@@ -114,14 +114,14 @@ function AnimatedRoutes({ user, setUser }) {
                   <Route path="/inscriptions" element={<Inscriptions user={user} />} />
                   <Route
                     path="/profil"
-                    element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
+                    element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} setProfilGlobal={setProfil} />}
                   />
                 </>
               ) : (
                 // Si role = "user" → redirige vers profil pour afficher message
                 <Route
                   path="/*"
-                  element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
+                  element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} setProfilGlobal={setProfil} />}
                 />
               )}
               <Route path="*" element={<Navigate to="/" />} />
@@ -136,30 +136,53 @@ function AnimatedRoutes({ user, setUser }) {
 // --- App principale ---
 export default function App() {
   const [user, setUser] = useState(null);
+  const [profil, setProfil] = useState(null); // <- profil complet avec nom
 
   useEffect(() => {
     // Vérifie si déjà connecté à Supabase
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) setUser(data.user);
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        setUser(data.user);
+        // Récupérer profil complet
+        const { data: profilData } = await supabase
+          .from("profils")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
+        setProfil(profilData);
+      }
     });
   }, []);
 
+  // Mettre à jour le profil si l'utilisateur change
   useEffect(() => {
-    if (user) localStorage.setItem("user", JSON.stringify(user));
-    else localStorage.removeItem("user");
+    if (!user) {
+      setProfil(null);
+      return;
+    }
+    const fetchProfil = async () => {
+      const { data: profilData } = await supabase
+        .from("profils")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      setProfil(profilData);
+    };
+    fetchProfil();
   }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setProfil(null);
   };
 
   return (
     <Router>
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
-        {user && <Navbar user={user} onLogout={handleLogout} />}
+        {user && <Navbar user={profil || user} onLogout={handleLogout} />}
         <div className="p-4">
-          <AnimatedRoutes user={user} setUser={setUser} />
+          <AnimatedRoutes user={profil || user} setUser={setUser} setProfil={setProfil} />
         </div>
       </div>
     </Router>

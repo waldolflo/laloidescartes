@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 
-export default function Profils({ user, onLogin, onLogout }) {
+export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nom, setNom] = useState("");
@@ -11,17 +11,14 @@ export default function Profils({ user, onLogin, onLogout }) {
   const [allUsers, setAllUsers] = useState([]);
   const [jeux, setJeux] = useState([]);
 
-  // ------------------- FETCH -------------------
+  // Charger le profil après login
   useEffect(() => {
     if (user) {
       fetchProfil();
       fetchJeux();
+      if (profil?.role === "admin") fetchAllUsers();
     }
   }, [user]);
-
-  useEffect(() => {
-    if (profil?.role === "admin") fetchAllUsers();
-  }, [profil]);
 
   const fetchProfil = async () => {
     const { data, error } = await supabase
@@ -32,6 +29,7 @@ export default function Profils({ user, onLogin, onLogout }) {
     if (!error && data) {
       setProfil(data);
       setNom(data.nom || "");
+      if (setProfilGlobal) setProfilGlobal(data); // <- maj navbar
     }
   };
 
@@ -51,7 +49,7 @@ export default function Profils({ user, onLogin, onLogout }) {
     if (!error) setAllUsers(data || []);
   };
 
-  // ------------------- AUTH -------------------
+  // Connexion
   const handleLogin = async () => {
     if (!email || !password) {
       setErrorMsg("Veuillez entrer email et mot de passe.");
@@ -60,7 +58,10 @@ export default function Profils({ user, onLogin, onLogout }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
       setErrorMsg("Erreur de connexion : " + error.message);
@@ -86,6 +87,7 @@ export default function Profils({ user, onLogin, onLogout }) {
     setLoading(false);
   };
 
+  // Inscription
   const handleSignUp = async () => {
     if (!email || !password) {
       setErrorMsg("Veuillez entrer email et mot de passe.");
@@ -94,7 +96,10 @@ export default function Profils({ user, onLogin, onLogout }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
     if (error) {
       setErrorMsg("Erreur d'inscription : " + error.message);
@@ -105,56 +110,71 @@ export default function Profils({ user, onLogin, onLogout }) {
     setLoading(false);
   };
 
-  // ------------------- PROFIL -------------------
+  // Mettre à jour le nom
   const updateNom = async () => {
     if (!nom) return;
-    try {
-      const { data, error } = await supabase
-        .from("profils")
-        .update({ nom })
-        .eq("id", profil.id)
-        .select()
-        .single();
-      if (error) throw error;
+    const { data, error } = await supabase
+      .from("profils")
+      .update({ nom })
+      .eq("id", profil.id)
+      .select()
+      .single();
+    if (!error) {
       setProfil(data);
-      setErrorMsg("✅ Prénom mis à jour !");
-      setTimeout(() => setErrorMsg(""), 3000);
-    } catch (err) {
-      console.error(err);
-      setErrorMsg("❌ Erreur lors de la mise à jour du prénom.");
-      setTimeout(() => setErrorMsg(""), 3000);
+      if (setProfilGlobal) setProfilGlobal(data); // <- maj navbar
     }
   };
 
-  const updateFavoris = async (champ, value) => {
-    try {
-      const { data, error } = await supabase
-        .from("profils")
-        .update({ [champ]: value })
-        .eq("id", profil.id)
-        .select()
-        .single();
-      if (!error) setProfil(data);
-    } catch (err) {
-      console.error(err);
+  // Mettre à jour jeux favoris
+  const updateFavoris = async (champ, valeur) => {
+    const { data, error } = await supabase
+      .from("profils")
+      .update({ [champ]: valeur })
+      .eq("id", profil.id)
+      .select()
+      .single();
+    if (!error) {
+      setProfil(data);
+      if (setProfilGlobal) setProfilGlobal(data);
     }
   };
 
+  // Changer rôle (admin)
   const updateUserRole = async (userId, newRole) => {
-    try {
-      const { data, error } = await supabase
-        .from("profils")
-        .update({ role: newRole })
-        .eq("id", userId)
-        .select()
-        .single();
-      if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
-    } catch (err) {
-      console.error(err);
-    }
+    const { data, error } = await supabase
+      .from("profils")
+      .update({ role: newRole })
+      .eq("id", userId)
+      .select()
+      .single();
+    if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
   };
 
-  // ------------------- RENDU -------------------
+  // Supprimer mon compte
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?")) {
+      return;
+    }
+
+    // 1. Supprimer le profil
+    await supabase.from("profils").delete().eq("id", user.id);
+
+    // 2. Supprimer le compte auth (⚠️ uniquement possible côté serveur avec service_role)
+    try {
+      // Tentative côté client (échoue sans service_role activé)
+      if (supabase.auth.admin?.deleteUser) {
+        await supabase.auth.admin.deleteUser(user.id);
+      }
+    } catch (err) {
+      console.warn("Suppression du compte Auth non possible côté client :", err.message);
+    }
+
+    // 3. Déconnexion
+    await supabase.auth.signOut();
+    onLogout();
+  };
+
+  // ---------------- Rendu ----------------
   if (!user) {
     return (
       <div className="p-4 border rounded bg-white shadow max-w-md mx-auto">
@@ -213,33 +233,21 @@ export default function Profils({ user, onLogin, onLogout }) {
       {profil && (
         <>
           <h2 className="text-2xl font-bold mb-4">Mon profil</h2>
-
-          {/* Prénom */}
           <div className="mb-4">
             <label className="block font-medium mb-1">Prénom :</label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="text"
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                className="border p-2 rounded w-full"
-                placeholder="Entrez votre prénom"
-              />
-              <button
-                onClick={updateNom}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Valider
-              </button>
-            </div>
-            {errorMsg && <p className="text-sm mt-1 text-green-600">{errorMsg}</p>}
+            <input
+              type="text"
+              value={nom || profil.nom || ""}
+              onChange={(e) => setNom(e.target.value)}
+              onBlur={updateNom}
+              className="border p-2 rounded w-full"
+              placeholder="Entrez votre prénom"
+            />
           </div>
-
-          {/* Rôle */}
-          <p className="mb-4"><strong>Rôle :</strong> {profil.role}</p>
+          <p><strong>Rôle :</strong> {profil.role}</p>
 
           {/* Déconnexion */}
-          <div className="mt-4 flex justify-end">
+          <div className="mt-6 flex justify-end">
             <button
               onClick={onLogout}
               className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
@@ -248,28 +256,39 @@ export default function Profils({ user, onLogin, onLogout }) {
             </button>
           </div>
 
-          {/* Jeux favoris */}
-          <h3 className="text-xl font-semibold mt-6 mb-2">🎲 Mes jeux favoris</h3>
+          {/* Jeux Favoris */}
+          <h3 className="text-xl font-semibold mt-6 mb-2">
+            🎲 Mes jeux favoris
+          </h3>
 
-          {["jeufavoris1", "jeufavoris2"].map((favori, idx) => (
-            <div key={favori} className="mb-4">
-              <label className="block font-medium mb-1">
-                Jeu favori {idx + 1} :
-              </label>
-              <select
-                value={profil[favori] || ""}
-                onChange={(e) => updateFavoris(favori, e.target.value)}
-                className="border p-2 rounded w-full"
-              >
-                <option value="">-- Choisir un jeu --</option>
-                {jeux.map((j) => (
-                  <option key={j.id} value={j.id}>{j.nom}</option>
-                ))}
-              </select>
-            </div>
-          ))}
+          <div className="mb-4">
+            <label className="block font-medium mb-1">Jeu favori 1 :</label>
+            <select
+              value={profil.jeufavoris1 || ""}
+              onChange={(e) => updateFavoris("jeufavoris1", e.target.value)}
+              className="border p-2 rounded w-full"
+            >
+              <option value="">-- Choisir un jeu --</option>
+              {jeux.map((j) => (
+                <option key={j.id} value={j.id}>{j.nom}</option>
+              ))}
+            </select>
+          </div>
 
-          {/* Affichage des couvertures des jeux */}
+          <div className="mb-4">
+            <label className="block font-medium mb-1">Jeu favori 2 :</label>
+            <select
+              value={profil.jeufavoris2 || ""}
+              onChange={(e) => updateFavoris("jeufavoris2", e.target.value)}
+              className="border p-2 rounded w-full"
+            >
+              <option value="">-- Choisir un jeu --</option>
+              {jeux.map((j) => (
+                <option key={j.id} value={j.id}>{j.nom}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map((id) => {
               const jeu = jeux.find((j) => j.id === id);
@@ -335,6 +354,16 @@ export default function Profils({ user, onLogin, onLogout }) {
               </table>
             </div>
           )}
+
+          {/* Supprimer mon compte */}
+          <div className="mt-10 border-t pt-6">
+            <button
+              onClick={handleDeleteAccount}
+              className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Supprimer mon compte
+            </button>
+          </div>
         </>
       )}
     </div>
