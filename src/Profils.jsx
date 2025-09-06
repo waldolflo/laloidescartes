@@ -9,11 +9,13 @@ export default function Profils({ user, onLogin, onLogout }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
+  const [jeux, setJeux] = useState([]);
 
   // Charger le profil après login
   useEffect(() => {
     if (user) {
       fetchProfil();
+      fetchJeux();
       if (profil?.role === "admin") fetchAllUsers();
     }
   }, [user]);
@@ -21,11 +23,20 @@ export default function Profils({ user, onLogin, onLogout }) {
   const fetchProfil = async () => {
     const { data, error } = await supabase
       .from("profils")
-      .select("id, nom, role")
+      .select("id, nom, role, jeufavoris1, jeufavoris2")
       .eq("id", user.id)
       .single();
     if (!error && data) setProfil(data);
   };
+
+  const fetchJeux = async () => {
+      const { data, error } = await supabase
+        .from("jeux")
+        .select("id, nom, couverture_url")
+        .order("nom", { ascending: true });
+      if (error) console.error(error);
+      else setJeux(data || []);
+    };
 
   const fetchAllUsers = async () => {
     const { data, error } = await supabase
