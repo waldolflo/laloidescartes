@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
-import { supabase } from "./supabaseClient";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import Catalogue from "./Catalogue";
 import Profils from "./Profils";
 import Parties from "./Parties";
@@ -8,6 +14,7 @@ import Inscriptions from "./Inscriptions";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
+// --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
   const location = useLocation();
   const tabs = [
@@ -29,13 +36,14 @@ function Navbar({ user, onLogout }) {
                 <Link
                   key={to}
                   to={to}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    active ? "bg-slate-700" : "hover:bg-slate-700"
-                  }`}
+                  className={`relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors
+                    ${active ? "bg-slate-700" : "hover:bg-slate-700"}`}
                 >
                   <Icon size={18} />
                   {label}
-                  {active && <span className="absolute bottom-0 left-0 w-full h-[2px] bg-rose-500 rounded-t"></span>}
+                  {active && (
+                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-rose-500 rounded-t"></span>
+                  )}
                 </Link>
               );
             })}
@@ -44,7 +52,10 @@ function Navbar({ user, onLogout }) {
             <span className="text-sm">
               Bonjour <strong>{user.nom}</strong>
             </span>
-            <button onClick={onLogout} className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm">
+            <button
+              onClick={onLogout}
+              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
+            >
               Déconnexion
             </button>
           </div>
@@ -73,6 +84,7 @@ function Navbar({ user, onLogout }) {
   );
 }
 
+// --- Animated Routes ---
 function AnimatedRoutes({ user, setUser }) {
   const location = useLocation();
 
@@ -87,19 +99,31 @@ function AnimatedRoutes({ user, setUser }) {
       >
         <Routes location={location}>
           {!user ? (
-            <Route path="/*" element={<Profils onLogin={setUser} onLogout={() => setUser(null)} />} />
+            <Route
+              path="/*"
+              element={<Profils onLogin={setUser} onLogout={() => setUser(null)} />}
+            />
           ) : (
             <>
+              {/* Routes accessibles uniquement si rôle !== "user" */}
               {user.role !== "user" ? (
                 <>
                   <Route path="/" element={<Catalogue user={user} />} />
                   <Route path="/parties" element={<Parties user={user} />} />
                   <Route path="/inscriptions" element={<Inscriptions user={user} />} />
-                  <Route path="/profil" element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />} />
+                  <Route
+                    path="/profil"
+                    element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
+                  />
                 </>
               ) : (
-                <Route path="/*" element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />} />
+                // Les "user" voient uniquement le message dans Profils
+                <Route
+                  path="/*"
+                  element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
+                />
               )}
+              {/* Redirection générique */}
               <Route path="*" element={<Navigate to="/" />} />
             </>
           )}
@@ -109,43 +133,21 @@ function AnimatedRoutes({ user, setUser }) {
   );
 }
 
+// --- App principale ---
 export default function App() {
   const [user, setUser] = useState(null);
 
-  // 🔹 À chaque reload, récupérer le user depuis Supabase
   useEffect(() => {
-    const initUser = async () => {
-      const supabaseUser = supabase.auth.user();
-      if (!supabaseUser) return setUser(null);
-
-      // Récupérer le profil complet (id, nom, role)
-      const { data, error } = await supabase
-        .from("profils")
-        .select("id, nom, role")
-        .eq("id", supabaseUser.id)
-        .single();
-
-      if (error) {
-        console.error("Erreur fetch profil au reload :", error);
-        setUser(null);
-      } else {
-        setUser(data);
-      }
-    };
-    initUser();
-
-    // Écoute des changements de session Supabase
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) setUser(null);
-    });
-
-    return () => listener.unsubscribe();
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
+  useEffect(() => {
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+    else localStorage.removeItem("user");
+  }, [user]);
+
+  const handleLogout = () => setUser(null);
 
   return (
     <Router>
