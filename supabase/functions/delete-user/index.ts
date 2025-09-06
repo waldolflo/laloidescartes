@@ -36,14 +36,14 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.29.0";
 
 // Lire les variables d'environnement (set via supabase secrets)
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASEURL = Deno.env.get("SUPABASEURL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY")!;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant(e)");
+if (!SUPABASEURL || !SERVICE_ROLE_KEY) {
+  throw new Error("SUPABASEURL ou SERVICE_ROLE_KEY manquant(e)");
 }
 
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabaseAdmin = createClient(SUPABASEURL, SERVICE_ROLE_KEY);
 
 serve(async (req) => {
   try {
