@@ -14,7 +14,7 @@ import Inscriptions from "./Inscriptions";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-// --- Navbar avec mode desktop + mobile ---
+// --- Navbar ---
 function Navbar({ user, onLogout }) {
   const location = useLocation();
 
@@ -27,7 +27,7 @@ function Navbar({ user, onLogout }) {
 
   return (
     <>
-      {/* --- Navbar Desktop --- */}
+      {/* Desktop */}
       <nav className="hidden md:block bg-slate-800 text-white sticky top-0 z-50 shadow-md w-full">
         <div className="flex justify-between items-center px-6 py-3">
           <div className="flex gap-2">
@@ -63,7 +63,7 @@ function Navbar({ user, onLogout }) {
         </div>
       </nav>
 
-      {/* --- Navbar Mobile --- */}
+      {/* Mobile */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 text-white flex justify-around items-center py-2 shadow-inner z-50">
         {tabs.map(({ to, label, icon: Icon }) => {
           const active = location.pathname === to;
@@ -85,8 +85,8 @@ function Navbar({ user, onLogout }) {
   );
 }
 
-// --- Container pour animations ---
-function AnimatedRoutes({ user, setUser, handleLogout }) {
+// --- Animated Routes ---
+function AnimatedRoutes({ user, setUser }) {
   const location = useLocation();
 
   return (
@@ -100,19 +100,13 @@ function AnimatedRoutes({ user, setUser, handleLogout }) {
       >
         <Routes location={location}>
           {!user ? (
-            <Route path="/*" element={<Profils onLogin={setUser} />} />
+            <Route path="/*" element={<Profils onLogin={setUser} onLogout={() => setUser(null)} />} />
           ) : (
             <>
               <Route path="/" element={<Catalogue user={user} />} />
               <Route path="/parties" element={<Parties user={user} />} />
-              <Route
-                path="/inscriptions"
-                element={<Inscriptions user={user} />}
-              />
-              <Route
-                path="/profil"
-                element={<Profils user={user} onLogin={setUser} onLogout={handleLogout} />}
-              />
+              <Route path="/inscriptions" element={<Inscriptions user={user} />} />
+              <Route path="/profil" element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>
           )}
@@ -142,7 +136,6 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
         {user && <Navbar user={user} onLogout={handleLogout} />}
-
         <div className="p-4">
           <AnimatedRoutes user={user} setUser={setUser} />
         </div>
