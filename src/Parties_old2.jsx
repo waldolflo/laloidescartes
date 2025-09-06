@@ -21,32 +21,35 @@ export default function Parties({ user }) {
   const [userRole, setUserRole] = useState("");
   const [search, setSearch] = useState("");
 
-  // ------------------- FETCH ROLE UTILISATEUR -------------------
   useEffect(() => {
     if (!user) return;
+
     const fetchRole = async () => {
-      const { data, error } = await supabase
+    const { data, error } = await supabase
         .from("profils")
         .select("role")
         .eq("id", user.id)
         .single();
-      if (!error) setUserRole(data?.role || "");
+
+    if (!error) setUserRole(data?.role || "");
     };
     fetchRole();
-  }, [user]);
+}, [user]);
 
-  // ------------------- FETCH JEUX ET PARTIES -------------------
   useEffect(() => {
     fetchJeux();
     fetchParties();
   }, []);
 
+
+  // -------------------- FETCH JEUX --------------------
   const fetchJeux = async () => {
     const { data, error } = await supabase.from("jeux").select("*");
-    if (!error) setJeux(data || []);
-    else console.error("Erreur fetch jeux :", error);
+    if (error) console.error("Erreur fetch jeux :", error);
+    else setJeux(data || []);
   };
 
+  // -------------------- FETCH PARTIES --------------------
   const fetchParties = async () => {
     const { data, error } = await supabase
       .from("parties")
@@ -92,7 +95,7 @@ export default function Parties({ user }) {
     setParties({ upcoming, past });
   };
 
-  // ------------------- AJOUT DE PARTIE -------------------
+  // -------------------- AJOUT DE PARTIE --------------------
   const addPartie = async () => {
     if (!newPartie.jeu_id || !newPartie.date_partie || !newPartie.heure_partie) {
       setErrorMsg("Jeu, date et heure sont obligatoires");
@@ -100,6 +103,7 @@ export default function Parties({ user }) {
     }
     setErrorMsg("");
 
+    // Comparer les id en string
     const jeu = jeux.find((j) => j.id === newPartie.jeu_id);
     if (!jeu) {
       setErrorMsg("Jeu sélectionné introuvable");
@@ -108,14 +112,16 @@ export default function Parties({ user }) {
 
     const nomDefault = `${jeu.nom} ${formatDate(newPartie.date_partie)} ${formatHeure(newPartie.heure_partie)}`;
 
-    const { error } = await supabase.from("parties").insert([
-      {
-        ...newPartie,
-        nom: nomDefault,
-        max_joueurs: jeu.max_joueurs || 0,
-        nombredejoueurs: 0,
-      },
-    ]);
+    const { error } = await supabase
+      .from("parties")
+      .insert([
+        {
+          ...newPartie,
+          nom: nomDefault,
+          max_joueurs: jeu.max_joueurs || 0,
+          nombredejoueurs: 0,
+        },
+      ]);
 
     if (error) {
       console.error(error);
@@ -134,14 +140,23 @@ export default function Parties({ user }) {
     }
   };
 
-  // ------------------- UTILS -------------------
+  // -------------------- CALLBACK POUR INCRIPTIONS --------------------
+  const handleUpdateInscrits = () => {
+    fetchParties();
+  };
+
+  // -------------------- FORMATTING --------------------
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString("fr-FR");
   };
 
-  const formatHeure = (timeStr) => (timeStr ? timeStr.slice(0, 5) : "");
+  const formatHeure = (timeStr) => {
+    if (!timeStr) return "";
+    return timeStr.slice(0, 5);
+  };
 
+  // -------------------- FILTRAGE --------------------
   const filterParties = (list) => {
     return list.filter((p) => {
       const searchLower = search.toLowerCase();
@@ -155,7 +170,6 @@ export default function Parties({ user }) {
     });
   };
 
-  // ------------------- RENDU -------------------
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Parties</h1>
@@ -183,6 +197,7 @@ export default function Parties({ user }) {
           <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">Nouvelle partie</h2>
             {errorMsg && <p className="text-red-600 mb-2">{errorMsg}</p>}
+
             <select
               value={newPartie.jeu_id}
               onChange={(e) =>
@@ -197,6 +212,7 @@ export default function Parties({ user }) {
                 </option>
               ))}
             </select>
+
             <input
               type="date"
               value={newPartie.date_partie}
@@ -249,7 +265,7 @@ export default function Parties({ user }) {
         </div>
       )}
 
-      {/* PARTIES À VENIR */}
+      {/* PARTIES A VENIR */}
       <h2 className="text-xl font-bold mb-2">Parties à venir</h2>
       <div className="grid gap-4">
         {filterParties(parties.upcoming)?.map((p) => (
@@ -268,7 +284,9 @@ export default function Parties({ user }) {
               {p.description && <p>{p.description}</p>}
               {p.lieu && <p>Lieu: {p.lieu}</p>}
               <p>Organisateur: {p.organisateur?.nom || "?"}</p>
-              <p>Joueurs inscrits: {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
+              <p>
+                Joueurs inscrits: {p.nombredejoueurs} / {p.jeux?.max_joueurs}
+              </p>
 
               {/* Liste des joueurs inscrits */}
               {p.inscrits?.length > 0 && (
@@ -279,36 +297,14 @@ export default function Parties({ user }) {
                 </ul>
               )}
 
-              {/* Boutons Modifier / Supprimer */}
               <div className="flex gap-2 mt-2">
                 {(p.utilisateur_id === user.id || userRole === "admin") && (
-                  <>
-                    <button
-                      onClick={() => setEditingPartie(p)}
-                      className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!window.confirm("Voulez-vous vraiment supprimer cette partie ?")) return;
-                        try {
-                          const { error } = await supabase
-                            .from("parties")
-                            .delete()
-                            .eq("id", p.id);
-                          if (error) throw error;
-                          fetchParties();
-                        } catch (err) {
-                          console.error(err);
-                          alert("Erreur lors de la suppression de la partie.");
-                        }
-                      }}
-                      className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
-                    >
-                      Supprimer
-                    </button>
-                  </>
+                  <button
+                    onClick={() => setEditingPartie(p)}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                  >
+                    Modifier
+                  </button>
                 )}
               </div>
             </div>
@@ -316,7 +312,7 @@ export default function Parties({ user }) {
         ))}
       </div>
 
-      {/* PARTIES PASSÉES */}
+      {/* PARTIES PASSEES */}
       {parties.past?.length > 0 && (
         <>
           <h2 className="text-xl font-bold mt-6 mb-2">Archives de parties</h2>
@@ -335,6 +331,7 @@ export default function Parties({ user }) {
                   <p>Date: {formatDate(p.date_partie)} - Heure: {formatHeure(p.heure_partie)}</p>
                   <p>Organisateur: {p.organisateur?.nom || "?"}</p>
                   {p.lieu && <p>Lieu: {p.lieu}</p>}
+                  {/* Liste des joueurs inscrits */}
                   {p.inscrits?.length > 0 && (
                     <ul className="list-disc pl-5 mt-2">
                       {p.inscrits.map((i) => (
@@ -363,7 +360,7 @@ export default function Parties({ user }) {
         <Inscriptions
           user={user}
           parties={parties.upcoming}
-          updateInscritsCount={() => fetchParties()}
+          updateInscritsCount={handleUpdateInscrits}
         />
       )}
     </div>
