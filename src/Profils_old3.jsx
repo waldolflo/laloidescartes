@@ -150,33 +150,29 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
     if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
   };
 
-    // Supprimer mon compte
-    const handleDeleteAccount = async () => {
-    if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ? Cette action est irréversible.")) {
-        return;
+  // Supprimer mon compte
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?")) {
+      return;
     }
 
+    // 1. Supprimer le profil
+    await supabase.from("profils").delete().eq("id", user.id);
+
+    // 2. Supprimer le compte auth (⚠️ uniquement possible côté serveur avec service_role)
     try {
-        // invoke la fonction (le SDK ajoute le token automatiquement)
-        const { error } = await supabase.functions.invoke("delete-user", {
-        body: { userId: profil.id } // facultatif : la fonction vérifie l'autorisation côté serveur
-        });
-
-        if (error) {
-        alert("Erreur lors de la suppression : " + error.message);
-        return;
-        }
-
-        // succès : déconnexion + mise à jour du profil global si nécessaire
-        alert("Votre compte a été supprimé.");
-        await supabase.auth.signOut();
-        if (setProfilGlobal) setProfilGlobal(null);
-        onLogout();
+      // Tentative côté client (échoue sans service_role activé)
+      if (supabase.auth.admin?.deleteUser) {
+        await supabase.auth.admin.deleteUser(user.id);
+      }
     } catch (err) {
-        console.error(err);
-        alert("Erreur inattendue lors de la suppression du compte.");
+      console.warn("Suppression du compte Auth non possible côté client :", err.message);
     }
-    };
+
+    // 3. Déconnexion
+    await supabase.auth.signOut();
+    onLogout();
+  };
 
   // ---------------- Rendu ----------------
   if (!user) {
