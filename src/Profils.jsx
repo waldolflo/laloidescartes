@@ -4,19 +4,16 @@ import { supabase } from "./supabaseClient";
 export default function Profils({ user, onLogin, onLogout }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [nom, setNom] = useState("");
+  const [profil, setProfil] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const [profil, setProfil] = useState(null);
-  const [jeux, setJeux] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
-  const [editingNom, setEditingNom] = useState(false);
-  const [newNom, setNewNom] = useState("");
 
-  // Charger profil et jeux
+  // Charger le profil après login
   useEffect(() => {
     if (user) {
       fetchProfil();
-      fetchJeux();
       if (profil?.role === "admin") fetchAllUsers();
     }
   }, [user]);
@@ -24,23 +21,10 @@ export default function Profils({ user, onLogin, onLogout }) {
   const fetchProfil = async () => {
     const { data, error } = await supabase
       .from("profils")
-      .select("id, nom, role, jeufavoris1, jeufavoris2")
+      .select("id, nom, role")
       .eq("id", user.id)
       .single();
-    if (error) console.error("Erreur fetch profil :", error);
-    else {
-      setProfil(data);
-      setNewNom(data.nom || "");
-    }
-  };
-
-  const fetchJeux = async () => {
-    const { data, error } = await supabase
-      .from("jeux")
-      .select("id, nom, couverture_url")
-      .order("nom", { ascending: true });
-    if (error) console.error("Erreur fetch jeux :", error);
-    else setJeux(data || []);
+    if (!error && data) setProfil(data);
   };
 
   const fetchAllUsers = async () => {
@@ -48,22 +32,83 @@ export default function Profils({ user, onLogin, onLogout }) {
       .from("profils")
       .select("id, nom, role")
       .order("nom", { ascending: true });
-    if (error) console.error("Erreur fetch users :", error);
-    else setAllUsers(data || []);
+    if (!error) setAllUsers(data || []);
   };
 
-  const updateFavoris = async (field, value) => {
-    if (!profil) return;
+  // Connexion
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setErrorMsg("Veuillez entrer email et mot de passe.");
+      return;
+    }
+    setLoading(true);
+    setErrorMsg("");
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMsg("Erreur de connexion : " + error.message);
+    } else if (data.user && !data.user.email_confirmed_at) {
+      setErrorMsg("❌ Vous devez confirmer votre email avant de vous connecter.");
+      await supabase.auth.signOut();
+    } else {
+      // Créer un profil si inexistant
+      const { data: existing, error: fetchError } = await supabase
+        .from("profils")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+
+      if (fetchError && fetchError.code === "PGRST116") {
+        await supabase.from("profils").insert([
+          { id: data.user.id, nom: "", role: "user", created_at: new Date().toISOString() },
+        ]);
+      }
+      onLogin(data.user);
+    }
+
+    setLoading(false);
+  };
+
+  // Inscription
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      setErrorMsg("Veuillez entrer email et mot de passe.");
+      return;
+    }
+    setLoading(true);
+    setErrorMsg("");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMsg("Erreur d'inscription : " + error.message);
+    } else {
+      setErrorMsg("✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter.");
+    }
+
+    setLoading(false);
+  };
+
+  // Mettre à jour le nom
+  const updateNom = async () => {
+    if (!nom) return;
     const { data, error } = await supabase
       .from("profils")
-      .update({ [field]: value || null })
+      .update({ nom })
       .eq("id", profil.id)
       .select()
       .single();
-    if (error) console.error("Erreur update favoris :", error);
-    else setProfil(data);
+    if (!error) setProfil(data);
   };
 
+  // Changer rôle (admin)
   const updateUserRole = async (userId, newRole) => {
     const { data, error } = await supabase
       .from("profils")
@@ -71,99 +116,10 @@ export default function Profils({ user, onLogin, onLogout }) {
       .eq("id", userId)
       .select()
       .single();
-    if (error) console.error("Erreur update role :", error);
-    else setAllUsers(prev => prev.map(u => (u.id === userId ? data : u)));
+    if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
   };
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setErrorMsg("Veuillez entrer votre email et votre mot de passe.");
-      return;
-    }
-    setLoading(true);
-    setErrorMsg("");
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        if (error.message.includes("Email not confirmed")) {
-          setErrorMsg("Veuillez confirmer votre email avant de vous connecter.");
-        } else {
-          setErrorMsg("Erreur de connexion : " + error.message);
-        }
-        setLoading(false);
-        return;
-      }
-
-      const { user } = data;
-      if (!user.email_confirmed_at) {
-        setErrorMsg("Veuillez confirmer votre email avant de vous connecter.");
-        await supabase.auth.signOut();
-        setLoading(false);
-        return;
-      }
-
-      onLogin(user);
-    } catch (err) {
-      console.error(err);
-      setErrorMsg("Erreur inattendue.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignup = async () => {
-    if (!email || !password) {
-      setErrorMsg("Veuillez entrer email et mot de passe.");
-      return;
-    }
-    setLoading(true);
-    setErrorMsg("");
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      if (error) {
-      setErrorMsg("Erreur lors de l'inscription : " + error.message);
-      setLoading(false);
-      return;
-    }
-    if (onLogin) onLogin(data.user);
-    setErrorMsg("✅ Un email de confirmation vous a été envoyé. Veuillez valider votre compte avant de vous connecter.");
-  } catch (err) {
-    console.error(err);
-    setErrorMsg("Erreur inattendue.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-  const saveNom = async () => {
-    if (!newNom.trim()) {
-      setErrorMsg("Le nom ne peut pas être vide.");
-      return;
-    }
-    const { data, error } = await supabase
-      .from("profils")
-      .update({ nom: newNom.trim() })
-      .eq("id", profil.id)
-      .select()
-      .single();
-    if (error) {
-      console.error(error);
-      setErrorMsg("Erreur lors de la mise à jour du nom.");
-    } else {
-      setProfil(data);
-      setEditingNom(false);
-    }
-  };
-
-  // ------------------ RENDU ------------------
+  // ---------------- Rendu ----------------
   if (!user) {
     return (
       <div className="p-4 border rounded bg-white shadow max-w-md mx-auto">
@@ -178,27 +134,25 @@ export default function Profils({ user, onLogin, onLogout }) {
         />
         <input
           type="password"
-          placeholder="Votre mot de passe"
+          placeholder="Mot de passe"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full border p-2 rounded mb-2"
         />
-        <div className="flex gap-2">
-          <button
-            onClick={handleLogin}
-            disabled={loading}
-            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? "Connexion..." : "Se connecter"}
-          </button>
-          <button
-            onClick={handleSignup}
-            disabled={loading}
-            className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading ? "Inscription..." : "Créer un compte"}
-          </button>
-        </div>
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? "Connexion..." : "Se connecter"}
+        </button>
+        <button
+          onClick={handleSignUp}
+          disabled={loading}
+          className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 mt-2"
+        >
+          {loading ? "Inscription..." : "Créer un compte"}
+        </button>
       </div>
     );
   }
@@ -224,53 +178,33 @@ export default function Profils({ user, onLogin, onLogout }) {
       {profil && (
         <>
           <h2 className="text-2xl font-bold mb-4">Mon profil</h2>
-
-          {/* Gestion du nom */}
-          {editingNom || !profil.nom ? (
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Votre prénom"
-                value={newNom}
-                onChange={(e) => setNewNom(e.target.value)}
-                className="border p-2 rounded w-full"
-              />
-              <div className="mt-2 flex gap-2">
-                <button
-                  onClick={saveNom}
-                  className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700"
-                >
-                  Enregistrer
-                </button>
-                {profil.nom && (
-                  <button
-                    onClick={() => {
-                      setEditingNom(false);
-                      setNewNom(profil.nom);
-                    }}
-                    className="bg-gray-400 text-white px-4 py-1 rounded hover:bg-gray-500"
-                  >
-                    Annuler
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <p className="mb-4">
-              <strong>Prénom :</strong> {profil.nom}{" "}
-              <button
-                onClick={() => setEditingNom(true)}
-                className="ml-2 text-blue-600 underline"
-              >
-                Modifier
-              </button>
-            </p>
-          )}
-
+          <div className="mb-4">
+            <label className="block font-medium mb-1">Prénom :</label>
+            <input
+              type="text"
+              value={nom || profil.nom || ""}
+              onChange={(e) => setNom(e.target.value)}
+              onBlur={updateNom}
+              className="border p-2 rounded w-full"
+              placeholder="Entrez votre prénom"
+            />
+          </div>
           <p><strong>Rôle :</strong> {profil.role}</p>
 
+          {/* Déconnexion */}
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onLogout}
+              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
+            >
+              Déconnexion
+            </button>
+          </div>
+
+          {/* Jeux Favoris */}
+
           <h3 className="text-xl font-semibold mt-6 mb-2">
-            🎲 Les jeux auxquels j’ai le plus envie de jouer
+            🎲 Mes jeux favoris
           </h3>
 
           <div className="mb-4">
@@ -320,17 +254,7 @@ export default function Profils({ user, onLogin, onLogout }) {
             })}
           </div>
 
-          {/* Bouton Déconnexion */}
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={onLogout}
-              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
-            >
-              Déconnexion
-            </button>
-          </div>
-
-          {/* Tableau des utilisateurs (admin) */}
+          {/* Gestion des utilisateurs pour admin */}
           {profil.role === "admin" && (
             <div className="mt-10">
               <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
@@ -347,7 +271,7 @@ export default function Profils({ user, onLogin, onLogout }) {
                     const isAdminUser = u.role === "admin";
                     return (
                       <tr key={u.id} className="text-center">
-                        <td className="border border-gray-300 p-2">{u.nom || "(pas défini)"}</td>
+                        <td className="border border-gray-300 p-2">{u.nom}</td>
                         <td className="border border-gray-300 p-2">
                           {isCurrentAdmin || isAdminUser ? (
                             <span className="px-2 py-1 bg-gray-200 rounded">{u.role}</span>
@@ -356,7 +280,7 @@ export default function Profils({ user, onLogin, onLogout }) {
                               value={u.role}
                               onChange={(e) => {
                                 const newRole = e.target.value;
-                                if (window.confirm(`Voulez-vous changer le rôle de ${u.nom || "cet utilisateur"} en "${newRole}" ?`)) {
+                                if (window.confirm(`Changer le rôle de ${u.nom} en "${newRole}" ?`)) {
                                   updateUserRole(u.id, newRole);
                                 } else e.target.value = u.role;
                               }}
