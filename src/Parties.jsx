@@ -88,7 +88,7 @@ export default function Parties({ user }) {
     }
     setErrorMsg("");
 
-    const jeu = jeux.find((j) => j.id === Number(newPartie.jeu_id));
+    const jeu = jeux.find((j) => j.id === newPartie.jeu_id);
     if (!jeu) {
       setErrorMsg("Jeu sélectionné introuvable");
       return;
