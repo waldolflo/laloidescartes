@@ -14,7 +14,7 @@ import Inscriptions from "./Inscriptions";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-// --- Navbar ---
+// --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
   const location = useLocation();
 
@@ -102,17 +102,27 @@ function AnimatedRoutes({ user, setUser }) {
           {!user ? (
             <Route
               path="/*"
-              element={<Profils user={user} setUser={setUser} onLogout={() => setUser(null)} />}
+              element={<Profils onLogin={setUser} onLogout={() => setUser(null)} />}
             />
           ) : (
             <>
-              <Route path="/" element={<Catalogue user={user} />} />
-              <Route path="/parties" element={<Parties user={user} />} />
-              <Route path="/inscriptions" element={<Inscriptions user={user} />} />
-              <Route
-                path="/profil"
-                element={<Profils user={user} setUser={setUser} onLogout={() => setUser(null)} />}
-              />
+              {user.role !== "user" ? (
+                <>
+                  <Route path="/" element={<Catalogue user={user} />} />
+                  <Route path="/parties" element={<Parties user={user} />} />
+                  <Route path="/inscriptions" element={<Inscriptions user={user} />} />
+                  <Route
+                    path="/profil"
+                    element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
+                  />
+                </>
+              ) : (
+                // Si role = "user" → redirige vers profil pour afficher message
+                <Route
+                  path="/*"
+                  element={<Profils user={user} onLogin={setUser} onLogout={() => setUser(null)} />}
+                />
+              )}
               <Route path="*" element={<Navigate to="/" />} />
             </>
           )}
