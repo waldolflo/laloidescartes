@@ -248,14 +248,21 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
           <h2 className="text-2xl font-bold mb-4">Mon profil</h2>
           <div className="mb-4">
             <label className="block font-medium mb-1">Prénom :</label>
-            <input
-              type="text"
-              value={nom || profil.nom || ""}
-              onChange={(e) => setNom(e.target.value)}
-              onBlur={updateNom}
-              className="border p-2 rounded w-full"
-              placeholder="Entrez votre prénom"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={nom || profil.nom || ""}
+                onChange={(e) => setNom(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Entrez votre prénom"
+              />
+              <button
+                onClick={updateNom}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                Valider
+              </button>
+            </div>
           </div>
           <p>
             <strong>Rôle :</strong> {profil.role}
