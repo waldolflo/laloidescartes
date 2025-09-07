@@ -28,8 +28,8 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
       .single();
     if (!error && data) {
       setProfil(data);
-      setNom(data.nom || "");
-      if (setProfilGlobal) setProfilGlobal(data); // <- maj navbar
+      setNom(data.nom || ""); // <- initialiser state local
+      if (setProfilGlobal) setProfilGlobal(data);
     }
   };
 
@@ -110,21 +110,6 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
     setLoading(false);
   };
 
-  // Mettre à jour le nom
-  const updateNom = async () => {
-    if (!nom) return;
-    const { data, error } = await supabase
-      .from("profils")
-      .update({ nom })
-      .eq("id", profil.id)
-      .select()
-      .single();
-    if (!error) {
-      setProfil(data);
-      if (setProfilGlobal) setProfilGlobal(data); // <- maj navbar
-    }
-  };
-
   // Mettre à jour jeux favoris
   const updateFavoris = async (champ, valeur) => {
     const { data, error } = await supabase
@@ -150,18 +135,15 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
     if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
   };
 
-  // Supprimer mon compte
+  // Supprimer son compte
   const handleDeleteAccount = async () => {
     if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?")) {
       return;
     }
 
-    // 1. Supprimer le profil
     await supabase.from("profils").delete().eq("id", user.id);
 
-    // 2. Supprimer le compte auth (⚠️ uniquement possible côté serveur avec service_role)
     try {
-      // Tentative côté client (échoue sans service_role activé)
       if (supabase.auth.admin?.deleteUser) {
         await supabase.auth.admin.deleteUser(user.id);
       }
@@ -169,7 +151,6 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
       console.warn("Suppression du compte Auth non possible côté client :", err.message);
     }
 
-    // 3. Déconnexion
     await supabase.auth.signOut();
     onLogout();
   };
@@ -233,33 +214,44 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
       {profil && (
         <>
           <h2 className="text-2xl font-bold mb-4">Mon profil</h2>
+
+          {/* Prénom avec bouton Valider */}
           <div className="mb-4">
             <label className="block font-medium mb-1">Prénom :</label>
-            <input
-              type="text"
-              value={nom || profil.nom || ""}
-              onChange={(e) => setNom(e.target.value)}
-              onBlur={updateNom}
-              className="border p-2 rounded w-full"
-              placeholder="Entrez votre prénom"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Entrez votre prénom"
+              />
+              <button
+                onClick={async () => {
+                  if (!nom) return;
+                  const { data, error } = await supabase
+                    .from("profils")
+                    .update({ nom })
+                    .eq("id", profil.id)
+                    .select()
+                    .single();
+                  if (!error) {
+                    setProfil(data);
+                    if (setProfilGlobal) setProfilGlobal(data);
+                    alert("✅ Prénom mis à jour !");
+                  }
+                }}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                Valider
+              </button>
+            </div>
           </div>
+
           <p><strong>Rôle :</strong> {profil.role}</p>
 
-          {/* Déconnexion */}
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={onLogout}
-              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
-            >
-              Déconnexion
-            </button>
-          </div>
-
           {/* Jeux Favoris */}
-          <h3 className="text-xl font-semibold mt-6 mb-2">
-            🎲 Mes jeux favoris
-          </h3>
+          <h3 className="text-xl font-semibold mt-6 mb-2">🎲 Mes jeux favoris</h3>
 
           <div className="mb-4">
             <label className="block font-medium mb-1">Jeu favori 1 :</label>
@@ -297,15 +289,21 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
                 <div key={id} className="border rounded p-2 bg-white shadow">
                   <p className="font-semibold">{jeu.nom}</p>
                   {jeu.couverture_url && (
-                    <img
-                      src={jeu.couverture_url}
-                      alt={jeu.nom}
-                      className="w-full h-32 object-contain mt-2"
-                    />
+                    <img src={jeu.couverture_url} alt={jeu.nom} className="w-full h-32 object-contain mt-2" />
                   )}
                 </div>
               );
             })}
+          </div>
+
+          {/* Déconnexion */}
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onLogout}
+              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
+            >
+              Déconnexion
+            </button>
           </div>
 
           {/* Gestion des utilisateurs pour admin */}
