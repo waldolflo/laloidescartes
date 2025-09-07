@@ -331,7 +331,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
               })}
           </div>
 
-          {/* Déconnexion */}
+          {/* Déconnexion
           <div className="mt-6 flex justify-end">
             <button
               onClick={() => {
@@ -342,7 +342,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
             >
               Déconnexion
             </button>
-          </div>
+          </div> */}
 
           {/* Gestion des utilisateurs pour admin */}
           {profil.role === "admin" && (

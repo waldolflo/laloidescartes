@@ -14,7 +14,6 @@ import Inscriptions from "./Inscriptions";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "./supabaseClient";
-import { useNavigate } from "react-router-dom";
 
 // --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
