@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
-import { useNavigate } from "react-router-dom"; // 👈 ajouté
 
 export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
   const [email, setEmail] = useState("");
@@ -11,8 +10,6 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
   const [loading, setLoading] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [jeux, setJeux] = useState([]);
-
-  const navigate = useNavigate(); // 👈 utilisé pour rediriger après déconnexion
 
   // Charger le profil après login
   useEffect(() => {
@@ -31,7 +28,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
       .single();
     if (!error && data) {
       setProfil(data);
-      setNom(data.nom || "");
+      setNom(data.nom || ""); // <- initialiser state local
       if (setProfilGlobal) setProfilGlobal(data);
     }
   };
@@ -81,12 +78,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
 
       if (fetchError && fetchError.code === "PGRST116") {
         await supabase.from("profils").insert([
-          {
-            id: data.user.id,
-            nom: "",
-            role: "user",
-            created_at: new Date().toISOString(),
-          },
+          { id: data.user.id, nom: "", role: "user", created_at: new Date().toISOString() },
         ]);
       }
       onLogin(data.user);
@@ -112,9 +104,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
     if (error) {
       setErrorMsg("Erreur d'inscription : " + error.message);
     } else {
-      setErrorMsg(
-        "✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter."
-      );
+      setErrorMsg("✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter.");
     }
 
     setLoading(false);
@@ -147,11 +137,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
 
   // Supprimer son compte
   const handleDeleteAccount = async () => {
-    if (
-      !window.confirm(
-        "⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?"
-      )
-    ) {
+    if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?")) {
       return;
     }
 
@@ -162,15 +148,11 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
         await supabase.auth.admin.deleteUser(user.id);
       }
     } catch (err) {
-      console.warn(
-        "Suppression du compte Auth non possible côté client :",
-        err.message
-      );
+      console.warn("Suppression du compte Auth non possible côté client :", err.message);
     }
 
     await supabase.auth.signOut();
     onLogout();
-    navigate("/"); // 👈 redirige vers connexion
   };
 
   // ---------------- Rendu ----------------
@@ -218,10 +200,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
           Demandez dans Messenger à l'administrateur de valider votre compte.
         </p>
         <button
-          onClick={() => {
-            onLogout();
-            navigate("/"); // 👈 redirection
-          }}
+          onClick={onLogout}
           className="mt-4 bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
         >
           Déconnexion
@@ -269,14 +248,10 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
             </div>
           </div>
 
-          <p>
-            <strong>Rôle :</strong> {profil.role}
-          </p>
+          <p><strong>Rôle :</strong> {profil.role}</p>
 
           {/* Jeux Favoris */}
-          <h3 className="text-xl font-semibold mt-6 mb-2">
-            🎲 Mes jeux favoris
-          </h3>
+          <h3 className="text-xl font-semibold mt-6 mb-2">🎲 Mes jeux favoris</h3>
 
           <div className="mb-4">
             <label className="block font-medium mb-1">Jeu favori 1 :</label>
@@ -287,9 +262,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
             >
               <option value="">-- Choisir un jeu --</option>
               {jeux.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.nom}
-                </option>
+                <option key={j.id} value={j.id}>{j.nom}</option>
               ))}
             </select>
           </div>
@@ -303,41 +276,30 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
             >
               <option value="">-- Choisir un jeu --</option>
               {jeux.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.nom}
-                </option>
+                <option key={j.id} value={j.id}>{j.nom}</option>
               ))}
             </select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            {[profil.jeufavoris1, profil.jeufavoris2]
-              .filter(Boolean)
-              .map((id) => {
-                const jeu = jeux.find((j) => j.id === id);
-                if (!jeu) return null;
-                return (
-                  <div key={id} className="border rounded p-2 bg-white shadow">
-                    <p className="font-semibold">{jeu.nom}</p>
-                    {jeu.couverture_url && (
-                      <img
-                        src={jeu.couverture_url}
-                        alt={jeu.nom}
-                        className="w-full h-32 object-contain mt-2"
-                      />
-                    )}
-                  </div>
-                );
-              })}
+            {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map((id) => {
+              const jeu = jeux.find((j) => j.id === id);
+              if (!jeu) return null;
+              return (
+                <div key={id} className="border rounded p-2 bg-white shadow">
+                  <p className="font-semibold">{jeu.nom}</p>
+                  {jeu.couverture_url && (
+                    <img src={jeu.couverture_url} alt={jeu.nom} className="w-full h-32 object-contain mt-2" />
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Déconnexion */}
           <div className="mt-6 flex justify-end">
             <button
-              onClick={() => {
-                onLogout();
-                navigate("/"); // 👈 redirection
-              }}
+              onClick={onLogout}
               className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800"
             >
               Déconnexion
@@ -347,9 +309,7 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
           {/* Gestion des utilisateurs pour admin */}
           {profil.role === "admin" && (
             <div className="mt-10">
-              <h3 className="text-xl font-semibold mb-4">
-                Gestion des utilisateurs
-              </h3>
+              <h3 className="text-xl font-semibold mb-4">Gestion des utilisateurs</h3>
               <table className="w-full border-collapse border border-gray-300">
                 <thead className="bg-gray-100">
                   <tr>
@@ -366,19 +326,13 @@ export default function Profils({ user, onLogin, onLogout, setProfilGlobal }) {
                         <td className="border border-gray-300 p-2">{u.nom}</td>
                         <td className="border border-gray-300 p-2">
                           {isCurrentAdmin || isAdminUser ? (
-                            <span className="px-2 py-1 bg-gray-200 rounded">
-                              {u.role}
-                            </span>
+                            <span className="px-2 py-1 bg-gray-200 rounded">{u.role}</span>
                           ) : (
                             <select
                               value={u.role}
                               onChange={(e) => {
                                 const newRole = e.target.value;
-                                if (
-                                  window.confirm(
-                                    `Changer le rôle de ${u.nom} en "${newRole}" ?`
-                                  )
-                                ) {
+                                if (window.confirm(`Changer le rôle de ${u.nom} en "${newRole}" ?`)) {
                                   updateUserRole(u.id, newRole);
                                 } else e.target.value = u.role;
                               }}
