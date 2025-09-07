@@ -14,6 +14,7 @@ import Inscriptions from "./Inscriptions";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "./supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 // --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
@@ -137,6 +138,7 @@ function AnimatedRoutes({ user, setUser, setProfil }) {
 export default function App() {
   const [user, setUser] = useState(null);
   const [profil, setProfil] = useState(null); // <- profil complet avec nom
+  const navigate = useNavigate(); // 👈 ici
 
   useEffect(() => {
     // Vérifie si déjà connecté à Supabase
@@ -175,6 +177,7 @@ export default function App() {
     await supabase.auth.signOut();
     setUser(null);
     setProfil(null);
+    navigate("/"); // 👈 renvoie sur la page connexion
   };
 
   return (
