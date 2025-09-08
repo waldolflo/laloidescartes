@@ -11,7 +11,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
   const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
-    if (!authUser) return;
+    //if (!authUser) return;
 
     const fetchProfil = async () => {
       const { data, error } = await supabase
