@@ -1,5 +1,5 @@
 // src/Auth.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 
@@ -9,7 +9,19 @@ export default function Auth({ onLogin }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate(); // 👈 pour rediriger après connexion
+  const navigate = useNavigate();
+
+  // 🚀 Redirection auto si déjà connecté
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        onLogin(data.user);
+        navigate("/profil", { replace: true });
+      }
+    };
+    checkUser();
+  }, [navigate, onLogin]);
 
   // Connexion
   const handleLogin = async () => {
@@ -49,8 +61,8 @@ export default function Auth({ onLogin }) {
         ]);
       }
 
-      onLogin(data.user); // maj état global
-      navigate("/profil"); // 👈 redirection auto
+      onLogin(data.user);
+      navigate("/profil", { replace: true }); // 🚀 redirection après login
     }
 
     setLoading(false);

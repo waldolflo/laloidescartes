@@ -7,6 +7,7 @@ import {
   Link,
   Navigate,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import Catalogue from "./Catalogue";
 import Profils from "./Profils";
@@ -20,6 +21,7 @@ import { supabase } from "./supabaseClient";
 // --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const tabs = [
     { to: "/", label: "Ludothèque", icon: BookOpen },
@@ -27,6 +29,16 @@ function Navbar({ user, onLogout }) {
     { to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/profil", label: "Profil", icon: User },
   ];
+
+  // onLogout est async dans App, on attend puis on navigue vers la page publique (Auth)
+  const handleLogoutClick = async () => {
+    try {
+      await onLogout(); // attend la déconnexion côté supabase
+    } catch (err) {
+      console.warn("Erreur lors de la déconnexion :", err);
+    }
+    navigate("/", { replace: true });
+  };
 
   return (
     <>
@@ -52,42 +64,38 @@ function Navbar({ user, onLogout }) {
               );
             })}
           </div>
-          {user && (
-            <div className="flex items-center gap-4">
-              <span className="text-sm">
-                Bonjour <strong>{user.nom || user.email}</strong>
-              </span>
-              <button
-                onClick={onLogout}
-                className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
-              >
-                Déconnexion
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            <span className="text-sm">
+              Bonjour <strong>{user?.nom || user?.email}</strong>
+            </span>
+            <button
+              onClick={handleLogoutClick}
+              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
+            >
+              Déconnexion
+            </button>
+          </div>
         </div>
       </nav>
 
       {/* Mobile */}
-      {user && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 text-white flex justify-around items-center py-2 shadow-inner z-50">
-          {tabs.map(({ to, label, icon: Icon }) => {
-            const active = location.pathname === to;
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={`flex flex-col items-center text-xs transition-colors ${
-                  active ? "text-rose-500" : "text-gray-300 hover:text-white"
-                }`}
-              >
-                <Icon size={22} />
-                <span>{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 text-white flex justify-around items-center py-2 shadow-inner z-50">
+        {tabs.map(({ to, label, icon: Icon }) => {
+          const active = location.pathname === to;
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={`flex flex-col items-center text-xs transition-colors ${
+                active ? "text-rose-500" : "text-gray-300 hover:text-white"
+              }`}
+            >
+              <Icon size={22} />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </>
   );
 }
@@ -107,7 +115,7 @@ function AnimatedRoutes({ user, setUser, setProfil }) {
       >
         <Routes location={location}>
           {!user ? (
-            // Si pas connecté → page Auth
+            // Si pas connecté -> page Auth (connexion / inscription)
             <Route path="/*" element={<Auth onLogin={setUser} />} />
           ) : (
             <>
@@ -115,28 +123,20 @@ function AnimatedRoutes({ user, setUser, setProfil }) {
                 <>
                   <Route path="/" element={<Catalogue user={user} />} />
                   <Route path="/parties" element={<Parties user={user} />} />
-                  <Route
-                    path="/inscriptions"
-                    element={<Inscriptions user={user} />}
-                  />
+                  <Route path="/inscriptions" element={<Inscriptions user={user} />} />
                   <Route
                     path="/profil"
-                    element={
-                      <Profils
-                        user={user}
-                        setProfilGlobal={setProfil}
-                      />
-                    }
+                    element={<Profils user={user} setProfilGlobal={setProfil} />}
                   />
                 </>
               ) : (
-                // Si role = "user" → redirige vers profil avec message
+                // Si role = "user" → on leur montre quand même la page profil
                 <Route
                   path="/*"
                   element={<Profils user={user} setProfilGlobal={setProfil} />}
                 />
               )}
-              <Route path="*" element={<Navigate to="/" />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
         </Routes>
@@ -147,15 +147,16 @@ function AnimatedRoutes({ user, setUser, setProfil }) {
 
 // --- App principale ---
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [profil, setProfil] = useState(null);
+  const [user, setUser] = useState(null); // peut être profil (table) ou user (auth) — on laisse la logique existante
+  const [profil, setProfil] = useState(null); // profil complet depuis la table "profils"
 
+  // initialisation / récupération user + profil
   useEffect(() => {
-    // Vérifie si déjà connecté à Supabase
-    supabase.auth.getUser().then(async ({ data }) => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
       if (data?.user) {
         setUser(data.user);
-        // Récupérer profil complet
+        // récupérer profil complet
         const { data: profilData } = await supabase
           .from("profils")
           .select("*")
@@ -163,25 +164,37 @@ export default function App() {
           .single();
         setProfil(profilData);
       }
-    });
+    })();
   }, []);
 
+  // lorsque l'auth change côté client, on peut nettoyer / mettre à jour
   useEffect(() => {
-    if (!user) {
-      setProfil(null);
-      return;
-    }
-    const fetchProfil = async () => {
-      const { data: profilData } = await supabase
-        .from("profils")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      setProfil(profilData);
-    };
-    fetchProfil();
-  }, [user]);
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!session?.user) {
+        setUser(null);
+        setProfil(null);
+      } else {
+        setUser(session.user);
+        const { data: profilData } = await supabase
+          .from("profils")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        setProfil(profilData);
+      }
+    });
 
+    // cleanup si possible
+    return () => {
+      if (data?.subscription?.unsubscribe) data.subscription.unsubscribe();
+      if (data?.subscription && data.subscription.unsubscribe === undefined && supabase.auth.removeSubscription) {
+        // fallback si ancienne API
+        try { supabase.auth.removeSubscription(data.subscription); } catch (e) {}
+      }
+    };
+  }, []);
+
+  // logout exposé pour la navbar (retourne la promesse pour qu'on puisse await)
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -193,11 +206,7 @@ export default function App() {
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
         {user && <Navbar user={profil || user} onLogout={handleLogout} />}
         <div className="p-4">
-          <AnimatedRoutes
-            user={profil || user}
-            setUser={setUser}
-            setProfil={setProfil}
-          />
+          <AnimatedRoutes user={profil || user} setUser={setUser} setProfil={setProfil} />
         </div>
       </div>
     </Router>
