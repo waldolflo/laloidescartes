@@ -3,7 +3,7 @@ import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
 
 export default function Profils({ authUser, user, setProfilGlobal }) {
-  //if (!authUser) return <Navigate to="/" replace />;
+  if (authUser) return <Navigate to="/" replace />;
 
   const [profil, setProfil] = useState(null);
   const [nom, setNom] = useState("");
@@ -11,7 +11,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
   const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
-    //if (!authUser) return;
+    if (!authUser) return;
 
     const fetchProfil = async () => {
       const { data, error } = await supabase
