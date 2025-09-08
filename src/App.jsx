@@ -16,7 +16,7 @@ import Parties from "./Parties";
 import Inscriptions from "./Inscriptions";
 import Profils from "./Profils";
 import Auth from "./Auth";
-import { BookOpen, CalendarDays, Users, User } from "lucide-react";
+import { BookOpen, CalendarDays, Users, User, LogOut } from "lucide-react"; // 👈 Ajout LogOut
 
 // --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
@@ -84,6 +84,14 @@ function Navbar({ user, onLogout }) {
             </Link>
           );
         })}
+        {/* Bouton déconnexion mobile (icône seule) */}
+        <button
+          onClick={onLogout}
+          className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
+        >
+          <LogOut size={22} />
+          <span>Quitter</span>
+        </button>
       </nav>
     </>
   );
@@ -104,10 +112,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
       >
         <Routes location={location}>
           {!authUser ? (
-            <Route
-              path="/*"
-              element={<Auth onLogin={setAuthUser} />}
-            />
+            <Route path="/*" element={<Auth onLogin={setAuthUser} />} />
           ) : (
             <>
               <Route path="/" element={<Catalogue user={user} />} />
@@ -115,7 +120,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
               <Route path="/inscriptions" element={<Inscriptions user={user} />} />
               <Route
                 path="/profil"
-                element={<Profils user={user} setProfilGlobal={setUser} authUser={authUser}/>}
+                element={<Profils user={user} setProfilGlobal={setUser} authUser={authUser} />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
