@@ -74,8 +74,13 @@ function Navbar({ user, onLogout }) {
 }
 
 // Routes animées
-function AnimatedRoutes({ authUser, user, setUser, setProfil }) {
+function AnimatedRoutes({ authUser, user, setUser}) {
   const location = useLocation();
+
+    // Tant que user n'est pas encore récupéré depuis DB
+  if (authUser && !user) {
+    return <div className="text-center mt-10">Chargement du profil...</div>;
+  }
 
   return (
     <AnimatePresence mode="wait">
@@ -94,7 +99,7 @@ function AnimatedRoutes({ authUser, user, setUser, setProfil }) {
               <Route path="/" element={<Catalogue user={user} />} />
               <Route path="/parties" element={<Parties user={user} />} />
               <Route path="/inscriptions" element={<Inscriptions user={user} />} />
-              <Route path="/profil" element={<Profils authUser={authUser} setProfilGlobal={setProfil} />} />
+              <Route path="/profil" element={<Profils authUser={authUser} setProfilGlobal={setUser} />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>
           )}
