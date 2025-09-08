@@ -63,7 +63,6 @@ export default function Auth({ onLogin }) {
 
     // Retourner au parent : { authUser, user }
     onLogin(authUser, userProfil);
-    navigate("/profil", { replace: true });
     setLoading(false);
   };
 

@@ -8,6 +8,7 @@ import Parties from "./Parties";
 import Inscriptions from "./Inscriptions";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // Navbar
 function Navbar({ user, onLogout }) {
@@ -108,6 +109,21 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null); // authUser = supabase.auth.getUser()
   const [user, setUser] = useState(null);         // user = profil complet
   const [profil, setProfil] = useState(null);     // profil complet pour Navbar
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirection automatique après login
+  useEffect(() => {
+    if (user && (location.pathname === "/" || location.pathname === "/auth")) {
+      navigate("/profil", { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
+
+  // Fonction passée à Auth.jsx
+  const handleLogin = (auth, profil) => {
+    setAuthUser(auth);
+    setUser(profil);
+  };
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
