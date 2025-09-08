@@ -87,10 +87,9 @@ function Navbar({ user, onLogout }) {
         {/* Bouton déconnexion mobile (icône seule) */}
         <button
           onClick={onLogout}
-          className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
+          className="text-gray-300 hover:text-rose-500 transition-colors"
         >
-          <LogOut size={22} />
-          <span>Quitter</span>
+          <LogOut size={26} />
         </button>
       </nav>
     </>
