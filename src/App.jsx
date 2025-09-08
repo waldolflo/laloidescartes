@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "./supabaseClient";
-import Profils from "./Profils";
-import Auth from "./Auth";
+
 import Catalogue from "./Catalogue";
 import Parties from "./Parties";
 import Inscriptions from "./Inscriptions";
+import Profils from "./Profils";
+import Auth from "./Auth";
 import { BookOpen, CalendarDays, Users, User } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useNavigate, useLocation } from "react-router-dom";
 
 // Navbar
 function Navbar({ user, onLogout }) {
@@ -28,9 +28,9 @@ function Navbar({ user, onLogout }) {
             {tabs.map(({ to, label, icon: Icon }) => {
               const active = location.pathname === to;
               return (
-                <Link
+                <a
                   key={to}
-                  to={to}
+                  href={to}
                   className={`relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     active ? "bg-slate-700" : "hover:bg-slate-700"
                   }`}
@@ -38,12 +38,14 @@ function Navbar({ user, onLogout }) {
                   <Icon size={18} />
                   {label}
                   {active && <span className="absolute bottom-0 left-0 w-full h-[2px] bg-rose-500 rounded-t"></span>}
-                </Link>
+                </a>
               );
             })}
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm">Bonjour <strong>{user.nom || user.email}</strong></span>
+            <span className="text-sm">
+              Bonjour <strong>{user.nom || user.email}</strong>
+            </span>
             <button
               onClick={onLogout}
               className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
@@ -53,19 +55,15 @@ function Navbar({ user, onLogout }) {
           </div>
         </div>
       </nav>
-      {/* Mobile */}
+
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 text-white flex justify-around items-center py-2 shadow-inner z-50">
         {tabs.map(({ to, label, icon: Icon }) => {
           const active = location.pathname === to;
           return (
-            <Link
-              key={to}
-              to={to}
-              className={`flex flex-col items-center text-xs transition-colors ${active ? "text-rose-500" : "text-gray-300 hover:text-white"}`}
-            >
+            <a key={to} href={to} className={`flex flex-col items-center text-xs transition-colors ${active ? "text-rose-500" : "text-gray-300 hover:text-white"}`}>
               <Icon size={22} />
               <span>{label}</span>
-            </Link>
+            </a>
           );
         })}
       </nav>
@@ -73,11 +71,10 @@ function Navbar({ user, onLogout }) {
   );
 }
 
-// Routes animées
-function AnimatedRoutes({ authUser, user, setUser}) {
+// Animated routes
+function AnimatedRoutes({ authUser, user, setUser }) {
   const location = useLocation();
 
-    // Tant que user n'est pas encore récupéré depuis DB
   if (authUser && !user) {
     return <div className="text-center mt-10">Chargement du profil...</div>;
   }
@@ -93,14 +90,14 @@ function AnimatedRoutes({ authUser, user, setUser}) {
       >
         <Routes location={location}>
           {!authUser ? (
-            <Route path="/*" element={<Auth onLogin={setUser} />} />
+            <Route path="/*" element={<Auth onLogin={(u) => setUser(u)} />} />
           ) : (
             <>
               <Route path="/" element={<Catalogue user={user} />} />
               <Route path="/parties" element={<Parties user={user} />} />
               <Route path="/inscriptions" element={<Inscriptions user={user} />} />
-              <Route path="/profil" element={<Profils authUser={authUser} setProfilGlobal={setUser} />} />
-              <Route path="*" element={<Navigate to="/" />} />
+              <Route path="/profil" element={<Profils authUser={authUser} user={user} setProfilGlobal={setUser} />} />
+              <Route path="*" element={<Navigate to="/profil" />} />
             </>
           )}
         </Routes>
@@ -111,32 +108,20 @@ function AnimatedRoutes({ authUser, user, setUser}) {
 
 // App principale
 export default function App() {
-  const [authUser, setAuthUser] = useState(null); // authUser = supabase.auth.getUser()
-  const [user, setUser] = useState(null);         // user = profil complet
-  const [profil, setProfil] = useState(null);     // profil complet pour Navbar
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [authUser, setAuthUser] = useState(null);
+  const [user, setUser] = useState(null);
 
-  // Redirection automatique après login
-  useEffect(() => {
-    if (user && (location.pathname === "/" || location.pathname === "/auth")) {
-      navigate("/profil", { replace: true });
-    }
-  }, [user, location.pathname, navigate]);
-
-  // Fonction passée à Auth.jsx
-  const handleLogin = (auth, profil) => {
-    setAuthUser(auth);
-    setUser(profil);
-  };
-
+  // Check si déjà connecté
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
-      if (data?.user) {
+      if (data.user) {
         setAuthUser(data.user);
-        const { data: profilData } = await supabase.from("profils").select("*").eq("id", data.user.id).single();
+        const { data: profilData } = await supabase
+          .from("profils")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
         setUser(profilData);
-        setProfil(profilData);
       }
     });
   }, []);
@@ -145,15 +130,14 @@ export default function App() {
     await supabase.auth.signOut();
     setAuthUser(null);
     setUser(null);
-    setProfil(null);
   };
 
   return (
     <Router>
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
-        {authUser && <Navbar user={profil || authUser} onLogout={handleLogout} />}
+        {authUser && <Navbar user={user || authUser} onLogout={handleLogout} />}
         <div className="p-4">
-          <AnimatedRoutes authUser={authUser} user={user} setUser={setUser} setProfil={setProfil} />
+          <AnimatedRoutes authUser={authUser} user={user} setUser={setUser} />
         </div>
       </div>
     </Router>

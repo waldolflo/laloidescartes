@@ -1,4 +1,3 @@
-// src/Auth.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
@@ -10,7 +9,6 @@ export default function Auth({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Connexion
   const handleLogin = async () => {
     if (!email || !password) {
       setErrorMsg("Veuillez entrer email et mot de passe.");
@@ -19,54 +17,42 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (authError) {
-      setErrorMsg("Erreur de connexion : " + authError.message);
-      setLoading(false);
-      return;
-    }
-
-    const authUser = authData.user;
-
-    if (authUser && !authUser.email_confirmed_at) {
+    if (error) {
+      setErrorMsg("Erreur de connexion : " + error.message);
+    } else if (data.user && !data.user.email_confirmed_at) {
       setErrorMsg("❌ Vous devez confirmer votre email avant de vous connecter.");
       await supabase.auth.signOut();
-      setLoading(false);
-      return;
+    } else {
+      // Créer profil si inexistant
+      const { data: profilData, error: fetchError } = await supabase
+        .from("profils")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+
+      if (fetchError && fetchError.code === "PGRST116") {
+        await supabase.from("profils").insert([
+          {
+            id: data.user.id,
+            nom: "",
+            role: "user",
+            created_at: new Date().toISOString(),
+          },
+        ]);
+      }
+
+      onLogin(data.user); // met à jour authUser dans App
+      navigate("/profil", { replace: true });
     }
 
-    // Vérifier si le profil existe
-    const { data: profilData, error: fetchError } = await supabase
-      .from("profils")
-      .select("*")
-      .eq("id", authUser.id)
-      .single();
-
-    let userProfil = profilData;
-
-    // Créer un profil si inexistant
-    if (fetchError && fetchError.code === "PGRST116") {
-      const { data: newProfil } = await supabase.from("profils").insert([
-        {
-          id: authUser.id,
-          nom: "",
-          role: "user",
-          created_at: new Date().toISOString(),
-        },
-      ]).select().single();
-      userProfil = newProfil;
-    }
-
-    // Retourner au parent : { authUser, user }
-    onLogin(authUser, userProfil);
     setLoading(false);
   };
 
-  // Inscription
   const handleSignUp = async () => {
     if (!email || !password) {
       setErrorMsg("Veuillez entrer email et mot de passe.");
@@ -75,7 +61,10 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
     if (error) {
       setErrorMsg("Erreur d'inscription : " + error.message);
