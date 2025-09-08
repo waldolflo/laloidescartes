@@ -68,26 +68,30 @@ function Navbar({ user, onLogout }) {
       </nav>
 
       {/* Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 text-white flex justify-around items-center py-2 shadow-inner z-50">
-        {tabs.map(({ to, label, icon: Icon }) => {
-          const active = location.pathname === to;
-          return (
-            <Link
-              key={to}
-              to={to}
-              className={`flex flex-col items-center text-xs transition-colors ${
-                active ? "text-rose-500" : "text-gray-300 hover:text-white"
-              }`}
-            >
-              <Icon size={22} />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 text-white flex justify-between items-center px-4 py-2 shadow-inner z-50">
+        {/* Onglets */}
+        <div className="flex justify-around flex-1">
+          {tabs.map(({ to, label, icon: Icon }) => {
+            const active = location.pathname === to;
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={`flex flex-col items-center text-xs transition-colors ${
+                  active ? "text-rose-500" : "text-gray-300 hover:text-white"
+                }`}
+              >
+                <Icon size={22} />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
         {/* Bouton déconnexion mobile (icône seule) */}
         <button
           onClick={onLogout}
-          className="text-gray-300 hover:text-rose-500 transition-colors"
+          className="ml-4 text-gray-300 hover:text-rose-500 transition-colors"
         >
           <LogOut size={26} />
         </button>
