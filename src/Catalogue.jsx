@@ -158,7 +158,7 @@ export default function Catalogue({ user }) {
         </select>
         </div>
         <div className="flex gap-2 mb-4">
-          {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo" || userRole === "membre") && (
+          {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo") && (
             <button
               onClick={() => setAddingJeu(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

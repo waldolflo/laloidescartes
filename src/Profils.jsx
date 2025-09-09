@@ -209,6 +209,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
               })}
             </tbody>
           </table>
+          <p></p>
           <p>Légende :</p>
           <ul className="list-disc pl-5 mt-2">
             <li>User : peut uniquement s'inscrire/se désinscrire à une partie</li>
@@ -217,7 +218,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
             <li>Ludoplus : peut modifier et ajouter des jeux à la Ludothèque, organiser et s'inscrire/se désinscrire à une partie</li>
             <li>Admin : peut modifier et ajouter des jeux à la Ludothèque, supprimer, modifier, organiser et s'inscrire/se désinscrire à une partie</li>
           </ul>
-          <p>Tous les utilisateurs peuvent par defaut : modifier leurs propres ajouts dans la Ludothèque et modifier, supprimer leurs propres partie.</p>
+          <p>Tous les utilisateurs peuvent par defaut : modifier les jeux qu'ils ajoutent dans la Ludothèque et modifier, supprimer les partie qu'ils organisent.</p>
         </div>
       )}
 
