@@ -120,7 +120,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
               <Route path="/parties" element={<Parties user={user} />} />
               <Route path="/inscriptions" element={<Inscriptions user={user} />} />
               <Route
-                path="/profil"
+                path="/profils"
                 element={<Profils user={user} setProfilGlobal={setUser} authUser={authUser} />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
