@@ -27,7 +27,6 @@ function Navbar({ user, onLogout }) {
     { to: "/parties", label: "Parties", icon: CalendarDays },
     { to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/profil", label: "Profil", icon: User },
-    { to: onLogout, label: "Quitter", icon: LogOut },
   ];
 
   return (
@@ -86,14 +85,14 @@ function Navbar({ user, onLogout }) {
           );
         })}
 
-        {/* Onglet Déconnexion */}
-        <Link
+        {/* Onglet Déconnexion séparé */}
+        <button
           onClick={onLogout}
           className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
         >
           <LogOut size={22} />
           <span>Quitter</span>
-        </Link>
+        </button>
       </nav>
     </>
   );
