@@ -3,7 +3,7 @@ import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
 
 export default function Profils({ authUser, user, setProfilGlobal }) {
-  if (authUser) return <Navigate to="/" replace />;
+  if (!authUser) return <Navigate to="/auth" replace />;
 
   const [profil, setProfil] = useState(null);
   const [nom, setNom] = useState("");
