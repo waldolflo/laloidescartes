@@ -88,7 +88,7 @@ function Navbar({ user, onLogout }) {
         {/* Onglet Déconnexion */}
         <button
           onClick={onLogout}
-          className="flex-1 flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
+          className="flex-1 flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors bg-red-500"
         >
           <LogOut size={22} />
           <span>Quitter</span>
