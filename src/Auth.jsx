@@ -47,7 +47,7 @@ export default function Auth({ onLogin }) {
       }
 
       onLogin(data.user); // met à jour authUser dans App
-      navigate("/profil", { replace: true });
+      navigate("/profils", { replace: true });
     }
 
     setLoading(false);
