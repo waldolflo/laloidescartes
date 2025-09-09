@@ -158,12 +158,14 @@ export default function Catalogue({ user }) {
         </select>
         </div>
         <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setAddingJeu(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Ajouter un jeu
-          </button>
+          {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo" || userRole === "membre") && (
+            <button
+              onClick={() => setAddingJeu(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Ajouter un jeu
+            </button>
+          )}
         </div>
 
       {/* Liste des jeux */}
@@ -178,7 +180,7 @@ export default function Catalogue({ user }) {
             <p>Durée : {j.duree || "?"} minutes</p>
             <p>Propriétaire : {j.proprietaire || "?"}</p>
 
-            {(userRole === "admin" || userRole === "ludo") && (
+            {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
               <button onClick={() => setEditingJeu(j)} className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mt-2">Modifier</button>
             )}
           </div>

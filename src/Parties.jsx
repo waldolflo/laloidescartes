@@ -169,12 +169,14 @@ export default function Parties({ user }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Créer une partie
-        </button>
+        {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo" || userRole === "membre") && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Créer une partie
+          </button>
+        )}
       </div>
 
       {/* Modal création */}

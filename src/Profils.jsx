@@ -127,6 +127,10 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
 
       <p><strong>Rôle :</strong> {profil.role}</p>
 
+      {(profil.role === "user") && (
+              <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
+      )}
+
       {/* Jeux favoris */}
       <h3 className="text-xl font-semibold mt-6 mb-2">🎲 Mes jeux favoris</h3>
       {[1, 2].map((n) => (
@@ -195,6 +199,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
                           <option value="user">user</option>
                           <option value="membre">membre</option>
                           <option value="ludo">ludo</option>
+                          <option value="ludoplus">ludoplus</option>
                           <option value="admin">admin</option>
                         </select>
                       )}
@@ -204,6 +209,15 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
               })}
             </tbody>
           </table>
+          <p>Légende :</p>
+          <ul className="list-disc pl-5 mt-2">
+            <li>User : peut uniquement s'inscrire/se désinscrire à une partie</li>
+            <li>Membre : peut organiser et s'inscrire à une partie</li>
+            <li>Ludo : peut ajouter des jeux à la Ludothèque, organiser et s'inscrire/se désinscrire à une partie</li>
+            <li>Ludoplus : peut modifier et ajouter des jeux à la Ludothèque, organiser et s'inscrire/se désinscrire à une partie</li>
+            <li>Admin : peut modifier et ajouter des jeux à la Ludothèque, supprimer, modifier, organiser et s'inscrire/se désinscrire à une partie</li>
+          </ul>
+          <p>Tous les utilisateurs peuvent par defaut : modifier leurs propres ajouts dans la Ludothèque et modifier, supprimer leurs propres partie.</p>
         </div>
       )}
 
