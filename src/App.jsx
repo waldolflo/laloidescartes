@@ -23,10 +23,10 @@ function Navbar({ user, onLogout }) {
   const location = useLocation();
 
   const tabs = [
-    { to: "/", label: "Ludothèque2", icon: BookOpen },
+    { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
     { to: "/inscriptions", label: "Inscriptions", icon: Users },
-    { to: "/profil", label: "Profil", icon: User },
+    { to: "/profils", label: "Profil", icon: User },
   ];
 
   return (
