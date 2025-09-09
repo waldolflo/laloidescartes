@@ -27,6 +27,7 @@ function Navbar({ user, onLogout }) {
     { to: "/parties", label: "Parties", icon: CalendarDays },
     { to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/profil", label: "Profil", icon: User },
+    { to: onLogout, label: "Quitter", icon: LogOut },
   ];
 
   return (
