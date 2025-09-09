@@ -85,7 +85,7 @@ function Navbar({ user, onLogout }) {
           );
         })}
 
-        {/* Onglet Déconnexion séparé */}
+        {/* Onglet Déconnexion affiché comme les autres */}
         <button
           onClick={onLogout}
           className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
