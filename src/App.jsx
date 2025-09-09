@@ -23,10 +23,11 @@ function Navbar({ user, onLogout }) {
   const location = useLocation();
 
   const tabs = [
-    { to: "/", label: "Ludothèque2", icon: BookOpen },
+    { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
     { to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/profil", label: "Profil", icon: User },
+    { to: "logout", label: "Quitter", icon: LogOut }, // Déconnexion comme un onglet
   ];
 
   return (
@@ -37,6 +38,20 @@ function Navbar({ user, onLogout }) {
           <div className="flex gap-2">
             {tabs.map(({ to, label, icon: Icon }) => {
               const active = location.pathname === to;
+
+              if (to === "logout") {
+                return (
+                  <button
+                    key="logout"
+                    onClick={onLogout}
+                    className="relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium hover:bg-slate-700"
+                  >
+                    <Icon size={18} />
+                    {label}
+                  </button>
+                );
+              }
+
               return (
                 <Link
                   key={to}
@@ -57,12 +72,6 @@ function Navbar({ user, onLogout }) {
             <span className="text-sm">
               Bonjour <strong>{user.nom || user.email}</strong>
             </span>
-            <button
-              onClick={onLogout}
-              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
-            >
-              Déconnexion
-            </button>
           </div>
         </div>
       </nav>
@@ -71,6 +80,20 @@ function Navbar({ user, onLogout }) {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 text-white flex justify-around items-center py-2 shadow-inner z-50">
         {tabs.map(({ to, label, icon: Icon }) => {
           const active = location.pathname === to;
+
+          if (to === "logout") {
+            return (
+              <button
+                key="logout"
+                onClick={onLogout}
+                className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
+              >
+                <Icon size={22} />
+                <span>{label}</span>
+              </button>
+            );
+          }
+
           return (
             <Link
               key={to}
@@ -84,15 +107,6 @@ function Navbar({ user, onLogout }) {
             </Link>
           );
         })}
-
-        {/* Ce bouton est bien **en dehors** du map */}
-        <button
-          onClick={onLogout}
-          className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
-        >
-          <LogOut size={22} />
-          <span>Quitter</span>
-        </button>
       </nav>
     </>
   );
