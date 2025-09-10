@@ -169,13 +169,13 @@ export default function Catalogue({ user }) {
         </div>
 
       {/* Liste des jeux */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         {filteredJeux.map(j => (
           <div key={j.id} className="border rounded p-4 bg-white shadow">
             <h2 className="text-lg font-bold">{j.nom}</h2>
             {j.couverture_url && <img src={j.couverture_url} alt={j.nom} className="w-full h-32 object-contain mt-2 mb-2" />}
             {j.regle_youtube && <p><a href={j.regle_youtube} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Voir les règles</a></p>}
-            <p>Nombre de joueurs : {j.min_joueurs}/{j.max_joueurs}</p>
+            <p>Nombre de joueurs : {j.min_joueurs} à {j.max_joueurs}</p>
             <p>Type : {j.type || "?"}</p>
             <p>Durée : {j.duree || "?"} minutes</p>
             <p>Propriétaire : {j.proprietaire || "?"}</p>

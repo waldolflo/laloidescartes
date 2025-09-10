@@ -174,7 +174,7 @@ export default function Parties({ user }) {
             onClick={() => setShowModal(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            Créer une partie
+            Créer partie
           </button>
         )}
       </div>
