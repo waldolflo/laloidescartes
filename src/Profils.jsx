@@ -9,6 +9,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
   const [nom, setNom] = useState("");
   const [jeux, setJeux] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
 
   useEffect(() => {
     if (!authUser) return;
@@ -88,14 +89,8 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
   const handleDeleteAccount = async () => {
     if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?")) return;
 
-    await supabase.from("profils").delete().eq("id", authUser.id);
+    await fetch(SUPABASE_URL,{method:"POST", body:{userId:authUser.id}}).then(async()=>{await supabase.auth.signOut();})
 
-    try {
-      if (supabase.auth.admin?.deleteUser) await supabase.auth.admin.deleteUser(authUser.id);
-    } catch (err) {
-      console.warn("Suppression du compte Auth non possible côté client :", err?.message || err);
-    }
-    await supabase.auth.signOut();
     // redirection gérée via navbar / parent
   };
 
@@ -213,7 +208,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
           <p>Légende :</p>
           <ul className="list-disc pl-5 mt-2">
             <li>User : peut uniquement s'inscrire/se désinscrire à une partie</li>
-            <li>Membre : peut organiser et s'inscrire à une partie</li>
+            <li>Membre : peut organiser et s'inscrire/se désinscrire à une partie</li>
             <li>Ludo : peut ajouter des jeux à la Ludothèque, organiser et s'inscrire/se désinscrire à une partie</li>
             <li>Ludoplus : peut modifier et ajouter des jeux à la Ludothèque, organiser et s'inscrire/se désinscrire à une partie</li>
             <li>Admin : peut modifier et ajouter des jeux à la Ludothèque, supprimer, modifier, organiser et s'inscrire/se désinscrire à une partie</li>
