@@ -85,7 +85,6 @@ function Navbar({ user, onLogout }) {
           );
         })}
 
-        {/* Ce bouton est bien **en dehors** du map */}
         <button
           onClick={onLogout}
           className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
@@ -132,12 +131,42 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
   );
 }
 
+// --- Bandeau RGPD ---
+function GDPRBanner() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const consent = localStorage.getItem("rgpdConsent");
+    if (!consent) setVisible(true);
+  }, []);
+
+  const accept = () => {
+    localStorage.setItem("rgpdConsent", "true");
+    setVisible(false);
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 flex flex-col md:flex-row justify-between items-center gap-2 z-50 shadow-lg">
+      <span className="text-sm">
+        Ce site utilise des données personnelles (votre email et le prénom/surnom de votre choix) pour gérer votre compte et améliorer votre expérience.
+      </span>
+      <button
+        onClick={accept}
+        className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm"
+      >
+        J'accepte
+      </button>
+    </div>
+  );
+}
+
 // --- App principale ---
 export default function App() {
-  const [authUser, setAuthUser] = useState(null); // Supabase Auth user
-  const [user, setUser] = useState(null); // Profil complet DB
+  const [authUser, setAuthUser] = useState(null);
+  const [user, setUser] = useState(null);
 
-  // Vérifier si déjà connecté côté Supabase Auth
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
@@ -170,6 +199,8 @@ export default function App() {
             setUser={setUser}
           />
         </div>
+        {/* Bandeau RGPD */}
+        <GDPRBanner />
       </div>
     </Router>
   );
