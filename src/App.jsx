@@ -9,7 +9,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import Cataimport { supabase } from "./supabaseClient";
+import { supabase } from "./supabaseClient";
 
 import Catalogue from "./Catalogue";
 import Parties from "./Parties";
@@ -154,7 +154,14 @@ export default function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
- <Navbar user={user || authUser} onLogout={handleLogout} />}
+    setAuthUser(null);
+    setUser(null);
+  };
+
+  return (
+    <Router>
+      <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+        {authUser && <Navbar user={user || authUser} onLogout={handleLogout} />}
         <div className="p-4">
           <AnimatedRoutes
             authUser={authUser}
