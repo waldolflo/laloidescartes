@@ -34,8 +34,10 @@ export default function Auth({ onLogin }) {
         navigate("/profils", { replace: true });
       }
     } catch (err) {
-      setErrorMsg("Erreur serveur : " + err.message);
-    }
+  console.error("Erreur /api/session :", err.message, err.stack);
+  return res.status(500).json({ error: err.message || "Erreur serveur" });
+}
+
 
     setLoading(false);
   };
