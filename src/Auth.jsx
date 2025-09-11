@@ -1,6 +1,6 @@
+// src/Auth.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "./supabaseClient";
 
 export default function Auth({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -9,6 +9,7 @@ export default function Auth({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Connexion via API serverless
   const handleLogin = async () => {
     if (!email || !password) {
       setErrorMsg("Veuillez entrer email et mot de passe.");
@@ -17,42 +18,31 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const res = await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (error) {
-      setErrorMsg("Erreur de connexion : " + error.message);
-    } else if (data.user && !data.user.email_confirmed_at) {
-      setErrorMsg("❌ Vous devez confirmer votre email avant de vous connecter.");
-      await supabase.auth.signOut();
-    } else {
-      // Créer profil si inexistant
-      const { data: profilData, error: fetchError } = await supabase
-        .from("profils")
-        .select("*")
-        .eq("id", data.user.id)
-        .single();
+      const result = await res.json();
 
-      if (fetchError && fetchError.code === "PGRST116") {
-        await supabase.from("profils").insert([
-          {
-            id: data.user.id,
-            nom: "",
-            role: "user",
-            created_at: new Date().toISOString(),
-          },
-        ]);
+      if (!res.ok) {
+        setErrorMsg(result.error);
+      } else {
+        onLogin(result.user);
+        navigate("/profils", { replace: true });
       }
+    } catch (err) {
+  console.error("Erreur /api/session :", err.message, err.stack);
+  return res.status(500).json({ error: err.message || "Erreur serveur" });
+}
 
-      onLogin(data.user); // met à jour authUser dans App
-      navigate("/profils", { replace: true });
-    }
 
     setLoading(false);
   };
 
+  // Inscription reste côté Supabase
   const handleSignUp = async () => {
     if (!email || !password) {
       setErrorMsg("Veuillez entrer email et mot de passe.");
@@ -61,17 +51,20 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) {
-      setErrorMsg("Erreur d'inscription : " + error.message);
-    } else {
-      setErrorMsg(
-        "✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter."
-      );
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = await res.json();
+      if (!res.ok) setErrorMsg(result.error);
+      else
+        setErrorMsg(
+          "✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter."
+        );
+    } catch (err) {
+      setErrorMsg("Erreur serveur : " + err.message);
     }
 
     setLoading(false);

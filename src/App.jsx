@@ -9,8 +9,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { supabase } from "./supabaseClient";
-
 import Catalogue from "./Catalogue";
 import Parties from "./Parties";
 import Inscriptions from "./Inscriptions";
@@ -21,7 +19,6 @@ import { BookOpen, CalendarDays, Users, User, LogOut } from "lucide-react";
 // --- Navbar responsive ---
 function Navbar({ user, onLogout }) {
   const location = useLocation();
-
   const tabs = [
     { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
@@ -85,7 +82,7 @@ function Navbar({ user, onLogout }) {
           );
         })}
 
-        {/* Ce bouton est bien **en dehors** du map */}
+        {/* Onglet Déconnexion */}
         <button
           onClick={onLogout}
           className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
@@ -134,26 +131,28 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
 
 // --- App principale ---
 export default function App() {
-  const [authUser, setAuthUser] = useState(null); // Supabase Auth user
-  const [user, setUser] = useState(null); // Profil complet DB
+  const [authUser, setAuthUser] = useState(null);
+  const [user, setUser] = useState(null);
 
-  // Vérifier si déjà connecté côté Supabase Auth
+  // Vérifier si déjà connecté côté serveur (cookie HttpOnly)
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (data?.user) {
-        setAuthUser(data.user);
-        const { data: profilData } = await supabase
-          .from("profils")
-          .select("*")
-          .eq("id", data.user.id)
-          .single();
-        setUser(profilData);
+    const checkSession = async () => {
+      try {
+        const res = await fetch("/api/session");
+        if (res.ok) {
+          const result = await res.json();
+          setAuthUser(result.user);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    });
+    };
+    checkSession();
   }, []);
 
+  // Déconnexion
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await fetch("/api/session", { method: "DELETE" });
     setAuthUser(null);
     setUser(null);
   };
