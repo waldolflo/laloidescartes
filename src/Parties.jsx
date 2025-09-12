@@ -3,14 +3,16 @@ import { supabase } from "./supabaseClient";
 import EditPartie from "./EditPartie";
 import Inscriptions from "./Inscriptions";
 
-export default function Parties({ user }) {
+export default function Parties({ user, authUser }) {
+  const currentUser = user || authUser; // fallback si user pas encore passé
+
   const [parties, setParties] = useState({ upcoming: [], past: [] });
   const [jeux, setJeux] = useState([]);
   const [newPartie, setNewPartie] = useState({
     jeu_id: "",
     date_partie: "",
     heure_partie: "",
-    utilisateur_id: user.id,
+    utilisateur_id: currentUser?.id || "",
     description: "",
     lieu: "",
   });
@@ -21,19 +23,21 @@ export default function Parties({ user }) {
   const [userRole, setUserRole] = useState("");
   const [search, setSearch] = useState("");
 
+  // ------------------- PROTECTION SI PAS D'UTILISATEUR -------------------
+  if (!currentUser) return <p>Chargement de l’utilisateur…</p>;
+
   // ------------------- FETCH ROLE UTILISATEUR -------------------
   useEffect(() => {
-    if (!user) return;
     const fetchRole = async () => {
       const { data, error } = await supabase
         .from("profils")
         .select("role")
-        .eq("id", user.id)
+        .eq("id", currentUser.id)
         .single();
       if (!error) setUserRole(data?.role || "");
     };
     fetchRole();
-  }, [user]);
+  }, [currentUser]);
 
   // ------------------- FETCH JEUX ET PARTIES -------------------
   useEffect(() => {
@@ -112,6 +116,7 @@ export default function Parties({ user }) {
       {
         ...newPartie,
         nom: nomDefault,
+        utilisateur_id: currentUser.id,
         max_joueurs: jeu.max_joueurs || 0,
         nombredejoueurs: 0,
       },
@@ -126,7 +131,7 @@ export default function Parties({ user }) {
         jeu_id: "",
         date_partie: "",
         heure_partie: "",
-        utilisateur_id: user.id,
+        utilisateur_id: currentUser.id,
         description: "",
         lieu: "",
       });
@@ -251,7 +256,7 @@ export default function Parties({ user }) {
         </div>
       )}
 
-      {/* PARTIES À VENIR */}
+      {/* Parties à venir */}
       <h2 className="text-xl font-bold mb-2">Parties à venir</h2>
       <div className="grid gap-4">
         {filterParties(parties.upcoming)?.map((p) => (
@@ -272,7 +277,6 @@ export default function Parties({ user }) {
               <p>Organisateur: {p.organisateur?.nom || "?"}</p>
               <p>Joueurs inscrits: {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
 
-              {/* Liste des joueurs inscrits */}
               {p.inscrits?.length > 0 && (
                 <ul className="list-disc pl-5 mt-2">
                   {p.inscrits.map((i) => (
@@ -283,7 +287,7 @@ export default function Parties({ user }) {
 
               {/* Boutons Modifier / Supprimer */}
               <div className="flex gap-2 mt-2">
-                {(p.utilisateur_id === user.id || userRole === "admin") && (
+                {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
                   <>
                     <button
                       onClick={() => setEditingPartie(p)}
@@ -318,7 +322,7 @@ export default function Parties({ user }) {
         ))}
       </div>
 
-      {/* PARTIES PASSÉES */}
+      {/* Parties passées */}
       {parties.past?.length > 0 && (
         <>
           <h2 className="text-xl font-bold mt-6 mb-2">Archives de parties</h2>
@@ -363,7 +367,7 @@ export default function Parties({ user }) {
       {/* INSCRIPTIONS */}
       {selectedPartie && (
         <Inscriptions
-          user={user}
+          user={currentUser}
           parties={parties.upcoming}
           updateInscritsCount={() => fetchParties()}
         />

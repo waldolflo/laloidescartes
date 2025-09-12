@@ -19,7 +19,7 @@ import Auth from "./Auth";
 import { BookOpen, CalendarDays, Users, User, LogOut } from "lucide-react";
 
 // --- Navbar responsive ---
-function Navbar({ user, onLogout }) {
+function Navbar({ currentUser, onLogout }) {
   const location = useLocation();
 
   const tabs = [
@@ -55,7 +55,7 @@ function Navbar({ user, onLogout }) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm">
-              Bonjour <strong>{user.nom || user.email}</strong>
+              Bonjour <strong>{currentUser.nom || currentUser.email}</strong>
             </span>
             <button
               onClick={onLogout}
@@ -100,6 +100,7 @@ function Navbar({ user, onLogout }) {
 // --- Animated Routes ---
 function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
   const location = useLocation();
+  const currentUser = user || authUser;
 
   return (
     <AnimatePresence mode="wait">
@@ -115,12 +116,12 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
             <Route path="/*" element={<Auth onLogin={setAuthUser} />} />
           ) : (
             <>
-              <Route path="/" element={<Catalogue user={user} />} />
-              <Route path="/parties" element={<Parties user={user} />} />
-              <Route path="/inscriptions" element={<Inscriptions user={user} />} />
+              <Route path="/" element={<Catalogue user={currentUser} />} />
+              <Route path="/parties" element={<Parties user={currentUser} authUser={authUser} />} />
+              <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
               <Route
                 path="/profils"
-                element={<Profils user={user} setProfilGlobal={setUser} authUser={authUser} />}
+                element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
@@ -187,10 +188,12 @@ export default function App() {
     setUser(null);
   };
 
+  const currentUser = user || authUser;
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
-        {authUser && <Navbar user={user || authUser} onLogout={handleLogout} />}
+        {authUser && <Navbar currentUser={currentUser} onLogout={handleLogout} />}
         <div className="p-4">
           <AnimatedRoutes
             authUser={authUser}
@@ -199,7 +202,6 @@ export default function App() {
             setUser={setUser}
           />
         </div>
-        {/* Bandeau RGPD */}
         <GDPRBanner />
       </div>
     </Router>
