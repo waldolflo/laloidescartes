@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
-import HCaptcha from "@hcaptcha/react-hcaptcha"; // <-- installer: npm install @hcaptcha/react-hcaptcha
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function Auth({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -9,6 +9,8 @@ export default function Auth({ onLogin }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
+
+  const captchaRef = useRef(null);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -24,15 +26,11 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { data, error } = await supabase.auth.signInWithPassword(
-      {
-        email,
-        password,
-      },
-      {
-        captchaToken, // <-- envoi du token captcha à Supabase
-      }
-    );
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: { captchaToken }, // ✅ envoie le captcha à Supabase
+    });
 
     if (error) {
       setErrorMsg("Erreur de connexion : " + error.message);
@@ -40,7 +38,7 @@ export default function Auth({ onLogin }) {
       setErrorMsg("❌ Vous devez confirmer votre email avant de vous connecter.");
       await supabase.auth.signOut();
     } else {
-      // Créer profil si inexistant
+      // Vérifie profil
       const { data: profilData, error: fetchError } = await supabase
         .from("profils")
         .select("*")
@@ -63,6 +61,8 @@ export default function Auth({ onLogin }) {
     }
 
     setLoading(false);
+    setCaptchaToken(null); // reset après usage
+    captchaRef.current?.resetCaptcha();
   };
 
   const handleSignUp = async () => {
@@ -78,15 +78,11 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signUp(
-      {
-        email,
-        password,
-      },
-      {
-        captchaToken, // <-- envoi du token captcha à Supabase
-      }
-    );
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { captchaToken }, // ✅ aussi pour l'inscription
+    });
 
     if (error) {
       setErrorMsg("Erreur d'inscription : " + error.message);
@@ -97,6 +93,8 @@ export default function Auth({ onLogin }) {
     }
 
     setLoading(false);
+    setCaptchaToken(null);
+    captchaRef.current?.resetCaptcha();
   };
 
   return (
@@ -118,11 +116,12 @@ export default function Auth({ onLogin }) {
         className="w-full border p-2 rounded mb-2"
       />
 
-      {/* hCaptcha widget */}
-      <div className="mb-2">
+      {/* ✅ Ajout du captcha */}
+      <div className="mb-3">
         <HCaptcha
-          sitekey={import.meta.env.VITE_HCAPTCHA_SITEKEY} // ⚠️ ajoute ta clé publique ici
+          sitekey={import.meta.env.VITE_HCAPTCHA_SITEKEY} // clé publique
           onVerify={(token) => setCaptchaToken(token)}
+          ref={captchaRef}
         />
       </div>
 
