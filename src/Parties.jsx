@@ -270,7 +270,7 @@ export default function Parties({ user, authUser }) {
             )}
             <div className="flex-1">
               <h2 className="text-lg font-bold">{p.jeux?.nom}</h2>
-              <p>{p.nom}</p>
+              {/* <p>{p.nom}</p> */}
               <p>Date: {formatDate(p.date_partie)} - Heure: {formatHeure(p.heure_partie)}</p>
               {p.description && <p>{p.description}</p>}
               {p.lieu && <p>Lieu: {p.lieu}</p>}
