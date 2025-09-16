@@ -63,18 +63,45 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
     }
   };
 
-  const updateFavoris = async (champ, valeur) => {
-    const { data, error } = await supabase
+const updateFavoris = async (champ, valeur) => {
+  if (!profil) return;
+
+  const ancienFavori = profil[champ]; // ancien jeu favori (id)
+  const nouveauFavori = valeur || null; // nouveau jeu favori (id)
+
+  // Étape 1 : mettre à jour le profil
+  const { data, error } = await supabase
       .from("profils")
-      .update({ [champ]: valeur })
+      .update({ [champ]: nouveauFavori })
       .eq("id", profil.id)
       .select()
       .single();
-    if (!error) {
-      setProfil(data);
-      if (setProfilGlobal) setProfilGlobal(data);
+
+    if (error) {
+      console.error("Erreur update profil :", error);
+      return;
     }
+
+    // Étape 2 : mettre à jour les compteurs fav
+    if (ancienFavori && ancienFavori !== nouveauFavori) {
+      await supabase
+        .from("jeux")
+        .update({ fav: supabase.rpc('decrement_fav', { jeu_id: ancienFavori }) })
+        .eq("id", ancienFavori);
+    }
+
+    if (nouveauFavori && ancienFavori !== nouveauFavori) {
+      await supabase
+        .from("jeux")
+        .update({ fav: supabase.rpc('increment_fav', { jeu_id: nouveauFavori }) })
+        .eq("id", nouveauFavori);
+    }
+
+    // Étape 3 : maj du state local
+    setProfil(data);
+    if (setProfilGlobal) setProfilGlobal(data);
   };
+
 
   const updateUserRole = async (userId, newRole) => {
     const { data, error } = await supabase
@@ -127,7 +154,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
       )}
 
       {/* Jeux favoris */}
-      <h3 className="text-xl font-semibold mt-6 mb-2">🎲 Mes jeux favoris</h3>
+      <h3 className="text-xl font-semibold mt-6 mb-2">🎲 Les jeux auxquels j'aimerais jouer</h3>
       {[1, 2].map((n) => (
         <div key={n} className="mb-4">
           <label className="block font-medium mb-1">Jeu favori {n} :</label>

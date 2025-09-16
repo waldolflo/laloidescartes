@@ -125,6 +125,8 @@ export default function Catalogue({ user }) {
         case "nom-desc": return (b.nom || "").localeCompare(a.nom || "");
         case "max-joueurs-asc": return (a.max_joueurs || 0) - (b.max_joueurs || 0);
         case "max-joueurs-desc": return (b.max_joueurs || 0) - (a.max_joueurs || 0);
+        case "fav-desc": return (b.fav || 0) - (a.fav || 0);
+        case "fav-asc": return (a.fav || 0) - (b.fav || 0);
         default: return 0;
       }
     });
@@ -155,6 +157,8 @@ export default function Catalogue({ user }) {
           <option value="nom-desc">Nom Z → A</option>
           <option value="max-joueurs-asc">Joueurs max ↑</option>
           <option value="max-joueurs-desc">Joueurs max ↓</option>
+          <option value="fav-desc">Favoris ↓</option>
+          <option value="fav-asc">Favoris ↑</option>
         </select>
         </div>
         <div className="flex gap-2 mb-4">
@@ -171,7 +175,13 @@ export default function Catalogue({ user }) {
       {/* Liste des jeux */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         {filteredJeux.map(j => (
-          <div key={j.id} className="border rounded p-4 bg-white shadow">
+          <div key={j.id} className="relative border rounded p-4 bg-white shadow">
+            {/* Bulle "fav" */}
+              {j.fav > 0 && (
+                <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-1 shadow">
+                  {j.fav}
+                </span>
+              )}
             <h2 className="text-lg font-bold">{j.nom}</h2>
             {j.couverture_url && <img src={j.couverture_url} alt={j.nom} className="w-full h-32 object-contain mt-2 mb-2" />}
             {j.regle_youtube && <p><a href={j.regle_youtube} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Voir les règles</a></p>}
