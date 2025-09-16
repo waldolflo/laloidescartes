@@ -129,12 +129,25 @@ const updateFavoris = async (champ, valeur) => {
     if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
   };
 
-  const handleDeleteAccount = async () => {
+ const handleDeleteAccount = async () => {
     if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?")) return;
 
-    await fetch(SUPABASE_URL,{method:"POST", body:{userId:authUser.id}}).then(async()=>{await supabase.auth.signOut();})
+    const { data: { session } } = await supabase.auth.getSession();
 
-    // redirection gérée via navbar / parent
+    if (!session) {
+      alert("Vous devez être connecté pour supprimer votre compte.");
+      return;
+    }
+
+    await fetch("https://<PROJECT>.supabase.co/functions/v1/delete-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`, // ✅ Token JWT
+      },
+    });
+
+    await supabase.auth.signOut();
   };
 
   if (!profil) return <div className="text-center mt-10">Chargement du profil...</div>;
