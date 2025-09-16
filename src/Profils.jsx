@@ -66,10 +66,10 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
 const updateFavoris = async (champ, valeur) => {
   if (!profil) return;
 
-  const ancienFavori = profil[champ]; // ancien jeu favori (id)
-  const nouveauFavori = valeur || null; // nouveau jeu favori (id)
+  const ancienFavori = profil[champ]; // ancien jeu favori
+  const nouveauFavori = valeur || null; // nouveau favori
 
-  // Étape 1 : mettre à jour le profil
+  // Étape 1 : update du profil
   const { data, error } = await supabase
       .from("profils")
       .update({ [champ]: nouveauFavori })
@@ -82,19 +82,35 @@ const updateFavoris = async (champ, valeur) => {
       return;
     }
 
-    // Étape 2 : mettre à jour les compteurs fav
+    // Étape 2 : ajuster les compteurs
     if (ancienFavori && ancienFavori !== nouveauFavori) {
-      await supabase
+      const { data: oldJeu } = await supabase
         .from("jeux")
-        .update({ fav: supabase.rpc('decrement_fav', { jeu_id: ancienFavori }) })
-        .eq("id", ancienFavori);
+        .select("fav")
+        .eq("id", ancienFavori)
+        .single();
+
+      if (oldJeu) {
+        await supabase
+          .from("jeux")
+          .update({ fav: Math.max((oldJeu.fav || 0) - 1, 0) })
+          .eq("id", ancienFavori);
+      }
     }
 
     if (nouveauFavori && ancienFavori !== nouveauFavori) {
-      await supabase
+      const { data: newJeu } = await supabase
         .from("jeux")
-        .update({ fav: supabase.rpc('increment_fav', { jeu_id: nouveauFavori }) })
-        .eq("id", nouveauFavori);
+        .select("fav")
+        .eq("id", nouveauFavori)
+        .single();
+
+      if (newJeu) {
+        await supabase
+          .from("jeux")
+          .update({ fav: (newJeu.fav || 0) + 1 })
+          .eq("id", nouveauFavori);
+      }
     }
 
     // Étape 3 : maj du state local
