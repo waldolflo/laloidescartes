@@ -139,7 +139,7 @@ const updateFavoris = async (champ, valeur) => {
       return;
     }
 
-    await fetch("https://<PROJECT>.supabase.co/functions/v1/delete-user", {
+    await fetch("https://https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
