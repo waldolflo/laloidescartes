@@ -148,7 +148,7 @@ const updateFavoris = async (champ, valeur) => {
       body: JSON.stringify({ userId: authUser.id }),
     });
 
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
   };
 
   if (!profil) return <div className="text-center mt-10">Chargement du profil...</div>;
