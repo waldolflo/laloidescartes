@@ -1,47 +1,77 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-serve(async (req) => {
+// Récupère les variables d'environnement Supabase (elles sont dispo automatiquement)
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// ⚠️ On doit utiliser la clé SERVICE ROLE (et pas anon/public)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+serve(async (req: Request) => {
+  // Gestion du preflight (CORS OPTIONS)
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app", // ⚠️ mets ton domaine exact ici
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers":
+          "authorization, x-client-info, apikey, content-type",
+      },
+    });
+  }
+
   try {
-    // Vérifier que l’utilisateur envoie bien un JWT
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
+    const { userId } = await req.json();
 
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Token manquant" }), { status: 401 });
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "userId manquant" }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
+          },
+        },
+      );
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // Vérifier le token et récupérer l'utilisateur
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Utilisateur non authentifié" }), { status: 401 });
-    }
-
-    const userId = user.id;
-
-    // 1. Supprimer dans la table profils
-    await supabase.from("profils").delete().eq("id", userId);
-
-    // 2. Supprimer dans auth.users
-    const { error } = await supabase.auth.admin.deleteUser(userId);
+    // Supprime l'utilisateur de l'auth
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (error) {
-      console.error("Erreur deleteUser:", error);
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
+          },
+        },
+      );
     }
 
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (err) {
-    console.error("Erreur fonction delete-user:", err);
-    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 });
+    return new Response(
+      JSON.stringify({ success: true }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
+        },
+      },
+    );
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
+        },
+      },
+    );
   }
 });
