@@ -121,7 +121,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
               <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
               <Route
                 path="/profils"
-                element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} />}
+                element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} setAuthUser={setAuthUser} setUser={setUser} />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>

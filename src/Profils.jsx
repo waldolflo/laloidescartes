@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
 
-export default function Profils({ authUser, user, setProfilGlobal }) {
+export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
   if (!authUser) return <Navigate to="/auth" replace />;
 
   const [profil, setProfil] = useState(null);
@@ -130,26 +130,38 @@ const updateFavoris = async (champ, valeur) => {
   };
 
  const handleDeleteAccount = async () => {
-    if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?")) return;
+    if (!window.confirm("⚠️ Voulez-vous vraiment supprimer votre compte ?")) return;
 
-    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      // Étape 1 : Déconnexion locale
+      await supabase.auth.signOut({ scope: "local" });
+      setAuthUser(null);
+      setUser(null);
 
-    if (!session) {
-      alert("Vous devez être connecté pour supprimer votre compte.");
-      return;
+      // Étape 2 : Suppression côté Supabase (profil + auth)
+      const res = await fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: authUser.id }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("Erreur suppression :", err);
+        alert("❌ Une erreur est survenue lors de la suppression du compte");
+        return;
+      }
+
+      alert("✅ Compte supprimé !");
+      window.location.href = "/"; // redirection accueil
+    } catch (err) {
+      console.error("Erreur inattendue :", err);
+      alert("❌ Impossible de supprimer le compte");
     }
-
-    await fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.access_token}`, // ✅ Token JWT
-      },
-      body: JSON.stringify({ userId: authUser.id }),
-    });
-
-    await supabase.auth.signOut({ scope: "local" });
   };
+
 
   if (!profil) return <div className="text-center mt-10">Chargement du profil...</div>;
 
