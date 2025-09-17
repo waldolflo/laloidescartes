@@ -145,6 +145,7 @@ const updateFavoris = async (champ, valeur) => {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session.access_token}`, // ✅ Token JWT
       },
+      body: JSON.stringify({ userId: authUser.id }),
     });
 
     await supabase.auth.signOut();

@@ -41,6 +41,8 @@ serve(async (req: Request) => {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (error) {
+      console.log("userId reçu:", userId);
+      console.error("Erreur deleteUser:", error); // 👈 log utile
       return new Response(
         JSON.stringify({ error: error.message }),
         {
