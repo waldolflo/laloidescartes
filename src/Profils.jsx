@@ -11,7 +11,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [allUsers, setAllUsers] = useState([]);
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
 
-  useEffect(() => {
+useEffect(() => {
     if (!authUser) return;
 
     const fetchProfil = async () => {
@@ -22,11 +22,35 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         .single();
 
       if (!error && data) {
-        setProfil(data);
-        setNom(data.nom || "");
-        if (setProfilGlobal) setProfilGlobal(data);
+        let updatedData = data;
 
-        if (data.role === "admin") {
+        // Génération d'un pseudo fun si nom vide
+        if (!data.nom) {
+          const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
+          const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
+
+          const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+          const randomCreature = creatures[Math.floor(Math.random() * creatures.length)];
+          const randomNum = Math.floor(100 + Math.random() * 900); // nombre à 3 chiffres
+
+          const defaultName = `${randomAdj}${randomCreature}${randomNum}`;
+
+          const { data: newData, error: updateError } = await supabase
+            .from("profils")
+            .update({ nom: defaultName })
+            .eq("id", authUser.id)
+            .select()
+            .single();
+
+          if (!updateError) updatedData = newData;
+        }
+
+        setProfil(updatedData);
+        setNom(updatedData.nom);
+        if (setProfilGlobal) setProfilGlobal(updatedData);
+
+        // Si admin, récupérer la liste des utilisateurs
+        if (updatedData.role === "admin") {
           const { data: usersData } = await supabase
             .from("profils")
             .select("id, nom, role")
