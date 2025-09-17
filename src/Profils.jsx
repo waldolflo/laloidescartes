@@ -133,19 +133,28 @@ const updateFavoris = async (champ, valeur) => {
     if (!window.confirm("⚠️ Voulez-vous vraiment supprimer votre compte ?")) return;
 
     try {
-      // Étape 1 : Déconnexion locale
-      await supabase.auth.signOut({ scope: "local" });
-      setAuthUser(null);
-      setUser(null);
+      // 🔑 Récupération du token actif
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      // Étape 2 : Suppression côté Supabase (profil + auth)
-      const res = await fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: authUser.id }),
-      });
+      if (!session?.access_token) {
+        alert("❌ Impossible de récupérer la session utilisateur");
+        return;
+      }
+
+      // Étape 1 : Suppression côté Supabase (profil + auth)
+      const res = await fetch(
+        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`, // ✅ ajout du JWT
+          },
+          body: JSON.stringify({ userId: authUser.id }),
+        }
+      );
 
       if (!res.ok) {
         const err = await res.text();
@@ -154,6 +163,11 @@ const updateFavoris = async (champ, valeur) => {
         return;
       }
 
+      // Étape 2 : Déconnexion locale
+      await supabase.auth.signOut({ scope: "local" });
+      setAuthUser(null);
+      setUser(null);
+
       alert("✅ Compte supprimé !");
       window.location.href = "/"; // redirection accueil
     } catch (err) {
@@ -161,7 +175,6 @@ const updateFavoris = async (champ, valeur) => {
       alert("❌ Impossible de supprimer le compte");
     }
   };
-
 
   if (!profil) return <div className="text-center mt-10">Chargement du profil...</div>;
 
