@@ -28,15 +28,23 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
   const fetchCover = async (bggId) => {
     if (!bggId) return null;
     try {
-      const res = await fetch(`https://jahbkwrftliquqziwwva.supabase.co/functions/v1/fetch-bgg-cover?id=${bggId}`);
+      const res = await fetch(
+        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/fetch-bgg-cover",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: bggId }),
+        }
+      );
+
       const data = await res.json();
-      return data.thumbnail || null;
+      return data.imageUrl || null;
     } catch (err) {
       console.error("Erreur fetchCover :", err);
       return null;
     }
   };
-
+  
   const saveEdit = async () => {
     try {
       let couverture_url = jeu.couverture_url;
