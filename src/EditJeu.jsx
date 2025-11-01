@@ -28,12 +28,9 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
   const fetchCover = async (bggId) => {
     if (!bggId) return null;
     try {
-      const res = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${bggId}`);
-      const text = await res.text();
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(text, "text/xml");
-      const thumbnail = xml.querySelector("thumbnail");
-      return thumbnail?.textContent || null;
+      const res = await fetch(`https://jahbkwrftliquqziwwva.supabase.co/functions/v1/fetch-bgg-cover?id=${bggId}`);
+      const data = await res.json();
+      return data.thumbnail || null;
     } catch (err) {
       console.error("Erreur fetchCover :", err);
       return null;

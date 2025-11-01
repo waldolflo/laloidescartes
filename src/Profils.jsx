@@ -3,15 +3,14 @@ import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
 
 export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
-  if (!authUser) return <Navigate to="/auth" replace />;
-
   const [profil, setProfil] = useState(null);
   const [nom, setNom] = useState("");
   const [jeux, setJeux] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
 
-useEffect(() => {
+  // ✅ Hooks toujours au même niveau
+  useEffect(() => {
     if (!authUser) return;
 
     const fetchProfil = async () => {
@@ -24,14 +23,13 @@ useEffect(() => {
       if (!error && data) {
         let updatedData = data;
 
-        // Génération d'un pseudo fun si nom vide
+        // Génération d’un pseudo fun si nom vide
         if (!data.nom) {
           const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
           const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
-
           const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
           const randomCreature = creatures[Math.floor(Math.random() * creatures.length)];
-          const randomNum = Math.floor(100 + Math.random() * 900); // nombre à 3 chiffres
+          const randomNum = Math.floor(100 + Math.random() * 900);
 
           const defaultName = `${randomAdj}${randomCreature}${randomNum}`;
 
@@ -47,9 +45,8 @@ useEffect(() => {
 
         setProfil(updatedData);
         setNom(updatedData.nom);
-        if (setProfilGlobal) setProfilGlobal(updatedData);
+        setProfilGlobal?.(updatedData);
 
-        // Si admin, récupérer la liste des utilisateurs
         if (updatedData.role === "admin") {
           const { data: usersData } = await supabase
             .from("profils")
@@ -70,7 +67,7 @@ useEffect(() => {
 
     fetchProfil();
     fetchJeux();
-  }, [authUser]);
+  }, [authUser, setProfilGlobal]);
 
   const updateNom = async () => {
     if (!nom || !profil) return;
@@ -82,19 +79,18 @@ useEffect(() => {
       .single();
     if (!error) {
       setProfil(data);
-      if (setProfilGlobal) setProfilGlobal(data);
+      setProfilGlobal?.(data);
       alert("✅ Prénom mis à jour !");
     }
   };
 
-const updateFavoris = async (champ, valeur) => {
-  if (!profil) return;
+  const updateFavoris = async (champ, valeur) => {
+    if (!profil) return;
 
-  const ancienFavori = profil[champ]; // ancien jeu favori
-  const nouveauFavori = valeur || null; // nouveau favori
+    const ancienFavori = profil[champ];
+    const nouveauFavori = valeur || null;
 
-  // Étape 1 : update du profil
-  const { data, error } = await supabase
+    const { data, error } = await supabase
       .from("profils")
       .update({ [champ]: nouveauFavori })
       .eq("id", profil.id)
@@ -106,7 +102,6 @@ const updateFavoris = async (champ, valeur) => {
       return;
     }
 
-    // Étape 2 : ajuster les compteurs
     if (ancienFavori && ancienFavori !== nouveauFavori) {
       const { data: oldJeu } = await supabase
         .from("jeux")
@@ -137,11 +132,9 @@ const updateFavoris = async (champ, valeur) => {
       }
     }
 
-    // Étape 3 : maj du state local
     setProfil(data);
-    if (setProfilGlobal) setProfilGlobal(data);
+    setProfilGlobal?.(data);
   };
-
 
   const updateUserRole = async (userId, newRole) => {
     const { data, error } = await supabase
@@ -153,11 +146,10 @@ const updateFavoris = async (champ, valeur) => {
     if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
   };
 
- const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async () => {
     if (!window.confirm("⚠️ Voulez-vous vraiment supprimer votre compte ?")) return;
 
     try {
-      // 🔑 Récupération du token actif
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -167,18 +159,14 @@ const updateFavoris = async (champ, valeur) => {
         return;
       }
 
-      // Étape 1 : Suppression côté Supabase (profil + auth)
-      const res = await fetch(
-        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`, // ✅ ajout du JWT
-          },
-          body: JSON.stringify({ userId: authUser.id }),
-        }
-      );
+      const res = await fetch(SUPABASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId: authUser.id }),
+      });
 
       if (!res.ok) {
         const err = await res.text();
@@ -187,19 +175,20 @@ const updateFavoris = async (champ, valeur) => {
         return;
       }
 
-      // Étape 2 : Déconnexion locale
       await supabase.auth.signOut({ scope: "local" });
       setAuthUser(null);
       setUser(null);
 
       alert("✅ Compte supprimé !");
-      window.location.href = "/"; // redirection accueil
+      window.location.href = "/";
     } catch (err) {
       console.error("Erreur inattendue :", err);
       alert("❌ Impossible de supprimer le compte");
     }
   };
 
+  // ✅ Redirections après les hooks
+  if (!authUser) return <Navigate to="/auth" replace />;
   if (!profil) return <div className="text-center mt-10">Chargement du profil...</div>;
 
   return (
@@ -228,8 +217,8 @@ const updateFavoris = async (champ, valeur) => {
 
       <p><strong>Rôle :</strong> {profil.role}</p>
 
-      {(profil.role === "user") && (
-              <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
+      {profil.role === "user" && (
+        <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
       )}
 
       {/* Jeux favoris */}
@@ -310,8 +299,7 @@ const updateFavoris = async (champ, valeur) => {
               })}
             </tbody>
           </table>
-          <p></p>
-          <p>Légende :</p>
+          <p className="mt-2">Légende :</p>
           <ul className="list-disc pl-5 mt-2">
             <li>User : peut uniquement s'inscrire/se désinscrire à une partie</li>
             <li>Membre : User + peut organiser des parties</li>
@@ -319,7 +307,7 @@ const updateFavoris = async (champ, valeur) => {
             <li>Ludoplus : Ludo + peut modifier tous les jeux de la Ludothèque</li>
             <li>Admin : Ludoplus + peut gérer les rôles des Utilisateurs</li>
           </ul>
-          <p>Tous les utilisateurs peuvent par defaut : modifier les jeux qu'ils ajoutent eux même dans la Ludothèque et modifier, supprimer les partie qu'ils organisent.</p>
+          <p>Tous les utilisateurs peuvent par défaut : modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque et modifier/supprimer les parties qu'ils organisent.</p>
         </div>
       )}
 
