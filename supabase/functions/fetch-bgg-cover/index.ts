@@ -25,7 +25,7 @@ serve(async (req) => {
     // 👇 Ajout du User-Agent pour éviter le 401
     const res = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${id}`, {
       headers: {
-        "User-Agent": "SupabaseEdgeFunction/1.0 (+https://votre-site.com)",
+        "User-Agent": "SupabaseEdgeFunction/1.0 (+https://https://laloidescartes.vercel.app/)",
         "Accept": "application/xml, text/xml, */*;q=0.1"
       },
     });
