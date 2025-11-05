@@ -1,7 +1,13 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { parse } from "https://deno.land/x/xml_parser@v0.2.0/mod.ts";
+
+// Fonction de parsing XML simple (regex)
+function extractTagValue(xml: string, tag: string): string | null {
+  const match = xml.match(new RegExp(`<${tag}>(.*?)</${tag}>`, "i"));
+  return match ? match[1] : null;
+}
 
 serve(async (req) => {
+  // Gestion du CORS
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -35,16 +41,9 @@ serve(async (req) => {
     if (!res.ok) throw new Error(`Erreur API BGG (${res.status})`);
     const xmlText = await res.text();
 
-    // ✅ Parsing XML
-    const xml = parse(xmlText);
-    const item = xml?.children?.find((c) => c.name === "item");
-    if (!item) throw new Error("Format XML inattendu");
-
-    const thumbnailNode = item.children?.find((c) => c.name === "thumbnail");
-    const imageNode = item.children?.find((c) => c.name === "image");
-
-    const thumbnail = thumbnailNode?.content || null;
-    const image = imageNode?.content || null;
+    // Extraction manuelle
+    const thumbnail = extractTagValue(xmlText, "thumbnail");
+    const image = extractTagValue(xmlText, "image");
 
     return new Response(JSON.stringify({ thumbnail, image }), { headers });
   } catch (err) {
