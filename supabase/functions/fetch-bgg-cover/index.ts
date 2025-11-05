@@ -2,13 +2,9 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // Fonction de parsing XML simple (regex)
 function extractTagValue(xml: string, tag: string, parentTag?: string): string | null {
-  let pattern: RegExp;
-  if (parentTag) {
-    // Cherche la balise dans le parent
-    pattern = new RegExp(`<${parentTag}[^>]*>[\\s\\S]*?<${tag}[^>]*>(.*?)</${tag}>[\\s\\S]*?</${parentTag}>`, "i");
-  } else {
-    pattern = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "i");
-  }
+  const pattern = parentTag
+    ? new RegExp(`<${parentTag}[^>]*>[\\s\\S]*?<${tag}[^>]*value=["'](.*?)["'][\\s\\S]*?</${parentTag}>`, "i")
+    : new RegExp(`<${tag}[^>]*value=["'](.*?)["']`, "i");
   const match = xml.match(pattern);
   return match ? match[1] : null;
 }
@@ -52,11 +48,8 @@ serve(async (req) => {
     const image = extractTagValue(xmlText, "image");
 
     // Extraction des stats dans <ratings>
-    const averageStr = extractTagValue(xmlText, "average", "ratings") || "0";
-    const weightStr = extractTagValue(xmlText, "averageweight", "ratings") || "0";
-
-    const rating = isNaN(parseFloat(averageStr)) ? 0 : parseFloat(averageStr);
-    const weight = isNaN(parseFloat(weightStr)) ? 0 : parseFloat(weightStr);
+    const rating = parseFloat(extractTagValue(xmlText, "average", "ratings") || "0");
+    const weight = parseFloat(extractTagValue(xmlText, "averageweight", "ratings") || "0");
 
     if (!thumbnail || !image) {
       throw new Error("Impossible de trouver les images dans le XML");
