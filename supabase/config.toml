@@ -31,3 +31,14 @@ entrypoint = "./functions/fetch-bgg-cover/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/fetch-bgg-cover/*.html" ]
+
+[functions.update_all_jeux_bgg]
+enabled = true
+verify_jwt = true
+import_map = "./functions/update_all_jeux_bgg/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/update_all_jeux_bgg/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/update_all_jeux_bgg/*.html" ]
