@@ -1,4 +1,4 @@
-import { serve } from "[https://deno.land/std@0.177.0/http/server.ts](https://deno.land/std@0.177.0/http/server.ts)";
+import { serve } from "std/http/server.ts";
 
 // === CONFIGURATION SUPABASE ===
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
