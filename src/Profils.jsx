@@ -2,15 +2,14 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
 
-export default function Profils({ authUser, user, setProfilGlobal }) {
-  if (!authUser) return <Navigate to="/auth" replace />;
-
+export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
   const [profil, setProfil] = useState(null);
   const [nom, setNom] = useState("");
   const [jeux, setJeux] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
 
+  // ✅ Hooks toujours au même niveau
   useEffect(() => {
     if (!authUser) return;
 
@@ -22,11 +21,33 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
         .single();
 
       if (!error && data) {
-        setProfil(data);
-        setNom(data.nom || "");
-        if (setProfilGlobal) setProfilGlobal(data);
+        let updatedData = data;
 
-        if (data.role === "admin") {
+        // Génération d’un pseudo fun si nom vide
+        if (!data.nom) {
+          const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
+          const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
+          const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+          const randomCreature = creatures[Math.floor(Math.random() * creatures.length)];
+          const randomNum = Math.floor(100 + Math.random() * 900);
+
+          const defaultName = `${randomAdj}${randomCreature}${randomNum}`;
+
+          const { data: newData, error: updateError } = await supabase
+            .from("profils")
+            .update({ nom: defaultName })
+            .eq("id", authUser.id)
+            .select()
+            .single();
+
+          if (!updateError) updatedData = newData;
+        }
+
+        setProfil(updatedData);
+        setNom(updatedData.nom);
+        setProfilGlobal?.(updatedData);
+
+        if (updatedData.role === "admin") {
           const { data: usersData } = await supabase
             .from("profils")
             .select("id, nom, role")
@@ -46,7 +67,7 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
 
     fetchProfil();
     fetchJeux();
-  }, [authUser]);
+  }, [authUser, setProfilGlobal]);
 
   const updateNom = async () => {
     if (!nom || !profil) return;
@@ -58,19 +79,18 @@ export default function Profils({ authUser, user, setProfilGlobal }) {
       .single();
     if (!error) {
       setProfil(data);
-      if (setProfilGlobal) setProfilGlobal(data);
+      setProfilGlobal?.(data);
       alert("✅ Prénom mis à jour !");
     }
   };
 
-const updateFavoris = async (champ, valeur) => {
-  if (!profil) return;
+  const updateFavoris = async (champ, valeur) => {
+    if (!profil) return;
 
-  const ancienFavori = profil[champ]; // ancien jeu favori (id)
-  const nouveauFavori = valeur || null; // nouveau jeu favori (id)
+    const ancienFavori = profil[champ];
+    const nouveauFavori = valeur || null;
 
-  // Étape 1 : mettre à jour le profil
-  const { data, error } = await supabase
+    const { data, error } = await supabase
       .from("profils")
       .update({ [champ]: nouveauFavori })
       .eq("id", profil.id)
@@ -82,26 +102,39 @@ const updateFavoris = async (champ, valeur) => {
       return;
     }
 
-    // Étape 2 : mettre à jour les compteurs fav
     if (ancienFavori && ancienFavori !== nouveauFavori) {
-      await supabase
+      const { data: oldJeu } = await supabase
         .from("jeux")
-        .update({ fav: supabase.rpc('decrement_fav', { jeu_id: ancienFavori }) })
-        .eq("id", ancienFavori);
+        .select("fav")
+        .eq("id", ancienFavori)
+        .single();
+
+      if (oldJeu) {
+        await supabase
+          .from("jeux")
+          .update({ fav: Math.max((oldJeu.fav || 0) - 1, 0) })
+          .eq("id", ancienFavori);
+      }
     }
 
     if (nouveauFavori && ancienFavori !== nouveauFavori) {
-      await supabase
+      const { data: newJeu } = await supabase
         .from("jeux")
-        .update({ fav: supabase.rpc('increment_fav', { jeu_id: nouveauFavori }) })
-        .eq("id", nouveauFavori);
+        .select("fav")
+        .eq("id", nouveauFavori)
+        .single();
+
+      if (newJeu) {
+        await supabase
+          .from("jeux")
+          .update({ fav: (newJeu.fav || 0) + 1 })
+          .eq("id", nouveauFavori);
+      }
     }
 
-    // Étape 3 : maj du state local
     setProfil(data);
-    if (setProfilGlobal) setProfilGlobal(data);
+    setProfilGlobal?.(data);
   };
-
 
   const updateUserRole = async (userId, newRole) => {
     const { data, error } = await supabase
@@ -114,13 +147,48 @@ const updateFavoris = async (champ, valeur) => {
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("⚠️ Êtes-vous sûr de vouloir supprimer définitivement votre compte ?")) return;
+    if (!window.confirm("⚠️ Voulez-vous vraiment supprimer votre compte ?")) return;
 
-    await fetch(SUPABASE_URL,{method:"POST", body:{userId:authUser.id}}).then(async()=>{await supabase.auth.signOut();})
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    // redirection gérée via navbar / parent
+      if (!session?.access_token) {
+        alert("❌ Impossible de récupérer la session utilisateur");
+        return;
+      }
+
+      const res = await fetch(SUPABASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId: authUser.id }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("Erreur suppression :", err);
+        alert("❌ Une erreur est survenue lors de la suppression du compte");
+        return;
+      }
+
+      await supabase.auth.signOut({ scope: "local" });
+      setAuthUser(null);
+      setUser(null);
+
+      alert("✅ Compte supprimé !");
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Erreur inattendue :", err);
+      alert("❌ Impossible de supprimer le compte");
+    }
   };
 
+  // ✅ Redirections après les hooks
+  if (!authUser) return <Navigate to="/auth" replace />;
   if (!profil) return <div className="text-center mt-10">Chargement du profil...</div>;
 
   return (
@@ -149,8 +217,8 @@ const updateFavoris = async (champ, valeur) => {
 
       <p><strong>Rôle :</strong> {profil.role}</p>
 
-      {(profil.role === "user") && (
-              <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
+      {profil.role === "user" && (
+        <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
       )}
 
       {/* Jeux favoris */}
@@ -231,8 +299,7 @@ const updateFavoris = async (champ, valeur) => {
               })}
             </tbody>
           </table>
-          <p></p>
-          <p>Légende :</p>
+          <p className="mt-2">Légende :</p>
           <ul className="list-disc pl-5 mt-2">
             <li>User : peut uniquement s'inscrire/se désinscrire à une partie</li>
             <li>Membre : User + peut organiser des parties</li>
@@ -240,7 +307,7 @@ const updateFavoris = async (champ, valeur) => {
             <li>Ludoplus : Ludo + peut modifier tous les jeux de la Ludothèque</li>
             <li>Admin : Ludoplus + peut gérer les rôles des Utilisateurs</li>
           </ul>
-          <p>Tous les utilisateurs peuvent par defaut : modifier les jeux qu'ils ajoutent eux même dans la Ludothèque et modifier, supprimer les partie qu'ils organisent.</p>
+          <p>Tous les utilisateurs peuvent par défaut : modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque et modifier/supprimer les parties qu'ils organisent.</p>
         </div>
       )}
 

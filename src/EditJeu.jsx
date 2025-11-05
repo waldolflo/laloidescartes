@@ -46,7 +46,7 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
       return null;
     }
   };
-
+  
   const saveEdit = async () => {
     try {
       let couverture_url = jeu.couverture_url;

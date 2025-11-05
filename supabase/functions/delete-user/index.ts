@@ -1,61 +1,79 @@
-// supabase/functions/delete-user/index.ts
-
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// URL et clé service_role (clé secrète à stocker dans les secrets)
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// Récupère les variables d'environnement Supabase (elles sont dispo automatiquement)
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// client supabase avec service role
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+// ⚠️ On doit utiliser la clé SERVICE ROLE (et pas anon/public)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 serve(async (req: Request) => {
+  // Gestion du preflight (CORS OPTIONS)
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app", // ⚠️ mets ton domaine exact ici
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers":
+          "authorization, x-client-info, apikey, content-type",
+      },
+    });
+  }
+
   try {
-    if (req.method !== "POST") {
-      return new Response("Méthode non autorisée", { status: 405 });
-    }
-
     const { userId } = await req.json();
+
     if (!userId) {
-      return new Response(JSON.stringify({ error: "userId manquant" }), {
-        status: 400,
-      });
-    }
-
-    // 🔹 1. Supprimer le profil en base
-    const { error: profilError } = await supabase
-      .from("profils")
-      .delete()
-      .eq("id", userId);
-
-    if (profilError) {
-      console.error("Erreur suppression profil :", profilError.message);
       return new Response(
-        JSON.stringify({ error: "Erreur suppression profil" }),
-        { status: 500 }
+        JSON.stringify({ error: "userId manquant" }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
+          },
+        },
       );
     }
 
-    // 🔹 2. Supprimer l’utilisateur dans Auth
-    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+    // Supprime l'utilisateur de l'auth
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
-    if (authError) {
-      console.error("Erreur suppression auth :", authError.message);
+    if (error) {
+      console.log("userId reçu:", userId);
+      console.error("Erreur deleteUser:", error); // 👈 log utile
       return new Response(
-        JSON.stringify({ error: "Erreur suppression auth" }),
-        { status: 500 }
+        JSON.stringify({ error: error.message }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
+          },
+        },
       );
     }
 
     return new Response(
-      JSON.stringify({ message: "✅ Utilisateur supprimé avec succès" }),
-      { status: 200 }
+      JSON.stringify({ success: true }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
+        },
+      },
     );
-  } catch (err) {
-    console.error("Erreur serveur :", err);
-    return new Response(JSON.stringify({ error: "Erreur serveur" }), {
-      status: 500,
-    });
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
+        },
+      },
+    );
   }
 });
