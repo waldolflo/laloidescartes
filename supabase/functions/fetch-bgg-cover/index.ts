@@ -44,8 +44,13 @@ serve(async (req) => {
     // Extraction manuelle
     const thumbnail = extractTagValue(xmlText, "thumbnail");
     const image = extractTagValue(xmlText, "image");
-    const rating = parseFloat(extractTagValue(xmlText, "average") || "0");
-    const weight = parseFloat(extractTagValue(xmlText, "weightaverage") || "0");
+
+    // Les balises pour les stats sont imbriquées
+    const averageStr = extractTagValue(xmlText, "average") || "0";
+    const weightStr = extractTagValue(xmlText, "averageweight") || "0";
+
+    const rating = isNaN(parseFloat(averageStr)) ? 0 : parseFloat(averageStr);
+    const weight = isNaN(parseFloat(weightStr)) ? 0 : parseFloat(weightStr);
 
     if (!thumbnail || !image) {
       throw new Error("Impossible de trouver les images dans le XML");
