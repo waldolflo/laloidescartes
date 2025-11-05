@@ -1,22 +1,39 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-// Fonction de parsing XML simple (regex) pour les balises ou attributs "value"
+// Fonction de parsing XML simple (regex)
+// -> détecte soit une balise avec texte interne, soit une balise avec attribut value
 function extractTagValue(xml: string, tag: string, parentTag?: string): string | null {
   let pattern: RegExp;
+  let match: RegExpMatchArray | null = null;
 
   if (parentTag) {
-    // Cherche une balise auto-fermante avec attribut value dans le parent
+    // Essaie d'abord le format avec attribut value
     pattern = new RegExp(
-      `<${parentTag}[^>]*>[\\s\\S]*?<${tag}[^>]*value=["'](.*?)["'][\\s\\S]*?</${parentTag}>`,
+      `<${parentTag}[^>]*>[\\s\\S]*?<${tag}[^>]*value=["'](.*?)["'][^>]*>[\\s\\S]*?</${parentTag}>`,
       "i"
     );
+    match = xml.match(pattern);
+
+    // Si pas trouvé, cherche un contenu entre balises normales
+    if (!match) {
+      pattern = new RegExp(
+        `<${parentTag}[^>]*>[\\s\\S]*?<${tag}[^>]*>(.*?)</${tag}>[\\s\\S]*?</${parentTag}>`,
+        "i"
+      );
+      match = xml.match(pattern);
+    }
   } else {
-    // Cherche une balise auto-fermante avec attribut value
+    // Même logique sans parentTag
     pattern = new RegExp(`<${tag}[^>]*value=["'](.*?)["']`, "i");
+    match = xml.match(pattern);
+
+    if (!match) {
+      pattern = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "i");
+      match = xml.match(pattern);
+    }
   }
 
-  const match = xml.match(pattern);
-  return match ? match[1] : null;
+  return match ? match[1].trim() : null;
 }
 
 serve(async (req) => {
@@ -51,11 +68,11 @@ serve(async (req) => {
     if (!res.ok) throw new Error(`Erreur API BGG (${res.status})`);
     const xmlText = await res.text();
 
-    // Extraction des images
+    // Extraction des images (contenu texte entre balises)
     const thumbnail = extractTagValue(xmlText, "thumbnail");
     const image = extractTagValue(xmlText, "image");
 
-    // Extraction des stats dans <ratings> (valeurs dans l'attribut value)
+    // Extraction des stats dans <ratings>
     const averageStr = extractTagValue(xmlText, "average", "ratings") || "0";
     const weightStr = extractTagValue(xmlText, "averageweight", "ratings") || "0";
 
@@ -66,7 +83,10 @@ serve(async (req) => {
       throw new Error("Impossible de trouver les images dans le XML");
     }
 
-    return new Response(JSON.stringify({ xmlText, thumbnail, image, rating, weight }), { headers });
+    return new Response(
+      JSON.stringify({ xmlText, thumbnail, image, rating, weight }),
+      { headers }
+    );
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { headers });
   }
