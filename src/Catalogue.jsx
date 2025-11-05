@@ -144,6 +144,10 @@ export default function Catalogue({ user }) {
         case "max-joueurs-desc": return (b.max_joueurs || 0) - (a.max_joueurs || 0);
         case "fav-desc": return (b.fav || 0) - (a.fav || 0);
         case "fav-asc": return (a.fav || 0) - (b.fav || 0);
+        case "note-desc": return (b.note || 0) - (a.note || 0);
+        case "note-asc": return (a.note || 0) - (b.note || 0);
+        case "poids-desc": return (b.poids || 0) - (a.poids || 0);
+        case "poids-asc": return (a.poids || 0) - (b.poids || 0);
         default: return 0;
       }
     });
@@ -176,6 +180,10 @@ export default function Catalogue({ user }) {
           <option value="max-joueurs-desc">Joueurs max ↓</option>
           <option value="fav-desc">Favoris ↓</option>
           <option value="fav-asc">Favoris ↑</option>
+          <option value="note-desc">Note ↓</option>
+          <option value="note-asc">Note ↑</option>
+          <option value="poids-desc">Poids ↓</option>
+          <option value="poids-asc">Poids ↑</option>
         </select>
         </div>
         <div className="flex gap-2 mb-4">
@@ -292,8 +300,8 @@ export default function Catalogue({ user }) {
 
       {/* Modal ajout */}
       {addingJeu && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-          <div className="bg-white p-6 rounded shadow-md w-96">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded shadow-md w-96 z-60">
             <h2 className="text-xl font-bold mb-4">Ajouter un jeu</h2>
             {errorMsg && <p className="text-red-600 mb-2">{errorMsg}</p>}
 
