@@ -26,7 +26,7 @@ function Navbar({ currentUser, onLogout }) {
   const tabs = [
     { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
-    { to: "/inscriptions", label: "Inscriptions", icon: Users },
+    //{ to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/profils", label: "Profil", icon: User },
   ];
 
