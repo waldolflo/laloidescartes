@@ -1,3 +1,5 @@
+import React from "react";
+
 function FooterBGG() {
   return (
     <div className="flex items-center justify-center gap-2 mt-6 text-sm text-gray-600">
