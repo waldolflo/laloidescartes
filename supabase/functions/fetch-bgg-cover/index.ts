@@ -84,7 +84,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ xmlText, thumbnail, image, rating, weight }),
+      JSON.stringify({ thumbnail, image, rating, weight }),
       { headers }
     );
   } catch (err) {
