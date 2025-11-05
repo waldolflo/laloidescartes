@@ -192,14 +192,30 @@ export default function Catalogue({ user }) {
       {/* Liste des jeux */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         {filteredJeux.map(j => (
-          <div key={j.id} className="relative border rounded p-4 bg-white shadow">
-            {/* Bulle "fav" */}
+          <div key={j.id} className="relative border rounded p-4 bg-white shadow overflow-hidden">
+            {/* Badges empilés en haut à droite */}
+            <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
+              {/* Favori */}
               {j.fav > 0 && (
-                <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-1 shadow">
-                  {j.fav}
+                <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-1 shadow">
+                  ❤️ {j.fav}
                 </span>
               )}
-            <h2 className="text-lg font-bold">{j.nom}</h2>
+              {/* Note */}
+              {j.note && j.note > 0 && (
+                <span className="bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-lg shadow">
+                  ⭐ {parseFloat(j.note).toFixed(1)} / 10
+                </span>
+              )}
+              {/* Poids */}
+              {j.poids && j.poids > 0 && (
+                <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow">
+                  ⚖️ {parseFloat(j.poids).toFixed(2)} / 5
+                </span>
+              )}
+            </div>
+
+            {/* Image + lien BGG */}
             {j.couverture_url && (
               j.bgg_api ? (
                 <a
@@ -210,27 +226,44 @@ export default function Catalogue({ user }) {
                   <img
                     src={j.couverture_url}
                     alt={j.nom}
-                    className="w-full h-32 object-contain mt-2 mb-2 cursor-pointer"
+                    className="w-full h-40 object-contain mt-2 mb-2 rounded"
                   />
                 </a>
               ) : (
                 <img
                   src={j.couverture_url}
                   alt={j.nom}
-                  className="w-full h-32 object-contain mt-2 mb-2"
+                  className="w-full h-40 object-contain mt-2 mb-2 rounded"
                 />
               )
             )}
-            {j.regle_youtube && <p><a href={j.regle_youtube} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Voir les règles</a></p>}
+
+            {/* Informations texte */}
+            <h2 className="text-lg font-bold">{j.nom}</h2>
+            {j.regle_youtube && (
+              <p>
+                <a
+                  href={j.regle_youtube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  Voir les règles
+                </a>
+              </p>
+            )}
             <p>Nombre de joueurs : {j.min_joueurs} à {j.max_joueurs}</p>
             <p>Type : {j.type || "?"}</p>
             <p>Durée : {j.duree || "?"} minutes</p>
             <p>Propriétaire : {j.proprietaire || "?"}</p>
-            <p>Note : {j.note || "?"} / 10</p>
-            <p>Poids : {j.poids || "?"} / 5</p>
 
             {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
-              <button onClick={() => setEditingJeu(j)} className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mt-2">Modifier</button>
+              <button
+                onClick={() => setEditingJeu(j)}
+                className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mt-2"
+              >
+                Modifier
+              </button>
             )}
           </div>
         ))}
