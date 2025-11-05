@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { XMLParser } from "https://deno.land/x/fast_xml_parser@4.3.6/mod.ts";
+import { parse } from "https://deno.land/x/xml_parser@v0.2.0/mod.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -35,16 +35,16 @@ serve(async (req) => {
     if (!res.ok) throw new Error(`Erreur API BGG (${res.status})`);
     const xmlText = await res.text();
 
-    // 🔍 Parser XML avec fast-xml-parser
-    const parser = new XMLParser();
-    const result = parser.parse(xmlText);
-
-    // Structure de réponse BGG : result.items.item.thumbnail / image
-    const item = result.items?.item;
+    // ✅ Parsing XML
+    const xml = parse(xmlText);
+    const item = xml?.children?.find((c) => c.name === "item");
     if (!item) throw new Error("Format XML inattendu");
 
-    const thumbnail = item.thumbnail || null;
-    const image = item.image || null;
+    const thumbnailNode = item.children?.find((c) => c.name === "thumbnail");
+    const imageNode = item.children?.find((c) => c.name === "image");
+
+    const thumbnail = thumbnailNode?.content || null;
+    const image = imageNode?.content || null;
 
     return new Response(JSON.stringify({ thumbnail, image }), { headers });
   } catch (err) {
