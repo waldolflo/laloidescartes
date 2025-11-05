@@ -51,7 +51,7 @@ serve(async (req) => {
       throw new Error("Impossible de trouver les images dans le XML");
     }
 
-    return new Response(JSON.stringify({thumbnail, image, rating, weight }), { headers });
+    return new Response(JSON.stringify({xmlText, thumbnail, image, rating, weight }), { headers });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { headers });
   }
