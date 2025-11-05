@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import EditPartie from "./EditPartie";
-import Inscriptions from "./Inscriptions";
 
 export default function Parties({ user, authUser }) {
   const currentUser = user || authUser; // fallback si user pas encore passé
@@ -17,7 +16,6 @@ export default function Parties({ user, authUser }) {
     lieu: "",
   });
   const [editingPartie, setEditingPartie] = useState(null);
-  const [selectedPartie, setSelectedPartie] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [userRole, setUserRole] = useState("");
@@ -94,6 +92,32 @@ export default function Parties({ user, authUser }) {
     }
 
     setParties({ upcoming, past });
+  };
+
+  // ------------------- INSCRIPTION / DÉSINSCRIPTION -------------------
+  const toggleInscription = async (partie) => {
+    const isInscrit = partie.inscrits?.some((i) => i.utilisateur_id === currentUser.id);
+
+    if (isInscrit) {
+      // Se désinscrire
+      const { error } = await supabase
+        .from("inscriptions")
+        .delete()
+        .eq("partie_id", partie.id)
+        .eq("utilisateur_id", currentUser.id);
+      if (error) return alert("Erreur de désinscription : " + error.message);
+    } else {
+      // S’inscrire
+      if ((partie.inscrits?.length || 0) >= (partie.jeux?.max_joueurs || 0)) {
+        return alert("La partie est complète !");
+      }
+      const { error } = await supabase
+        .from("inscriptions")
+        .insert([{ partie_id: partie.id, utilisateur_id: currentUser.id }]);
+      if (error) return alert("Erreur d’inscription : " + error.message);
+    }
+
+    fetchParties();
   };
 
   // ------------------- AJOUT DE PARTIE -------------------
@@ -259,67 +283,88 @@ export default function Parties({ user, authUser }) {
       {/* Parties à venir */}
       <h2 className="text-xl font-bold mb-2">Parties à venir</h2>
       <div className="grid gap-4">
-        {filterParties(parties.upcoming)?.map((p) => (
-          <div key={p.id} className="border rounded p-4 bg-white shadow flex gap-4">
-            {p.jeux?.couverture_url && (
-              <img
-                src={p.jeux.couverture_url}
-                alt={p.jeux.nom}
-                className="w-24 h-24 object-contain"
-              />
-            )}
-            <div className="flex-1">
-              <h2 className="text-lg font-bold">{p.jeux?.nom}</h2>
-              {/* <p>{p.nom}</p> */}
-              <p>Date: {formatDate(p.date_partie)} - Heure: {formatHeure(p.heure_partie)}</p>
-              {p.description && <p>{p.description}</p>}
-              {p.lieu && <p>Lieu: {p.lieu}</p>}
-              <p>Organisateur: {p.organisateur?.nom || "?"}</p>
-              <p>Joueurs inscrits: {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
+        {filterParties(parties.upcoming).map((p) => {
+          const isInscrit = p.inscrits?.some((i) => i.utilisateur_id === currentUser.id);
+          const placesRestantes = (p.jeux?.max_joueurs || 0) - (p.inscrits?.length || 0);
 
-              {p.inscrits?.length > 0 && (
-                <ul className="list-disc pl-5 mt-2">
-                  {p.inscrits.map((i) => (
-                    <li key={i.utilisateur_id}>{i.profil?.nom || i.utilisateur_id}</li>
-                  ))}
-                </ul>
+          return (
+            <div key={p.id} className="border rounded p-4 bg-white shadow flex gap-4 relative">
+              {p.jeux?.couverture_url && (
+                <img
+                  src={p.jeux.couverture_url}
+                  alt={p.jeux.nom}
+                  className="w-24 h-24 object-contain"
+                />
               )}
+              <div className="flex-1">
+                <h2 className="text-lg font-bold">{p.jeux?.nom}</h2>
+                {/* <p>{p.nom}</p> */}
+                <p>Date: {formatDate(p.date_partie)} - Heure: {formatHeure(p.heure_partie)}</p>
+                {p.description && <p>{p.description}</p>}
+                {p.lieu && <p>Lieu: {p.lieu}</p>}
+                <p>Organisateur: {p.organisateur?.nom || "?"}</p>
+                <p>Joueurs inscrits: {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
 
-              {/* Boutons Modifier / Supprimer */}
-              <div className="flex gap-2 mt-2">
-                {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
-                  <>
-                    <button
-                      onClick={() => setEditingPartie(p)}
-                      className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!window.confirm("Voulez-vous vraiment supprimer cette partie ?")) return;
-                        try {
-                          const { error } = await supabase
-                            .from("parties")
-                            .delete()
-                            .eq("id", p.id);
-                          if (error) throw error;
-                          fetchParties();
-                        } catch (err) {
-                          console.error(err);
-                          alert("Erreur lors de la suppression de la partie.");
-                        }
-                      }}
-                      className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
-                    >
-                      Supprimer
-                    </button>
-                  </>
+                {p.inscrits?.length > 0 && (
+                  <ul className="list-disc pl-5 mt-2">
+                    {p.inscrits.map((i) => (
+                      <li key={i.utilisateur_id}>{i.profil?.nom || i.utilisateur_id}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Boutons */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <button
+                    onClick={() => toggleInscription(p)}
+                    className={`px-3 py-1 rounded text-white ${
+                      isInscrit
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-green-600 hover:bg-green-700"
+                    }`}
+                  >
+                    {isInscrit ? "Se désinscrire" : "S’inscrire"}
+                  </button>
+
+                  {/* Boutons Modifier / Supprimer */}
+                  {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
+                    <>
+                      <button
+                        onClick={() => setEditingPartie(p)}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm("Voulez-vous vraiment supprimer cette partie ?")) return;
+                          try {
+                            const { error } = await supabase
+                              .from("parties")
+                              .delete()
+                              .eq("id", p.id);
+                            if (error) throw error;
+                            fetchParties();
+                          } catch (err) {
+                            console.error(err);
+                            alert("Erreur lors de la suppression de la partie.");
+                          }
+                        }}
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                      >
+                        Supprimer
+                      </button>
+                    </>
+                  )}
+                </div>
+                {/* Places restantes */}
+                {placesRestantes <= 0 && !isInscrit && (
+                  <p className="text-red-600 text-sm mt-1">Partie complète</p>
                 )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Parties passées */}
@@ -361,15 +406,6 @@ export default function Parties({ user, authUser }) {
           partie={editingPartie}
           onClose={() => setEditingPartie(null)}
           onUpdate={fetchParties}
-        />
-      )}
-
-      {/* INSCRIPTIONS */}
-      {selectedPartie && (
-        <Inscriptions
-          user={currentUser}
-          parties={parties.upcoming}
-          updateInscritsCount={() => fetchParties()}
         />
       )}
     </div>
