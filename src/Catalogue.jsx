@@ -19,6 +19,8 @@ export default function Catalogue({ user }) {
   const [editingJeu, setEditingJeu] = useState(null);
   const [addingJeu, setAddingJeu] = useState(false);
   const [userRole, setUserRole] = useState("");
+  const [poids, setPoids] = useState("");
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -46,8 +48,8 @@ export default function Catalogue({ user }) {
     else setJeux(data || []);
   };
 
-  const fetchCover = async (bggId) => {
-    if (!bggId) return null;
+  const fetchBGGData = async (bggId) => {
+    if (!bggId) return { couverture_url: null, poids: null, note: null };
     try {
       const res = await fetch(
         "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/fetch-bgg-cover",
@@ -61,10 +63,14 @@ export default function Catalogue({ user }) {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      return data.image || data.thumbnail || null;
+      return {
+      couverture_url: data.image || data.thumbnail || null,
+      poids: data.weight || null,  // Assure-toi que ton endpoint renvoie weight
+      note: data.rating || null     // Assure-toi que ton endpoint renvoie rating
+      };
     } catch (err) {
-      console.error("Erreur fetchCover :", err);
-      return null;
+      console.error("Erreur fetchBGGData :", err);
+      return { couverture_url: null, poids: null, note: null };
     }
   };
 
@@ -88,6 +94,8 @@ export default function Catalogue({ user }) {
         utilisateur_id: user.id,
         bgg_api: bggId,
         couverture_url: null,
+        poids: null, // initialement null
+        note: null, // initialement null
       }])
       .select("*");
 
@@ -99,16 +107,17 @@ export default function Catalogue({ user }) {
     if (!data || !data[0]) return;
     let newJeu = data[0];
 
-    const coverUrl = await fetchCover(bggId);
+    // 2️⃣ Récupération des données depuis BGG
+    const bggData = await fetchBGGData(bggId);
 
     const { data: updatedData, error: updateError } = await supabase
       .from("jeux")
-      .update({ couverture_url: coverUrl })
+      .update({ couverture_url: bggData.couverture_url, note: bggData.note, poids: bggData.poids })
       .eq("id", newJeu.id)
       .select("*");
 
     if (updateError) console.error("Erreur update couverture :", updateError);
-    newJeu = { ...newJeu, couverture_url: coverUrl };
+    newJeu = { ...newJeu, ...bggData };
 
     setJeux(prev => [newJeu, ...prev]);
     setAddingJeu(false);
@@ -216,6 +225,8 @@ export default function Catalogue({ user }) {
             <p>Type : {j.type || "?"}</p>
             <p>Durée : {j.duree || "?"} minutes</p>
             <p>Propriétaire : {j.proprietaire || "?"}</p>
+            <p>Note : {j.note || "?"} / 10</p>
+            <p>Poids : {j.poids || "?"} / 5</p>
 
             {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
               <button onClick={() => setEditingJeu(j)} className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mt-2">Modifier</button>

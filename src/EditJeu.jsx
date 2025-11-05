@@ -25,8 +25,8 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
   };
 
   // Fonction pour récupérer couverture depuis BGG
-  const fetchCover = async (bggId) => {
-    if (!bggId) return null;
+  const fetchBGGData = async (bggId) => {
+    if (!bggId) return { couverture_url: null, poids: null, note: null };
     try {
       const res = await fetch(
         "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/fetch-bgg-cover",
@@ -40,23 +40,30 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      return data.image || data.thumbnail || null;
+      return {
+      couverture_url: data.image || data.thumbnail || null,
+      poids: data.weight || null,  // Assure-toi que ton endpoint renvoie weight
+      note: data.rating || null     // Assure-toi que ton endpoint renvoie rating
+      };
     } catch (err) {
-      console.error("Erreur fetchCover :", err);
-      return null;
+      console.error("Erreur fetchBGGData :", err);
+      return { couverture_url: null, poids: null, note: null };
     }
   };
   
   const saveEdit = async () => {
     try {
       let couverture_url = jeu.couverture_url;
+      let poids = jeu.poids;
+      let note = jeu.note;
 
       // Si bgg_api a changé, récupérer nouvelle couverture
-      //if (form.bgg_api && form.bgg_api !== jeu.bgg_api) {
-      //  couverture_url = await fetchCover(form.bgg_api);
-      //}
-      // Mise à jour à chaque modification de la couverture
-      couverture_url = await fetchCover(form.bgg_api);
+      if (form.bgg_api && form.bgg_api !== jeu.bgg_api) {
+        const bggData = await fetchBGGData(form.bgg_api);
+        couverture_url = bggData.couverture_url;
+        poids = bggData.poids;
+        note = bggData.note;
+      }
 
       const { data, error } = await supabase
         .from("jeux")
@@ -69,7 +76,9 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
           duree: form.duree,
           proprietaire: form.proprietaire,
           bgg_api: form.bgg_api,
-          couverture_url, // Mise à jour de la couverture si nécessaire
+          couverture_url,
+          poids,
+          note
         })
         .eq("id", jeu.id)
         .select("*");
