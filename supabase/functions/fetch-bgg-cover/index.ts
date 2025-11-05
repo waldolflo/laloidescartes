@@ -1,10 +1,20 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-// Fonction de parsing XML simple (regex)
+// Fonction de parsing XML simple (regex) pour les balises ou attributs "value"
 function extractTagValue(xml: string, tag: string, parentTag?: string): string | null {
-  const pattern = parentTag
-    ? new RegExp(`<${parentTag}[^>]*>[\\s\\S]*?<${tag}[^>]*value=["'](.*?)["'][\\s\\S]*?</${parentTag}>`, "i")
-    : new RegExp(`<${tag}[^>]*value=["'](.*?)["']`, "i");
+  let pattern: RegExp;
+
+  if (parentTag) {
+    // Cherche une balise auto-fermante avec attribut value dans le parent
+    pattern = new RegExp(
+      `<${parentTag}[^>]*>[\\s\\S]*?<${tag}[^>]*value=["'](.*?)["'][\\s\\S]*?</${parentTag}>`,
+      "i"
+    );
+  } else {
+    // Cherche une balise auto-fermante avec attribut value
+    pattern = new RegExp(`<${tag}[^>]*value=["'](.*?)["']`, "i");
+  }
+
   const match = xml.match(pattern);
   return match ? match[1] : null;
 }
@@ -35,9 +45,7 @@ serve(async (req) => {
     const BGG_API_TOKEN = Deno.env.get("BGG_API_TOKEN");
 
     const res = await fetch(`https://api.geekdo.com/xmlapi2/thing?id=${id}&stats=1`, {
-      headers: BGG_API_TOKEN
-        ? { Authorization: `Bearer ${BGG_API_TOKEN}` }
-        : {},
+      headers: BGG_API_TOKEN ? { Authorization: `Bearer ${BGG_API_TOKEN}` } : {},
     });
 
     if (!res.ok) throw new Error(`Erreur API BGG (${res.status})`);
@@ -47,9 +55,12 @@ serve(async (req) => {
     const thumbnail = extractTagValue(xmlText, "thumbnail");
     const image = extractTagValue(xmlText, "image");
 
-    // Extraction des stats dans <ratings>
-    const rating = parseFloat(extractTagValue(xmlText, "average", "ratings") || "0");
-    const weight = parseFloat(extractTagValue(xmlText, "averageweight", "ratings") || "0");
+    // Extraction des stats dans <ratings> (valeurs dans l'attribut value)
+    const averageStr = extractTagValue(xmlText, "average", "ratings") || "0";
+    const weightStr = extractTagValue(xmlText, "averageweight", "ratings") || "0";
+
+    const rating = parseFloat(averageStr);
+    const weight = parseFloat(weightStr);
 
     if (!thumbnail || !image) {
       throw new Error("Impossible de trouver les images dans le XML");
