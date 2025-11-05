@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import EditJeu from "./EditJeu";
+import CreatePartieModal from "./CreatePartieModal";
 
 export default function Catalogue({ user }) {
   const [jeux, setJeux] = useState([]);
