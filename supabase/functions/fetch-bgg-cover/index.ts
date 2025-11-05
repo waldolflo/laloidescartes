@@ -47,7 +47,7 @@ serve(async (req) => {
     const rating = extractTagValue(xmlText, "average"); // Note moyenne
     const weight = extractTagValue(xmlText, "weightaverage"); // Poids du jeu
 
-    return new Response(JSON.stringify({ thumbnail, image, rating, weight }), { headers });
+    return new Response(JSON.stringify({ xmlText, thumbnail, image, rating, weight }), { headers });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { headers });
   }
