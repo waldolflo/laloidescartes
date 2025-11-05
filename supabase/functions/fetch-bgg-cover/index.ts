@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // Fonction de parsing XML simple (regex)
 function extractTagValue(xml: string, tag: string): string | null {
-  const match = xml.match(new RegExp(`<${tag}>(.*?)</${tag}>`, "i"));
+  const match = xml.match(new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "i"));
   return match ? match[1] : null;
 }
 
@@ -32,7 +32,7 @@ serve(async (req) => {
     const BGG_API_TOKEN = Deno.env.get("BGG_API_TOKEN");
     if (!BGG_API_TOKEN) throw new Error("Token BGG manquant dans les variables d'environnement");
 
-    const res = await fetch(`https://api.geekdo.com/xmlapi2/thing?id=${id}`, {
+    const res = await fetch(`https://api.geekdo.com/xmlapi2/thing?id=${id}&stats=1`, {
       headers: {
         Authorization: `Bearer ${BGG_API_TOKEN}`,
       },
@@ -44,10 +44,14 @@ serve(async (req) => {
     // Extraction manuelle
     const thumbnail = extractTagValue(xmlText, "thumbnail");
     const image = extractTagValue(xmlText, "image");
-    const rating = extractTagValue(xmlText, "average"); // Note moyenne
-    const weight = extractTagValue(xmlText, "weightaverage"); // Poids du jeu
+    const rating = parseFloat(extractTagValue(xmlText, "average") || "0");
+    const weight = parseFloat(extractTagValue(xmlText, "weightaverage") || "0");
 
-    return new Response(JSON.stringify({ xmlText, thumbnail, image, rating, weight }), { headers });
+    if (!thumbnail || !image) {
+      throw new Error("Impossible de trouver les images dans le XML");
+    }
+
+    return new Response(JSON.stringify({thumbnail, image, rating, weight }), { headers });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { headers });
   }
