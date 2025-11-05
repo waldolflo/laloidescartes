@@ -1,8 +1,15 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // Fonction de parsing XML simple (regex)
-function extractTagValue(xml: string, tag: string): string | null {
-  const match = xml.match(new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "i"));
+function extractTagValue(xml: string, tag: string, parentTag?: string): string | null {
+  let pattern: RegExp;
+  if (parentTag) {
+    // Cherche la balise dans le parent
+    pattern = new RegExp(`<${parentTag}[^>]*>[\\s\\S]*?<${tag}[^>]*>(.*?)</${tag}>[\\s\\S]*?</${parentTag}>`, "i");
+  } else {
+    pattern = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "i");
+  }
+  const match = xml.match(pattern);
   return match ? match[1] : null;
 }
 
@@ -30,24 +37,23 @@ serve(async (req) => {
     if (!id) throw new Error("ID BGG manquant");
 
     const BGG_API_TOKEN = Deno.env.get("BGG_API_TOKEN");
-    if (!BGG_API_TOKEN) throw new Error("Token BGG manquant dans les variables d'environnement");
 
     const res = await fetch(`https://api.geekdo.com/xmlapi2/thing?id=${id}&stats=1`, {
-      headers: {
-        Authorization: `Bearer ${BGG_API_TOKEN}`,
-      },
+      headers: BGG_API_TOKEN
+        ? { Authorization: `Bearer ${BGG_API_TOKEN}` }
+        : {},
     });
 
     if (!res.ok) throw new Error(`Erreur API BGG (${res.status})`);
     const xmlText = await res.text();
 
-    // Extraction manuelle
+    // Extraction des images
     const thumbnail = extractTagValue(xmlText, "thumbnail");
     const image = extractTagValue(xmlText, "image");
 
-    // Les balises pour les stats sont imbriquées
-    const averageStr = extractTagValue(xmlText, "average.value") || "0";
-    const weightStr = extractTagValue(xmlText, "averageweight.value") || "0";
+    // Extraction des stats dans <ratings>
+    const averageStr = extractTagValue(xmlText, "average", "ratings") || "0";
+    const weightStr = extractTagValue(xmlText, "averageweight", "ratings") || "0";
 
     const rating = isNaN(parseFloat(averageStr)) ? 0 : parseFloat(averageStr);
     const weight = isNaN(parseFloat(weightStr)) ? 0 : parseFloat(weightStr);
@@ -56,7 +62,7 @@ serve(async (req) => {
       throw new Error("Impossible de trouver les images dans le XML");
     }
 
-    return new Response(JSON.stringify({xmlText, thumbnail, image, rating, averageStr, weight, weightStr}), { headers });
+    return new Response(JSON.stringify({ xmlText, thumbnail, image, rating, weight }), { headers });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { headers });
   }
