@@ -46,8 +46,8 @@ serve(async (req) => {
     const image = extractTagValue(xmlText, "image");
 
     // Les balises pour les stats sont imbriquées
-    const averageStr = extractTagValue(xmlText, "average") || "0";
-    const weightStr = extractTagValue(xmlText, "averageweight") || "0";
+    const averageStr = extractTagValue(xmlText, "average.value") || "0";
+    const weightStr = extractTagValue(xmlText, "averageweight.value") || "0";
 
     const rating = isNaN(parseFloat(averageStr)) ? 0 : parseFloat(averageStr);
     const weight = isNaN(parseFloat(weightStr)) ? 0 : parseFloat(weightStr);
@@ -56,7 +56,7 @@ serve(async (req) => {
       throw new Error("Impossible de trouver les images dans le XML");
     }
 
-    return new Response(JSON.stringify({xmlText, thumbnail, image, rating, weight }), { headers });
+    return new Response(JSON.stringify({xmlText, thumbnail, image, rating, averageStr, weight, weightStr}), { headers });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { headers });
   }
