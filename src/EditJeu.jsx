@@ -62,6 +62,11 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
       if (form.bgg_api && form.bgg_api !== jeu.bgg_api) {
         const bggData = await fetchBGGData(form.bgg_api);
         couverture_url = bggData.couverture_url;
+      }
+
+      // Récupérer nouvelle couverture dans tous les cas pour mise à jour
+      if (form.bgg_api) {
+        const bggData = await fetchBGGData(form.bgg_api);
         poids = bggData.poids;
         note = bggData.note;
       }
