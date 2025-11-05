@@ -84,6 +84,30 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     }
   };
 
+  const [loadingUpdate, setLoadingUpdate] = useState(false);
+
+  const handleUpdateGames = async () => {
+    if (!window.confirm("⚠️ Voulez-vous vraiment mettre à jour tous les jeux depuis BGG ?")) return;
+
+    setLoadingUpdate(true);
+    try {
+      const res = await fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/update_all_jeux_bgg", {
+        method: "POST",
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+      alert(`✅ Mise à jour terminée ! Jeux modifiés: ${data.jeux_modifies}`);
+      console.log("Détails :", data.details);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Une erreur est survenue lors de la mise à jour des jeux");
+    } finally {
+      setLoadingUpdate(false);
+    }
+  };
+
   const updateFavoris = async (champ, valeur) => {
     if (!profil) return;
 
@@ -308,6 +332,19 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             <li>Admin : Ludoplus + peut gérer les rôles des Utilisateurs</li>
           </ul>
           <p>Tous les utilisateurs peuvent par défaut : modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque et modifier/supprimer les parties qu'ils organisent.</p>
+        </div>
+      )}
+
+      {/* Mettre à jour les jeux */}
+      {profil.role === "admin" && (
+        <div className="mt-10 border-t pt-6">
+          <button 
+            onClick={handleUpdateGames} 
+            className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            disabled={loadingUpdate}
+          >
+            {loadingUpdate ? "Mise à jour en cours..." : "Mettre à jour les jeux"}
+          </button>
         </div>
       )}
 
