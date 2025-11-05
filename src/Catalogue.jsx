@@ -49,12 +49,19 @@ export default function Catalogue({ user }) {
   const fetchCover = async (bggId) => {
     if (!bggId) return null;
     try {
-      const res = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${bggId}`);
-      const text = await res.text();
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(text, "text/xml");
-      const thumbnail = xml.querySelector("thumbnail");
-      return thumbnail?.textContent || null;
+      const res = await fetch(
+        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/fetch-bgg-cover",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: bggId }),
+        }
+      );
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      return data.image || data.thumbnail || null;
     } catch (err) {
       console.error("Erreur fetchCover :", err);
       return null;
