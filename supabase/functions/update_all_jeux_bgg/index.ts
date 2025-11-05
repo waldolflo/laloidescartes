@@ -66,7 +66,10 @@ function extractTagValue(xml: string, tag: string, parentTag?: string): string |
 
 // Récupère note et poids depuis BGG
 async function fetchBGGData(bggId: string | number) {
-const res = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${bggId}&stats=1`);
+const BGG_API_TOKEN = Deno.env.get("BGG_API_TOKEN");
+const res = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${bggId}&stats=1`, {
+  headers: BGG_API_TOKEN ? { Authorization: `Bearer ${BGG_API_TOKEN}` } : {},
+});
 if (!res.ok) throw new Error(`Erreur BGG ${res.status}`);
 const xml = await res.text();
 
