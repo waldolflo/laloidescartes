@@ -16,6 +16,7 @@ import Parties from "./Parties";
 import Inscriptions from "./Inscriptions";
 import Profils from "./Profils";
 import Auth from "./Auth";
+import FooterBGG from "./FooterBGG"; // <-- importe ton FooterBGG
 import { BookOpen, CalendarDays, Users, User, LogOut } from "lucide-react";
 
 // --- Navbar responsive ---
@@ -203,6 +204,7 @@ export default function App() {
           />
         </div>
         <GDPRBanner />
+        <FooterBGG />
       </div>
     </Router>
   );

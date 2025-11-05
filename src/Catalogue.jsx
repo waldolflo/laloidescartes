@@ -190,7 +190,27 @@ export default function Catalogue({ user }) {
                 </span>
               )}
             <h2 className="text-lg font-bold">{j.nom}</h2>
-            {j.couverture_url && <img src={j.couverture_url} alt={j.nom} className="w-full h-32 object-contain mt-2 mb-2" />}
+            {j.couverture_url && (
+              j.bgg_api ? (
+                <a
+                  href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    src={j.couverture_url}
+                    alt={j.nom}
+                    className="w-full h-32 object-contain mt-2 mb-2 cursor-pointer"
+                  />
+                </a>
+              ) : (
+                <img
+                  src={j.couverture_url}
+                  alt={j.nom}
+                  className="w-full h-32 object-contain mt-2 mb-2"
+                />
+              )
+            )}
             {j.regle_youtube && <p><a href={j.regle_youtube} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Voir les règles</a></p>}
             <p>Nombre de joueurs : {j.min_joueurs} à {j.max_joueurs}</p>
             <p>Type : {j.type || "?"}</p>
