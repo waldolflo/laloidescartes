@@ -97,8 +97,8 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-      <div className="bg-white p-6 rounded shadow-md w-96">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded shadow-md w-96 z-60">
         <h2 className="text-xl font-bold mb-4">Modifier le jeu</h2>
 
         {errorMsg && <p className="text-red-600 mb-2">{errorMsg}</p>}

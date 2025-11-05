@@ -19,8 +19,7 @@ export default function Catalogue({ user }) {
   const [editingJeu, setEditingJeu] = useState(null);
   const [addingJeu, setAddingJeu] = useState(false);
   const [userRole, setUserRole] = useState("");
-  const [poids, setPoids] = useState("");
-  const [note, setNote] = useState("");
+  const [selectedJeu, setSelectedJeu] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -256,15 +255,24 @@ export default function Catalogue({ user }) {
             <p>Type : {j.type || "?"}</p>
             <p>Durée : {j.duree || "?"} minutes</p>
             <p>Propriétaire : {j.proprietaire || "?"}</p>
-
-            {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
-              <button
-                onClick={() => setEditingJeu(j)}
-                className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mt-2"
-              >
-                Modifier
-              </button>
-            )}
+            <div className="flex flex-wrap gap-2 mt-3">
+              {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
+                <button
+                  onClick={() => setEditingJeu(j)}
+                  className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                >
+                  Modifier
+                </button>
+              )}
+              {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo" || userRole === "membre") && (
+                <button
+                  onClick={() => setSelectedJeu(j)}
+                  className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                >
+                  Créer partie
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -303,6 +311,19 @@ export default function Catalogue({ user }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modale création partie */}
+      {selectedJeu && (
+        <CreatePartieModal
+          user={user}
+          jeu={selectedJeu}
+          onClose={() => setSelectedJeu(null)}
+          onCreated={() => {
+            setSelectedJeu(null);
+            alert("Partie créée !");
+          }}
+        />
       )}
     </div>
   );
