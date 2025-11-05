@@ -38,12 +38,13 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
       );
 
       const data = await res.json();
+      console.log(data)
       if (data.error) throw new Error(data.error);
 
       return {
-      couverture_url: data.image || data.thumbnail || null,
-      poids: data.weight || null,  // Assure-toi que ton endpoint renvoie weight
-      note: data.rating || null     // Assure-toi que ton endpoint renvoie rating
+        couverture_url: data.image || data.thumbnail || null,
+        poids: data.weight ? parseFloat(data.weight) : null,
+        note: data.rating ? parseFloat(data.rating) : null
       };
     } catch (err) {
       console.error("Erreur fetchBGGData :", err);
