@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import EditPartie from "./EditPartie";
+import RankModal from "./RankModal";
 
 export default function Parties({ user, authUser }) {
   const currentUser = user || authUser; // fallback si user pas encore passé
@@ -20,6 +21,7 @@ export default function Parties({ user, authUser }) {
   const [showModal, setShowModal] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedPartieForRank, setSelectedPartieForRank] = useState(null);
 
   // ------------------- PROTECTION SI PAS D'UTILISATEUR -------------------
   if (!currentUser) return <p>Chargement de l’utilisateur…</p>;
@@ -71,7 +73,7 @@ export default function Parties({ user, authUser }) {
       // Récupérer les inscrits pour cette partie
       const { data: insData } = await supabase
         .from("inscriptions")
-        .select("utilisateur_id")
+        .select("utilisateur_id, rank")
         .eq("partie_id", p.id);
 
       const userIds = (insData || []).map((i) => i.utilisateur_id);
@@ -373,7 +375,10 @@ export default function Parties({ user, authUser }) {
           <h2 className="text-xl font-bold mt-6 mb-2">Archives de parties</h2>
           <div className="grid gap-4">
             {filterParties(parties.past).map((p) => (
-              <div key={p.id} className="border rounded p-4 bg-gray-100 shadow flex gap-4">
+              <div
+                key={p.id}
+                className="border rounded p-4 bg-gray-100 shadow flex flex-col md:flex-row gap-4"
+              >
                 {p.jeux?.couverture_url && (
                   <img
                     src={p.jeux.couverture_url}
@@ -383,15 +388,70 @@ export default function Parties({ user, authUser }) {
                 )}
                 <div className="flex-1">
                   <h2 className="text-lg font-bold">{p.jeux?.nom}</h2>
-                  <p>Date: {formatDate(p.date_partie)} - Heure: {formatHeure(p.heure_partie)}</p>
-                  <p>Organisateur: {p.organisateur?.nom || "?"}</p>
-                  {p.lieu && <p>Lieu: {p.lieu}</p>}
+                  <p>
+                    Date : {formatDate(p.date_partie)} — Heure :{" "}
+                    {formatHeure(p.heure_partie)}
+                  </p>
+                  <p>Organisateur : {p.organisateur?.nom || "?"}</p>
+                  {p.lieu && <p>Lieu : {p.lieu}</p>}
+
+                  {/* Liste des joueurs */}
                   {p.inscrits?.length > 0 && (
-                    <ul className="list-disc pl-5 mt-2">
-                      {p.inscrits.map((i) => (
-                        <li key={i.utilisateur_id}>{i.profil?.nom || i.utilisateur_id}</li>
-                      ))}
-                    </ul>
+                    <div className="mt-3">
+                      <h3 className="font-semibold text-sm mb-1">Classement :</h3>
+                      <ul className="flex flex-col gap-1">
+                        {p.inscrits
+                          .sort((a, b) => (a.rank || 99) - (b.rank || 99))
+                          .map((i) => {
+                            const rank = i.rank;
+                            const score = i.score;
+                            const nom = i.profil?.nom || "Joueur inconnu";
+
+                            let bgColor = "bg-white";
+                            let emoji = "";
+                            if (rank === 1) {
+                              bgColor = "bg-yellow-100";
+                              emoji = "🥇";
+                            } else if (rank === 2) {
+                              bgColor = "bg-gray-200";
+                              emoji = "🥈";
+                            } else if (rank === 3) {
+                              bgColor = "bg-orange-200";
+                              emoji = "🥉";
+                            }
+
+                            return (
+                              <li
+                                key={i.utilisateur_id}
+                                className={`flex justify-between items-center rounded px-3 py-1 border ${bgColor}`}
+                              >
+                                <span className="font-medium flex items-center gap-2">
+                                  {emoji && <span>{emoji}</span>}
+                                  {nom}
+                                </span>
+                                <div className="text-sm text-gray-700 flex items-center gap-3">
+                                  {score !== null && score !== undefined && (
+                                    <span>Score : {score}</span>
+                                  )}
+                                  {rank && <span>Rang : {rank}</span>}
+                                </div>
+                              </li>
+                            );
+                          })}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Bouton attribuer les rangs (admin ou organisateur) */}
+                  {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setSelectedPartieForRank(p)} // Ou ouvrir RankModal
+                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+                      >
+                        Gérer les classements 🏆
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -406,6 +466,14 @@ export default function Parties({ user, authUser }) {
           partie={editingPartie}
           onClose={() => setEditingPartie(null)}
           onUpdate={fetchParties}
+        />
+      )}
+      {/* MODAL RANKING */}
+      {selectedPartieForRank && (
+        <RankModal
+          partie={selectedPartieForRank}
+          onClose={() => setSelectedPartieForRank(null)}
+          fetchParties={fetchParties}
         />
       )}
     </div>
