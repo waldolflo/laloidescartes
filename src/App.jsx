@@ -14,6 +14,7 @@ import { supabase } from "./supabaseClient";
 import Catalogue from "./Catalogue";
 import Parties from "./Parties";
 import Inscriptions from "./Inscriptions";
+import Statistiques from "./Statistiques";
 import Profils from "./Profils";
 import Auth from "./Auth";
 import FooterBGG from "./FooterBGG"; // <-- importe ton FooterBGG
@@ -27,6 +28,7 @@ function Navbar({ currentUser, onLogout }) {
     { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
     //{ to: "/inscriptions", label: "Inscriptions", icon: Users },
+    { to: "/statistiques", label: "Statistiques", icon: Users },
     { to: "/profils", label: "Profil", icon: User },
   ];
 
@@ -120,6 +122,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
               <Route path="/" element={<Catalogue user={currentUser} />} />
               <Route path="/parties" element={<Parties user={currentUser} authUser={authUser} />} />
               <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
+              <Route path="/statistiques" element={<Statistiques user={currentUser} authUser={authUser} />} />
               <Route
                 path="/profils"
                 element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} setAuthUser={setAuthUser} setUser={setUser} />}
