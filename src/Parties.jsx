@@ -284,84 +284,87 @@ export default function Parties({ user, authUser }) {
 
       {/* Parties à venir */}
       <h2 className="text-xl font-bold mb-2">Parties à venir</h2>
-      <div className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filterParties(parties.upcoming).map((p) => {
           const isInscrit = p.inscrits?.some((i) => i.utilisateur_id === currentUser.id);
           const placesRestantes = (p.jeux?.max_joueurs || 0) - (p.inscrits?.length || 0);
 
           return (
-            <div key={p.id} className="border rounded p-4 bg-white shadow flex gap-4 relative">
+            <div
+              key={p.id}
+              className="border rounded p-4 bg-white shadow flex flex-col hover:shadow-lg transition"
+            >
               {p.jeux?.couverture_url && (
                 <img
                   src={p.jeux.couverture_url}
                   alt={p.jeux.nom}
-                  className="w-24 h-24 object-contain"
+                  className="w-full h-40 object-contain mb-2"
                 />
               )}
-              <div className="flex-1">
-                <h2 className="text-lg font-bold">{p.jeux?.nom}</h2>
-                {/* <p>{p.nom}</p> */}
-                <p>Date: {formatDate(p.date_partie)} - Heure: {formatHeure(p.heure_partie)}</p>
-                {p.description && <p>{p.description}</p>}
-                {p.lieu && <p>Lieu: {p.lieu}</p>}
-                <p>Organisateur: {p.organisateur?.nom || "?"}</p>
-                <p>Joueurs inscrits: {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
 
-                {p.inscrits?.length > 0 && (
-                  <ul className="list-disc pl-5 mt-2">
-                    {p.inscrits.map((i) => (
-                      <li key={i.utilisateur_id}>{i.profil?.nom || i.utilisateur_id}</li>
-                    ))}
-                  </ul>
+              <h2 className="text-lg font-bold text-center">{p.jeux?.nom}</h2>
+              <p className="text-sm text-gray-600 text-center">
+                {formatDate(p.date_partie)} — {formatHeure(p.heure_partie)}
+              </p>
+              {p.description && <p className="text-sm text-gray-600 text-center">{p.description}</p>}
+              {p.lieu && <p className="text-sm text-gray-600 text-center">{p.lieu}</p>}
+              <p className="text-sm text-gray-700 text-center">
+                Organisateur : {p.organisateur?.nom || "?"}
+              </p>
+              <p className="text-sm text-gray-700 text-center">Joueurs inscrits: {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
+
+              {p.inscrits?.length > 0 && (
+                <ul className="list-disc pl-4 mt-2 text-sm text-gray-800">
+                  {p.inscrits.map((i) => (
+                    <li key={i.utilisateur_id}>{i.profil?.nom || i.utilisateur_id}</li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-auto flex flex-col gap-2 items-center">
+                <button
+                  onClick={() => toggleInscription(p)}
+                  className={`w-full px-3 py-1 rounded text-white text-sm ${
+                    isInscrit
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
+                >
+                  {isInscrit ? "Se désinscrire" : "S’inscrire"}
+                </button>
+
+                {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
+                  <div className="flex gap-2 w-full">
+                    <button
+                      onClick={() => setEditingPartie(p)}
+                      className="flex-1 bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 text-sm"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm("Voulez-vous vraiment supprimer cette partie ?")) return;
+                        try {
+                          const { error } = await supabase
+                            .from("parties")
+                            .delete()
+                            .eq("id", p.id);
+                          if (error) throw error;
+                          fetchParties();
+                        } catch (err) {
+                          console.error(err);
+                          alert("Erreur lors de la suppression de la partie.");
+                        }
+                      }}
+                      className="flex-1 bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 text-sm"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 )}
 
-                {/* Boutons */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <button
-                    onClick={() => toggleInscription(p)}
-                    className={`px-3 py-1 rounded text-white ${
-                      isInscrit
-                        ? "bg-red-600 hover:bg-red-700"
-                        : "bg-green-600 hover:bg-green-700"
-                    }`}
-                  >
-                    {isInscrit ? "Se désinscrire" : "S’inscrire"}
-                  </button>
-
-                  {/* Boutons Modifier / Supprimer */}
-                  {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
-                    <>
-                      <button
-                        onClick={() => setEditingPartie(p)}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!window.confirm("Voulez-vous vraiment supprimer cette partie ?")) return;
-                          try {
-                            const { error } = await supabase
-                              .from("parties")
-                              .delete()
-                              .eq("id", p.id);
-                            if (error) throw error;
-                            fetchParties();
-                          } catch (err) {
-                            console.error(err);
-                            alert("Erreur lors de la suppression de la partie.");
-                          }
-                        }}
-                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                      >
-                        Supprimer
-                      </button>
-                    </>
-                  )}
-                </div>
-                {/* Places restantes */}
                 {placesRestantes <= 0 && !isInscrit && (
-                  <p className="text-red-600 text-sm mt-1">Partie complète</p>
+                  <p className="text-red-600 text-xs mt-1">Partie complète</p>
                 )}
               </div>
             </div>
@@ -373,32 +376,31 @@ export default function Parties({ user, authUser }) {
       {parties.past?.length > 0 && (
         <>
           <h2 className="text-xl font-bold mt-6 mb-2">Archives de parties</h2>
-          <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filterParties(parties.past).map((p) => (
               <div
                 key={p.id}
-                className="border rounded p-4 bg-gray-100 shadow flex flex-col md:flex-row gap-4"
+                className="border rounded p-4 bg-gray-100 shadow flex flex-col gap-4 hover:shadow-lg transition"
               >
                 {p.jeux?.couverture_url && (
                   <img
                     src={p.jeux.couverture_url}
                     alt={p.jeux.nom}
-                    className="w-24 h-24 object-contain"
+                    className="w-full h-40 object-contain"
                   />
                 )}
-                <div className="flex-1">
-                  <h2 className="text-lg font-bold">{p.jeux?.nom}</h2>
-                  <p>
-                    Date : {formatDate(p.date_partie)} — Heure :{" "}
-                    {formatHeure(p.heure_partie)}
+                <div className="flex-1 flex flex-col justify-between">
+                  <h2 className="text-lg font-bold text-center">{p.jeux?.nom}</h2>
+                  <p className="text-sm text-gray-600 text-center">
+                    {formatDate(p.date_partie)} — {formatHeure(p.heure_partie)}
                   </p>
-                  <p>Organisateur : {p.organisateur?.nom || "?"}</p>
-                  {p.lieu && <p>Lieu : {p.lieu}</p>}
+                  <p className="text-sm text-gray-700 text-center">
+                    {p.organisateur?.nom || "?"} — {p.lieu || "?"}
+                  </p>
 
-                  {/* Liste des joueurs */}
                   {p.inscrits?.length > 0 && (
-                    <div className="mt-3">
-                      <h3 className="font-semibold text-sm mb-1">Classement :</h3>
+                    <div className="mt-2">
+                      <h3 className="font-semibold text-sm mb-1 text-center">Classement :</h3>
                       <ul className="flex flex-col gap-1">
                         {p.inscrits
                           .sort((a, b) => (a.rank || 99) - (b.rank || 99))
@@ -429,9 +431,9 @@ export default function Parties({ user, authUser }) {
                                   {emoji && <span>{emoji}</span>}
                                   {nom}
                                 </span>
-                                <div className="text-sm text-gray-700 flex items-center gap-3">
+                                <div className="text-sm text-gray-700 flex items-center gap-2">
                                   {score !== null && score !== undefined && (
-                                    <span>Score : {score}</span>
+                                    <span>{score}</span>
                                   )}
                                   {rank && <span>Rang : {rank}</span>}
                                 </div>
@@ -441,12 +443,11 @@ export default function Parties({ user, authUser }) {
                       </ul>
                     </div>
                   )}
-
                   {/* Bouton attribuer les rangs (admin ou organisateur) */}
                   {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
-                    <div className="mt-4">
+                    <div className="mt-3 text-center">
                       <button
-                        onClick={() => setSelectedPartieForRank(p)} // Ou ouvrir RankModal
+                        onClick={() => setSelectedPartieForRank(p)}
                         className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
                       >
                         Gérer les classements 🏆
