@@ -73,7 +73,7 @@ export default function Parties({ user, authUser }) {
       // Récupérer les inscrits pour cette partie
       const { data: insData } = await supabase
         .from("inscriptions")
-        .select("utilisateur_id, rank")
+        .select("utilisateur_id, rank, score")
         .eq("partie_id", p.id);
 
       const userIds = (insData || []).map((i) => i.utilisateur_id);
