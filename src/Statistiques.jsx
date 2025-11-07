@@ -9,73 +9,90 @@ const [generalRanking, setGeneralRanking] = useState([]);
 
 useEffect(() => {
 async function fetchStats() {
-const { data: parties, error: partiesError } = await supabase.from("parties").select("id, jeu_id, utilisateur_id, date_partie, heure_partie");
+const { data: parties, error: partiesError } = await supabase
+.from("parties")
+.select("id, jeu_id, date_partie");
 
 if (partiesError) return console.error(partiesError);
 
-  const { data: jeux, error: jeuxError } = await supabase.from("jeux").select("id, nom");  
-  if (jeuxError) return console.error(jeuxError);  
+const { data: jeux, error: jeuxError } = await supabase
+  .from("jeux")
+  .select("id, nom");
+if (jeuxError) return console.error(jeuxError);
 
-  const { data: users, error: userError } = await supabase.from("profils").select("id, nom");  
-  if (userError) return console.error(userError);  
+const { data: users, error: userError } = await supabase
+  .from("profils")
+  .select("id, nom");
+if (userError) return console.error(userError);
 
-  const { data: inscriptions, error: inscriptionsError } = await supabase.from("inscriptions").select("partie_id, utilisateur_id, rank");  
-  if (inscriptionsError) return console.error(inscriptionsError);  
+const { data: inscriptions, error: inscriptionsError } = await supabase
+  .from("inscriptions")
+  .select("partie_id, utilisateur_id, rank");
+if (inscriptionsError) return console.error(inscriptionsError);
 
-  const now = new Date();  
-  const currentMonth = now.getMonth() + 1;  
-  const currentYear = now.getFullYear();  
+const now = new Date();
+const currentMonth = now.getMonth() + 1;
+const currentYear = now.getFullYear();
 
-  const calculatePoints = (userParties) => {  
-    return userParties.reduce((acc, p) => {  
-      const ins = inscriptions.find(i => i.partie_id === p.id && i.utilisateur_id === p.utilisateur_id);  
-      if (!ins) return acc;  
-      if (ins.rank === 1) return acc + 3;  
-      if (ins.rank === 2) return acc + 2;  
-      if (ins.rank === 3) return acc + 1;  
-      return acc;  
-    }, 0);  
-  };  
+// --- Fonction pour calculer les points d'un utilisateur selon une condition ---
+const calculatePointsForUser = (userId, filterFn) => {
+  return inscriptions
+    .filter(ins => ins.utilisateur_id === userId)
+    .filter(ins => filterFn(parties.find(p => p.id === ins.partie_id)))
+    .reduce((acc, ins) => {
+      if (ins.rank === 1) return acc + 3;
+      if (ins.rank === 2) return acc + 2;
+      if (ins.rank === 3) return acc + 1;
+      return acc;
+    }, 0);
+};
 
-  // --- Statistiques mensuelles ---  
-  const statsByMonth = users.map(user => {  
-    const userParties = parties.filter(p => p.utilisateur_id === user.id && new Date(p.date_partie).getMonth() + 1 === currentMonth && new Date(p.date_partie).getFullYear() === currentYear);  
-    const points = calculatePoints(userParties);  
-    return { nom: user.nom, points };  
-  });  
+// --- Statistiques mensuelles ---
+const statsByMonth = users.map(user => {
+  const points = calculatePointsForUser(user.id, p => {
+    if (!p) return false;
+    const d = new Date(p.date_partie);
+    return d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear;
+  });
+  return { nom: user.nom, points };
+});
 
-  // --- Statistiques annuelles ---  
-  const statsByYear = users.map(user => {  
-    const userParties = parties.filter(p => p.utilisateur_id === user.id && new Date(p.date_partie).getFullYear() === currentYear);  
-    const points = calculatePoints(userParties);  
-    return { nom: user.nom, points };  
-  });  
+// --- Statistiques annuelles ---
+const statsByYear = users.map(user => {
+  const points = calculatePointsForUser(user.id, p => {
+    if (!p) return false;
+    const d = new Date(p.date_partie);
+    return d.getFullYear() === currentYear;
+  });
+  return { nom: user.nom, points };
+});
 
-  setMonthlyStats(statsByMonth.sort((a, b) => b.points - a.points));  
-  setYearlyStats(statsByYear.sort((a, b) => b.points - a.points));  
+setMonthlyStats(statsByMonth.sort((a, b) => b.points - a.points));
+setYearlyStats(statsByYear.sort((a, b) => b.points - a.points));
 
-  // --- Statistiques générales ---  
-  const totalParties = parties.length;  
-  const gameCounts = parties.reduce((acc, p) => { acc[p.jeu_id] = (acc[p.jeu_id] || 0) + 1; return acc; }, {});  
-  const mostPlayedGameId = Object.keys(gameCounts).reduce((a, b) => gameCounts[a] > gameCounts[b] ? a : b, null);  
-  const mostPlayedGame = jeux.find(j => j.id === mostPlayedGameId)?.nom || "";  
-  setGeneralStats({ totalParties, mostPlayedGame });  
+// --- Statistiques générales ---
+const totalParties = parties.length;
+const gameCounts = parties.reduce((acc, p) => {
+  acc[p.jeu_id] = (acc[p.jeu_id] || 0) + 1;
+  return acc;
+}, {});
+const mostPlayedGameId = Object.keys(gameCounts).reduce(
+  (a, b) => (gameCounts[a] > gameCounts[b] ? a : b),
+  null
+);
+const mostPlayedGame = jeux.find(j => j.id === mostPlayedGameId)?.nom || "";
+setGeneralStats({ totalParties, mostPlayedGame });
 
-  // --- Classement général par points de rank ---  
-  const pointsByUser = {};  
-  inscriptions.forEach(ins => {  
-    if (!pointsByUser[ins.utilisateur_id]) pointsByUser[ins.utilisateur_id] = 0;  
-    if (ins.rank === 1) pointsByUser[ins.utilisateur_id] += 3;  
-    else if (ins.rank === 2) pointsByUser[ins.utilisateur_id] += 2;  
-    else if (ins.rank === 3) pointsByUser[ins.utilisateur_id] += 1;  
-  });  
+// --- Classement général ---
+const ranking = users.map(user => ({
+  nom: user.nom,
+  points: calculatePointsForUser(user.id, () => true)
+}));
+setGeneralRanking(ranking.sort((a, b) => b.points - a.points));
 
-  const ranking = users.map(user => ({ nom: user.nom, points: pointsByUser[user.id] || 0 }));  
-  setGeneralRanking(ranking.sort((a, b) => b.points - a.points));  
-}  
+}
 
-fetchStats();  
-
+fetchStats();
 }, []);
 
 const renderBars = (data) => {
