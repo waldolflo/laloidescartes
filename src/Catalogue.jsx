@@ -263,7 +263,7 @@ export default function Catalogue({ user }) {
                 </span>
               )}
               {/* Score max */}
-              {j.bestScore && (
+              {j.bestScore && j.bestScore > 0 && (
                 <span
                   className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow cursor-pointer"
                   title={j.bestUsers.join(", ")} // infobulle desktop
