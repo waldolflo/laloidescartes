@@ -40,37 +40,45 @@ export default function Catalogue({ user }) {
   }, [user]);
 
   useEffect(() => {
-  const fetchBestScores = async () => {
-    const updatedJeux = await Promise.all(
-      jeux.map(async (jeu) => {
-        // On récupère le score max pour ce jeu
-        const { data, error } = await supabase
-          .from("inscriptions")
-          .select("score, utilisateur_id, utilisateurs:utilisateur_id(nom)")
-          .in(
-            "partie_id",
-            supabase.from("parties").select("id").eq("jeu_id", jeu.id)
-          )
-          .order("score", { ascending: false })
-          .limit(1)
-          .single();
+    const fetchBestScores = async () => {
+      const updatedJeux = await Promise.all(
+        jeux.map(async (jeu) => {
+          // 1️⃣ Récupérer les ids des parties pour ce jeu
+          const { data: parties, error: errorParties } = await supabase
+            .from("parties")
+            .select("id")
+            .eq("jeu_id", jeu.id);
 
-        if (!error && data) {
-          return {
-            ...jeu,
-            bestScore: data.score,
-            bestUser: data.utilisateurs?.nom || "?"
-          };
-        }
-        return jeu;
-      })
-    );
+          if (errorParties || !parties?.length) return jeu;
 
-    setJeux(updatedJeux);
-  };
+          const partieIds = parties.map((p) => p.id);
 
-  if (jeux.length > 0) fetchBestScores();
-}, [jeux]);
+          // 2️⃣ Récupérer le score max parmi les inscriptions pour ces parties
+          const { data, error } = await supabase
+            .from("inscriptions")
+            .select("score, utilisateur_id, utilisateurs:utilisateur_id(nom)")
+            .in("partie_id", partieIds)
+            .order("score", { ascending: false })
+            .limit(1)
+            .single();
+
+          if (!error && data) {
+            return {
+              ...jeu,
+              bestScore: data.score,
+              bestUser: data.utilisateurs?.nom || "?"
+            };
+          }
+
+          return jeu;
+        })
+      );
+
+      setJeux(updatedJeux);
+    };
+
+    if (jeux.length > 0) fetchBestScores();
+  }, [jeux]);
 
 
   const fetchJeux = async () => {
