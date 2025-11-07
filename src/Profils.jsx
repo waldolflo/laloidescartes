@@ -299,21 +299,20 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
               })}
             </tbody>
           </table>
-          <p className="mt-2">Légende :</p>
+          <h3 className="text-xl font-semibold mb-4">Rôles :</h3>
           <ul className="list-disc pl-5 mt-2">
-            <li>Tous les utilisateurs peuvent par défaut : 
-              <li>Modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque</li>
-              <li>Pour les parties qu'ils organisent :
-                <li>Modifier/supprimer les parties</li>
-                <li>Ajouter de nouveaux inscrits (une fois la partie archivée)</li>
-                <li>Gérer le classement et les scores des inscrits (une fois la partie archivée)</li>
-              </li>
-            </li>
-            <li>User : peut uniquement s'inscrire/se désinscrire à une partie</li>
-            <li>Membre : User + peut organiser des parties</li>
-            <li>Ludo : Membre + peut ajouter des jeux à la Ludothèque</li>
-            <li>Ludoplus : Ludo + peut modifier tous les jeux de la Ludothèque</li>
-            <li>Admin : Ludoplus + peut gérer les rôles des Utilisateurs + peut gérer le classement et les scores de toutes les parties archivées ainsi qu'y ajouter des inscrits</li>
+            <li><span className="font-bold">User</span> : peut uniquement s'inscrire/se désinscrire à une partie</li>
+            <li><span className="font-bold">Membre</span> : User + peut organiser des parties et <span className="font-semibold">pour ses propres parties</span> : les modifier & supprimer (pour les parties à venir) et ajouter des inscrits, gérer le classement et les scores (pour les parties archivées)</li>
+            <li><span className="font-bold">Ludo</span> : Membre + peut ajouter des jeux à la Ludothèque et <span className="font-semibold">pour ses propres jeux</span> : les modifier</li>
+            <li><span className="font-bold">Ludoplus</span> : Ludo + peut modifier tous les jeux de la Ludothèque</li>
+            <li><span className="font-bold">Admin</span> : Ludoplus + peut gérer les rôles des Utilisateurs + peut gérer le classement et les scores de toutes les parties archivées ainsi qu'y ajouter des inscrits</li>
+          </ul>
+          <p className="mt-2">Tous les utilisateurs peuvent par défaut (en fonction de leurs rôles) :</p>
+          <ul className="list-disc pl-5 mt-2">
+            <li>Modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque</li>
+            <li>Pour les parties qu'ils organisent : Modifier/supprimer les parties</li>
+            <li>Pour les parties qu'ils organisent : Ajouter de nouveaux inscrits (une fois la partie archivée)</li>
+            <li>Pour les parties qu'ils organisent : Gérer le classement et les scores des inscrits (une fois la partie archivée)</li>
           </ul>
         </div>
       )}
