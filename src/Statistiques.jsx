@@ -21,7 +21,7 @@ if (userError) { console.error(userError); return; }
 
   // 3️⃣ Récupérer toutes les inscriptions  
   const { data: inscriptions, error: inscriptionsError } = await supabase  
-    .from("inscription")  
+    .from("inscriptions")  
     .select("id, partie_id, utilisateur_id, created_at, rank, score");  
   if (inscriptionsError) { console.error(inscriptionsError); return; }  
 
