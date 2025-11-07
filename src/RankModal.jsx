@@ -33,6 +33,13 @@ export default function RankModal({ partie, onClose, fetchParties }) {
     const gagnants = players.filter((p) => p.gagnant);
     const nonGagnants = players.filter((p) => !p.gagnant);
 
+    // Cas spécial : tout le monde a score 0 et aucun gagnant
+    const allZeroAndNoWinner =
+      gagnants.length === 0 && nonGagnants.every((p) => p.score === 0);
+    if (allZeroAndNoWinner) {
+      return players.map((p) => ({ ...p, rank: null }));
+    }
+
     // Trie par score décroissant
     nonGagnants.sort((a, b) => b.score - a.score);
 
@@ -42,7 +49,7 @@ export default function RankModal({ partie, onClose, fetchParties }) {
     if (nonGagnants.length > 0) {
       let lastScore = null;
       let lastRank = gagnants.length > 0 ? 2 : 1;
-      nonGagnants.forEach((p, i) => {
+      nonGagnants.forEach((p) => {
         if (lastScore === null) {
           p.rank = lastRank;
           lastScore = p.score;
@@ -142,7 +149,10 @@ export default function RankModal({ partie, onClose, fetchParties }) {
       for (const i of inscrits) {
         await supabase
           .from("inscriptions")
-          .update({ rank: i.rank, score: i.score })
+          .update({ 
+            rank: i.rank, 
+            score: i.score === 0 && !i.gagnant ? null : i.score 
+          })
           .eq("utilisateur_id", i.utilisateur_id)
           .eq("partie_id", partie.id);
       }

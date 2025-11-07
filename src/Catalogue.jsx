@@ -53,24 +53,27 @@ export default function Catalogue({ user }) {
 
           const partieIds = parties.map((p) => p.id);
 
-          // 2️⃣ Récupérer le score max parmi les inscriptions pour ces parties
-          const { data, error } = await supabase
+          // 2️⃣ Récupérer toutes les inscriptions pour ces parties
+          const { data: inscriptions, error: errorInscriptions } = await supabase
             .from("inscriptions")
-            .select("score, utilisateur_id, utilisateurs:utilisateur_id(nom)")
-            .in("partie_id", partieIds)
-            .order("score", { ascending: false })
-            .limit(1)
-            .single();
+            .select("score, utilisateurs:utilisateur_id(nom)")
+            .in("partie_id", partieIds);
 
-          if (!error && data) {
-            return {
-              ...jeu,
-              bestScore: data.score,
-              bestUser: data.utilisateurs?.nom || "?"
-            };
-          }
+          if (errorInscriptions || !inscriptions?.length) return jeu;
 
-          return jeu;
+          // 3️⃣ Trouver le score max
+          const maxScore = Math.max(...inscriptions.map(i => i.score));
+
+          // 4️⃣ Récupérer les noms de tous les joueurs ayant ce score
+          const bestUsers = inscriptions
+            .filter(i => i.score === maxScore)
+            .map(i => i.utilisateurs?.nom || "?");
+
+          return {
+            ...jeu,
+            bestScore: maxScore,
+            bestUsers // tableau de noms
+          };
         })
       );
 
@@ -263,8 +266,8 @@ export default function Catalogue({ user }) {
               {j.bestScore && (
                 <span
                   className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow cursor-pointer"
-                  title={j.bestUser} // infobulle desktop
-                  onClick={() => alert(`Meilleur score par ${j.bestUser}`)} // mobile tap
+                  title={j.bestUsers.join(", ")} // infobulle desktop
+                  onClick={() => alert(`Meilleur score par ${j.bestUsers.join(", ")}`)} // mobile tap
                 >
                   🏆 {j.bestScore}
                 </span>
