@@ -68,6 +68,7 @@ export default function Statistiques() {
             if (!partie) return acc;
             const jeu = jeux.find((j) => j.id === partie.jeu_id);
             const nbJoueurs = inscriptions.filter((i) => i.partie_id === partie.id).length;
+            if (!ins.rank || ins.rank < 1) return acc; // Ignorer si pas de rang défini
             return acc + calcPoints(ins.rank, jeu?.poids, nbJoueurs);
           }, 0);
       };
