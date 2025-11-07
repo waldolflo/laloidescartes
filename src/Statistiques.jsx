@@ -16,7 +16,7 @@ if (userError) { console.error(userError); return; }
   // 2️⃣ Récupérer toutes les parties  
   const { data: parties, error: partiesError } = await supabase  
     .from("parties")  
-    .select("id, jeu_id, utilisateur_id, datepartie, heure_partie");  
+    .select("id, jeu_id, utilisateur_id, date_partie, heure_partie");  
   if (partiesError) { console.error(partiesError); return; }  
 
   // 3️⃣ Récupérer toutes les inscriptions  
