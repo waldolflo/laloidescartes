@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import EditJeu from "./EditJeu";
 import CreatePartieModal from "./CreatePartieModal";
@@ -21,6 +21,7 @@ export default function Catalogue({ user }) {
   const [addingJeu, setAddingJeu] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [selectedJeu, setSelectedJeu] = useState(null);
+  const bestScoresFetched = useRef(false); // ✅ Empêche la boucle
 
   useEffect(() => {
     if (!user) return;
@@ -41,61 +42,78 @@ export default function Catalogue({ user }) {
 
   useEffect(() => {
     const fetchBestScores = async () => {
-      const updatedJeux = await Promise.all(
-        jeux.map(async (jeu) => {
-          // 1️⃣ Récupérer les ids des parties pour ce jeu
-          const { data: parties, error: errorParties } = await supabase
-            .from("parties")
-            .select("id")
-            .eq("jeu_id", jeu.id);
+      if (!jeux.length || bestScoresFetched.current) return; // ⛔ déjà fait
+      bestScoresFetched.current = true;
 
-          if (errorParties || !parties?.length) return jeu;
+      try {
+        // 1️⃣ Récupérer toutes les parties
+        const { data: allParties, error: errorParties } = await supabase
+          .from("parties")
+          .select("id, jeu_id");
 
-          const partieIds = parties.map((p) => p.id);
+        if (errorParties || !allParties?.length) return;
 
-          // 2️⃣ Récupérer toutes les inscriptions pour ces parties
-          const { data: inscriptions, error: errorInscriptions } = await supabase
-            .from("inscriptions")
-            .select("score, utilisateurs:utilisateur_id(nom)")
-            .in("partie_id", partieIds);
+        // 2️⃣ Récupérer toutes les inscriptions liées à ces parties
+        const partieIds = allParties.map((p) => p.id);
+        const { data: allInscriptions, error: errorInscriptions } = await supabase
+          .from("inscriptions")
+          .select("partie_id, score, utilisateurs:utilisateur_id(nom)")
+          .in("partie_id", partieIds);
 
-          if (errorInscriptions || !inscriptions?.length) return jeu;
+        if (errorInscriptions || !allInscriptions?.length) return;
 
-          // 3️⃣ Filtrer uniquement les scores valides (>0)
-          const validInscriptions = inscriptions.filter(i => i.score != null && i.score > 0);
-          if (!validInscriptions.length) {
+        // 3️⃣ Grouper les inscriptions par jeu
+        const inscriptionsByJeu = {};
+        for (const inscription of allInscriptions) {
+          const partie = allParties.find((p) => p.id === inscription.partie_id);
+          if (!partie) continue;
+          const jeuId = partie.jeu_id;
+          if (!inscriptionsByJeu[jeuId]) inscriptionsByJeu[jeuId] = [];
+          inscriptionsByJeu[jeuId].push(inscription);
+        }
+
+        // 4️⃣ Calculer les meilleurs scores et joueurs
+        const updatedJeux = jeux.map((jeu) => {
+          const inscriptions = inscriptionsByJeu[jeu.id] || [];
+          const valid = inscriptions.filter(
+            (i) => i.score != null && i.score > 0
+          );
+
+          if (!valid.length) {
             return { ...jeu, bestScore: null, bestUsers: null };
           }
 
-          // 4️⃣ Trouver le score max
-          const maxScore = Math.max(...validInscriptions.map(i => i.score));
-
-          // 5️⃣ Récupérer les noms de tous les joueurs ayant ce score
-          const bestUsers = validInscriptions
-            .filter(i => i.score === maxScore)
-            .map(i => i.utilisateurs?.nom || "?");
+          const maxScore = Math.max(...valid.map((i) => i.score));
+          const bestUsers = valid
+            .filter((i) => i.score === maxScore)
+            .map((i) => i.utilisateurs?.nom || "?");
 
           return {
             ...jeu,
             bestScore: maxScore,
-            bestUsers // tableau de noms
+            bestUsers,
           };
-        })
-      );
+        });
 
-      setJeux(updatedJeux);
+        setJeux(updatedJeux);
+      } catch (err) {
+        console.error("Erreur fetchBestScores :", err);
+      }
     };
 
-    if (jeux.length > 0) fetchBestScores();
-  }, [jeux]);
+    fetchBestScores();
+  }, [jeux]); // ⚙️ se relance seulement quand jeux change
 
+  // 🔄 Réinitialise la protection quand on recharge les jeux depuis la base
   const fetchJeux = async () => {
     const { data, error } = await supabase
       .from("jeux")
       .select("*")
-      .order("nom", { ascending: true }); // Tri alphabétique de base
-    if (error) setErrorMsg(error.message);
-    else setJeux(data || []);
+      .order("nom", { ascending: true });
+    if (!error) {
+      setJeux(data || []);
+      bestScoresFetched.current = false; // ✅ permet rechargement propre
+    }
   };
 
   const fetchBGGData = async (bggId) => {
