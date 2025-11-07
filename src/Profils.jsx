@@ -301,13 +301,20 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           </table>
           <p className="mt-2">Légende :</p>
           <ul className="list-disc pl-5 mt-2">
+            <li>Tous les utilisateurs peuvent par défaut : 
+              <li>Modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque</li>
+              <li>Pour les parties qu'ils organisent :
+                <li>Modifier/supprimer les parties</li>
+                <li>Ajouter de nouveaux inscrits (une fois la partie archivée)</li>
+                <li>Gérer le classement et les scores des inscrits (une fois la partie archivée)</li>
+              </li>
+            </li>
             <li>User : peut uniquement s'inscrire/se désinscrire à une partie</li>
             <li>Membre : User + peut organiser des parties</li>
             <li>Ludo : Membre + peut ajouter des jeux à la Ludothèque</li>
             <li>Ludoplus : Ludo + peut modifier tous les jeux de la Ludothèque</li>
-            <li>Admin : Ludoplus + peut gérer les rôles des Utilisateurs</li>
+            <li>Admin : Ludoplus + peut gérer les rôles des Utilisateurs + peut gérer le classement et les scores de toutes les parties archivées ainsi qu'y ajouter des inscrits</li>
           </ul>
-          <p>Tous les utilisateurs peuvent par défaut : modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque et modifier/supprimer les parties qu'ils organisent.</p>
         </div>
       )}
 
