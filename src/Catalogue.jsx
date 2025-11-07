@@ -39,6 +39,40 @@ export default function Catalogue({ user }) {
     fetchJeux();
   }, [user]);
 
+  useEffect(() => {
+  const fetchBestScores = async () => {
+    const updatedJeux = await Promise.all(
+      jeux.map(async (jeu) => {
+        // On récupère le score max pour ce jeu
+        const { data, error } = await supabase
+          .from("inscriptions")
+          .select("score, utilisateur_id, utilisateurs:utilisateur_id(nom)")
+          .in(
+            "partie_id",
+            supabase.from("parties").select("id").eq("jeu_id", jeu.id)
+          )
+          .order("score", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!error && data) {
+          return {
+            ...jeu,
+            bestScore: data.score,
+            bestUser: data.utilisateurs?.nom || "?"
+          };
+        }
+        return jeu;
+      })
+    );
+
+    setJeux(updatedJeux);
+  };
+
+  if (jeux.length > 0) fetchBestScores();
+}, [jeux]);
+
+
   const fetchJeux = async () => {
     const { data, error } = await supabase
       .from("jeux")
@@ -159,16 +193,14 @@ export default function Catalogue({ user }) {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Jeux</h1>
 
-      {/* Barre de recherche + tri */}
-      <div className="flex gap-2 mb-4">
+      {/* Barre de recherche + tri + bouton sur une ligne */}
+      <div className="flex flex-wrap gap-2 mb-4 items-center">
         <input
           className="flex-1 border p-2 rounded"
           placeholder="Rechercher par nom, type, propriétaire, durée ou nombre max de joueurs"
           value={searchText}
           onChange={e => setSearchText(e.target.value)}
         />
-      </div>
-      <div className="flex gap-2 mb-4">
         <select
           className="border p-2 rounded"
           value={sortOption}
@@ -185,17 +217,15 @@ export default function Catalogue({ user }) {
           <option value="poids-desc">Poids ↓</option>
           <option value="poids-asc">Poids ↑</option>
         </select>
-        </div>
-        <div className="flex gap-2 mb-4">
-          {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo") && (
-            <button
-              onClick={() => setAddingJeu(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Ajouter un jeu
-            </button>
-          )}
-        </div>
+        {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo") && (
+          <button
+            onClick={() => setAddingJeu(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Ajouter un jeu
+          </button>
+        )}
+      </div>
 
       {/* Liste des jeux */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
@@ -219,6 +249,16 @@ export default function Catalogue({ user }) {
               {j.poids && j.poids > 0 && (
                 <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow">
                   ⚖️ {parseFloat(j.poids).toFixed(2)} / 5
+                </span>
+              )}
+              {/* Score max */}
+              {j.bestScore && (
+                <span
+                  className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow cursor-pointer"
+                  title={j.bestUser} // infobulle desktop
+                  onClick={() => alert(`Meilleur score par ${j.bestUser}`)} // mobile tap
+                >
+                  🏆 {j.bestScore}
                 </span>
               )}
             </div>

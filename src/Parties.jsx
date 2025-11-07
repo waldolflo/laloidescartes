@@ -450,7 +450,7 @@ export default function Parties({ user, authUser }) {
                         onClick={() => setSelectedPartieForRank(p)}
                         className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
                       >
-                        Gérer les classements 🏆
+                        Gérer les scores 🏆
                       </button>
                     </div>
                   )}
