@@ -14,13 +14,13 @@ export default function Statistiques() {
     async function fetchStats() {
       const { data: parties, error: partiesError } = await supabase
         .from("parties")
-        .select("id, jeu_id, date_partie");
+        .select("id, jeu_id, date_partie, lieu");
 
       if (partiesError) return console.error(partiesError);
 
       const { data: jeux, error: jeuxError } = await supabase
         .from("jeux")
-        .select("id, nom, couverture_url");
+        .select("id, nom, couverture_url, poids");
       if (jeuxError) return console.error(jeuxError);
 
       const { data: users, error: userError } = await supabase
@@ -33,27 +33,48 @@ export default function Statistiques() {
         .select("partie_id, utilisateur_id, rank");
       if (inscriptionsError) return console.error(inscriptionsError);
 
+      // 👉 On ne garde que les parties jouées à "La loi des cartes"
+      const filteredParties = parties.filter((p) => p.lieu === "La loi des cartes");
+
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
+
+      // 🧮 Nouvelle formule de calcul des points
+      const calcPoints = (rank, poids, nbJoueurs) => {
+        const basePoints =
+          rank === 1 ? 2.5 :
+          rank === 2 ? 2 :
+          rank === 3 ? 1.5 :
+          1;
+
+        const boostPoids = 0.5 * ((Math.sqrt(poids || 1) - 1) / (Math.sqrt(5) - 1));
+        const boostJoueurs = 0.1 * Math.log(nbJoueurs || 1);
+        const multiplier = 1 + boostPoids + boostJoueurs;
+
+        return Math.round(basePoints * multiplier * 100) / 100;
+      };
 
       // --- Fonction pour calculer les points d'un utilisateur selon une condition ---
       const calculatePointsForUser = (userId, filterFn) => {
         return inscriptions
           .filter((ins) => ins.utilisateur_id === userId)
-          .filter((ins) => filterFn(parties.find((p) => p.id === ins.partie_id)))
+          .filter((ins) => {
+            const partie = filteredParties.find((p) => p.id === ins.partie_id);
+            return partie && filterFn(partie);
+          })
           .reduce((acc, ins) => {
-            if (ins.rank === 1) return acc + 3;
-            if (ins.rank === 2) return acc + 2;
-            if (ins.rank === 3) return acc + 1;
-            return acc;
+            const partie = filteredParties.find((p) => p.id === ins.partie_id);
+            if (!partie) return acc;
+            const jeu = jeux.find((j) => j.id === partie.jeu_id);
+            const nbJoueurs = inscriptions.filter((i) => i.partie_id === partie.id).length;
+            return acc + calcPoints(ins.rank, jeu?.poids, nbJoueurs);
           }, 0);
       };
 
       // --- Statistiques mensuelles ---
       const statsByMonth = users.map((user) => {
         const points = calculatePointsForUser(user.id, (p) => {
-          if (!p) return false;
           const d = new Date(p.date_partie);
           return d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear;
         });
@@ -63,7 +84,6 @@ export default function Statistiques() {
       // --- Statistiques annuelles ---
       const statsByYear = users.map((user) => {
         const points = calculatePointsForUser(user.id, (p) => {
-          if (!p) return false;
           const d = new Date(p.date_partie);
           return d.getFullYear() === currentYear;
         });
@@ -74,8 +94,8 @@ export default function Statistiques() {
       setYearlyStats(statsByYear.sort((a, b) => b.points - a.points));
 
       // --- Statistiques générales ---
-      const totalParties = parties.length;
-      const gameCounts = parties.reduce((acc, p) => {
+      const totalParties = filteredParties.length;
+      const gameCounts = filteredParties.reduce((acc, p) => {
         acc[p.jeu_id] = (acc[p.jeu_id] || 0) + 1;
         return acc;
       }, {});
