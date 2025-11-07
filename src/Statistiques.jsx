@@ -81,12 +81,20 @@ fetchStats();
 const renderBars = (data) => {
   const maxValue = Math.max(...data.map(d => d.points), 1);
   return (
-    {data.map(d => (
-      {d.nom}
-      <div className="bg-green-500 h-6 rounded" style={{ width: ${(d.points / maxValue) * 100}% }}>
-        {d.points}
-      </div>
-    ))}
+    <div className="space-y-2">
+      {data.map(d => (
+        <div key={d.nom} className="flex items-center space-x-2">
+          <span className="w-32">{d.nom}</span>
+          <div className="bg-gray-300 h-6 flex-1 rounded overflow-hidden">
+            <div
+              className="bg-green-500 h-6 rounded"
+              style={{ width: `${(d.points / maxValue) * 100}%` }}
+            ></div>
+          </div>
+          <span className="w-12 text-right">{d.points}</span>
+        </div>
+      ))}
+    </div>
   );
 };
 
