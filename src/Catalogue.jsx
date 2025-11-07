@@ -61,11 +61,17 @@ export default function Catalogue({ user }) {
 
           if (errorInscriptions || !inscriptions?.length) return jeu;
 
-          // 3️⃣ Trouver le score max
-          const maxScore = Math.max(...inscriptions.map(i => i.score));
+          // 3️⃣ Filtrer uniquement les scores valides (>0)
+          const validInscriptions = inscriptions.filter(i => i.score != null && i.score > 0);
+          if (!validInscriptions.length) {
+            return { ...jeu, bestScore: null, bestUsers: null };
+          }
 
-          // 4️⃣ Récupérer les noms de tous les joueurs ayant ce score
-          const bestUsers = inscriptions
+          // 4️⃣ Trouver le score max
+          const maxScore = Math.max(...validInscriptions.map(i => i.score));
+
+          // 5️⃣ Récupérer les noms de tous les joueurs ayant ce score
+          const bestUsers = validInscriptions
             .filter(i => i.score === maxScore)
             .map(i => i.utilisateurs?.nom || "?");
 
@@ -82,7 +88,6 @@ export default function Catalogue({ user }) {
 
     if (jeux.length > 0) fetchBestScores();
   }, [jeux]);
-
 
   const fetchJeux = async () => {
     const { data, error } = await supabase
