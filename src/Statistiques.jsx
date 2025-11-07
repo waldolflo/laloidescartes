@@ -1,87 +1,72 @@
-import React, { useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
-import { motion } from "framer-motion";
-import "./Statistiques.css"; // ton fichier de styles
+import React, { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient";
 
-// Mock data
-const monthlyData = [
-{ id: 1, name: "Alice", score: 1200, change: +3 },
-{ id: 2, name: "Bob", score: 1100, change: -1 },
-{ id: 3, name: "Charlie", score: 950, change: +2 },
-{ id: 4, name: "David", score: 900, change: 0 },
-{ id: 5, name: "Eve", score: 850, change: -2 },
-];
+export default function Statistiques() {
+const [monthlyStats, setMonthlyStats] = useState([]);
+const [yearlyStats, setYearlyStats] = useState([]);
 
-const yearlyData = [
-{ id: 1, name: "Alice", score: 14500, change: +1 },
-{ id: 2, name: "Charlie", score: 14000, change: +2 },
-{ id: 3, name: "Bob", score: 13500, change: -1 },
-{ id: 4, name: "Eve", score: 12500, change: 0 },
-{ id: 5, name: "David", score: 12000, change: -2 },
-];
+// Récupération des données depuis Supabase
+useEffect(() => {
+async function fetchStats() {
+// Exemple : récupérer les utilisateurs + score/parties
+const { data: users, error: userError } = await supabase
+.from("profils")
+.select("id, nom");
+  if (userError) {  
+    console.error(userError);  
+    return;  
+  }  
 
-// Graph data
-const monthlyScores = monthlyData.map(u => ({ name: u.name, score: u.score }));
-const yearlyScores = yearlyData.map(u => ({ name: u.name, score: u.score }));
+  const { data: parties, error: partiesError } = await supabase  
+    .from("partie")  
+    .select("id, user_id, score, rank, created_at");  
 
-const Statistiques = () => {
-const [period, setPeriod] = useState("monthly"); // monthly or yearly
+  if (partiesError) {  
+    console.error(partiesError);  
+    return;  
+  }  
 
-const displayedData = period === "monthly" ? monthlyData : yearlyData;
-const chartData = period === "monthly" ? monthlyScores : yearlyScores;
+  // Transformation des données
+  const now = new Date();  
+  const currentMonth = now.getMonth() + 1;  
+  const currentYear = now.getFullYear();  
 
-return ( <div className="stats-container"> <h1>Statistiques des utilisateurs</h1>
+  const statsByMonth = users.map(user => {  
+    const userParties = parties.filter(p => p.user_id === user.id && new Date(p.created_at).getMonth() + 1 === currentMonth && new Date(p.created_at).getFullYear() === currentYear);  
+    const totalScore = userParties.reduce((acc, p) => acc + p.score, 0);  
+    const totalRank = userParties.reduce((acc, p) => acc + p.rank, 0);  
+    return { nom: user.nom, score: totalScore, rank: totalRank, parties: userParties.length };  
+  });  
 
-  <div className="period-buttons">
-    <button className={period === "monthly" ? "active" : ""} onClick={() => setPeriod("monthly")}>Mois</button>
-    <button className={period === "yearly" ? "active" : ""} onClick={() => setPeriod("yearly")}>Année</button>
-  </div>
+  const statsByYear = users.map(user => {  
+    const userParties = parties.filter(p => p.user_id === user.id && new Date(p.created_at).getFullYear() === currentYear);  
+    const totalScore = userParties.reduce((acc, p) => acc + p.score, 0);  
+    const totalRank = userParties.reduce((acc, p) => acc + p.rank, 0);  
+    return { nom: user.nom, score: totalScore, rank: totalRank, parties: userParties.length };  
+  });  
 
-  <div className="leaderboard">
-    <h2>Top 5 {period === "monthly" ? "du mois" : "de l'année"}</h2>
-    {displayedData.map((user, index) => (
-      <motion.div 
-        key={user.id} 
-        className={`leaderboard-item rank-${index+1}`}
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: index * 0.1 }}
-      >
-        <span className="rank">{index + 1}</span>
-        <span className="name">{user.name}</span>
-        <span className="score">{user.score} pts</span>
-        <span className={`change ${user.change > 0 ? "up" : user.change < 0 ? "down" : "neutral"}`}>
-          {user.change > 0 ? `↑ ${user.change}` : user.change < 0 ? `↓ ${Math.abs(user.change)}` : "-"}
-        </span>
-      </motion.div>
-    ))}
-  </div>
+  setMonthlyStats(statsByMonth.sort((a, b) => b.score - a.score));  
+  setYearlyStats(statsByYear.sort((a, b) => b.score - a.score));  
+}  
 
-  <div className="charts">
-    <h2>Graphiques {period === "monthly" ? "mensuels" : "annuels"}</h2>
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Bar dataKey="score" fill="#82ca9d" />
-      </BarChart>
-    </ResponsiveContainer>
+fetchStats();
 
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Line type="monotone" dataKey="score" stroke="#8884d8" strokeWidth={2} />
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
-</div>
+}, []);
+
+const renderBars = (data) => {
+const maxScore = Math.max(...data.map(d => d.score), 1);
+return ( <div className="space-y-2">
+{data.map(d => ( <div key={d.nom} className="flex items-center space-x-2"> <span className="w-32">{d.nom}</span> <div className="bg-gray-300 h-6 flex-1 rounded overflow-hidden">
+<div className="bg-green-500 h-6 rounded" style={{ width: `${(d.score / maxScore) * 100}%` }}></div> </div> <span className="w-12 text-right">{d.score}</span> </div>
+))} </div>
 );
 };
 
-export default Statistiques;
+return ( <div className="p-6 space-y-10"> <h2 className="text-2xl font-bold">Statistiques Mensuelles</h2>
+{renderBars(monthlyStats)}
+  <h2 className="text-2xl font-bold mt-10">Statistiques Année</h2>  
+  {renderBars(yearlyStats)}  
+</div>  
+
+);
+}
