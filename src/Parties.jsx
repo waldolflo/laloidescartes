@@ -314,7 +314,7 @@ export default function Parties({ user, authUser }) {
               <p className="text-sm text-gray-700 text-center">Joueurs inscrits : {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
 
               {p.inscrits?.length > 0 && (
-                <ul className="flex flex-col gap-1">
+                <ul className="flex flex-col gap-1 mt-3">
                   {p.inscrits.map((i) => (
                     <li className="flex justify-between items-center rounded px-3 py-1 border" key={i.utilisateur_id}><span className="font-medium flex items-center gap-2">{i.profil?.nom || i.utilisateur_id}</span></li>
                   ))}
@@ -324,7 +324,7 @@ export default function Parties({ user, authUser }) {
               <div className="mt-3 flex flex-col gap-2 items-center">
                 <button
                   onClick={() => toggleInscription(p)}
-                  className={`w-full px-3 py-1 rounded text-white text-sm ${
+                  className={`w-full px-4 py-2 rounded text-white ${
                     isInscrit
                       ? "bg-red-600 hover:bg-red-700"
                       : "bg-green-600 hover:bg-green-700"
@@ -448,7 +448,7 @@ export default function Parties({ user, authUser }) {
                     <div className="mt-3 text-center">
                       <button
                         onClick={() => setSelectedPartieForRank(p)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                       >
                         Gérer les scores 🏆
                       </button>
