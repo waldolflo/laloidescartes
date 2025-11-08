@@ -311,17 +311,17 @@ export default function Parties({ user, authUser }) {
               <p className="text-sm text-gray-700 text-center">
                 Organisateur : {p.organisateur?.nom || "?"}
               </p>
-              <p className="text-sm text-gray-700 text-center">Joueurs inscrits: {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
+              <p className="text-sm text-gray-700 text-center">Joueurs inscrits : {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
 
               {p.inscrits?.length > 0 && (
-                <ul className="list-disc pl-4 mt-2 text-sm text-gray-800">
+                <ul className="flex flex-col gap-1">
                   {p.inscrits.map((i) => (
-                    <li key={i.utilisateur_id}>{i.profil?.nom || i.utilisateur_id}</li>
+                    <li className="flex justify-between items-center rounded px-3 py-1 border" key={i.utilisateur_id}><span className="font-medium flex items-center gap-2">{i.profil?.nom || i.utilisateur_id}</span></li>
                   ))}
                 </ul>
               )}
 
-              <div className="mt-auto flex flex-col gap-2 items-center">
+              <div className="mt-3 flex flex-col gap-2 items-center">
                 <button
                   onClick={() => toggleInscription(p)}
                   className={`w-full px-3 py-1 rounded text-white text-sm ${
