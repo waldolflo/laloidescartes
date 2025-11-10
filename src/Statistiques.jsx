@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 
 export default function Statistiques({ profil }) {
+  const currentUser = user || authUser; // fallback si user pas encore passé
   const [monthlyStats, setMonthlyStats] = useState([]);
   const [yearlyStats, setYearlyStats] = useState([]);
   const [generalStats, setGeneralStats] = useState({
@@ -9,7 +10,7 @@ export default function Statistiques({ profil }) {
     topGames: [],
   });
   const [generalRanking, setGeneralRanking] = useState([]);
-
+  const [userRole, setUserRole] = useState("");
   const [lieux, setLieux] = useState([]);
   const [selectedLieu, setSelectedLieu] = useState("La loi des cartes");
 
@@ -22,6 +23,19 @@ export default function Statistiques({ profil }) {
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
   ];
   const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+
+  // ------------------- FETCH ROLE UTILISATEUR -------------------
+  useEffect(() => {
+    const fetchRole = async () => {
+      const { data, error } = await supabase
+        .from("profils")
+        .select("role")
+        .eq("id", currentUser.id)
+        .single();
+      if (!error) setUserRole(data?.role || "");
+    };
+    fetchRole();
+  }, [currentUser]);
 
   useEffect(() => {
     fetchStats();
@@ -171,7 +185,7 @@ export default function Statistiques({ profil }) {
   return (
     <div className="p-6 space-y-6">
       {/* 🎯 Filtres (admin uniquement) */}
-      {profil?.role === "admin" && (
+      {userRole === "admin" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 items-end mb-8">
           <div>
             <label className="block text-sm font-semibold mb-1">🏠 Lieu</label>
