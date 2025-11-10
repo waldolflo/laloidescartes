@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 
 export default function Statistiques({ profil }) {
+  console.log("Profil reçu :", profil);
   const [monthlyStats, setMonthlyStats] = useState([]);
   const [yearlyStats, setYearlyStats] = useState([]);
   const [generalStats, setGeneralStats] = useState({
