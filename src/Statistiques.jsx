@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 
 export default function Statistiques({ profil }) {
-  const currentUser = user || authUser; // fallback si user pas encore passé
   const [monthlyStats, setMonthlyStats] = useState([]);
   const [yearlyStats, setYearlyStats] = useState([]);
   const [generalStats, setGeneralStats] = useState({
@@ -26,16 +25,20 @@ export default function Statistiques({ profil }) {
 
   // ------------------- FETCH ROLE UTILISATEUR -------------------
   useEffect(() => {
+    if (!user) return;
+
     const fetchRole = async () => {
       const { data, error } = await supabase
         .from("profils")
         .select("role")
-        .eq("id", currentUser.id)
+        .eq("id", user.id)
         .single();
+
       if (!error) setUserRole(data?.role || "");
     };
+
     fetchRole();
-  }, [currentUser]);
+  }, [user]);
 
   useEffect(() => {
     fetchStats();
