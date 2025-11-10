@@ -25,7 +25,7 @@ export default function Statistiques({ profil }) {
 
   // ------------------- FETCH ROLE UTILISATEUR -------------------
   useEffect(() => {
-    if (!profil) return;
+    if (!profil?.id) return;
 
     const fetchRole = async () => {
       const { data, error } = await supabase
@@ -34,127 +34,142 @@ export default function Statistiques({ profil }) {
         .eq("id", profil.id)
         .single();
 
-      if (!error) setUserRole(data?.role || "");
+      if (error) {
+        console.error("Erreur récupération rôle :", error);
+        return;
+      }
+
+      if (data?.role) {
+        setUserRole(data.role);
+      } else {
+        setUserRole("membre"); // rôle par défaut
+      }
     };
 
     fetchRole();
   }, [profil]);
 
+  // ------------------- FETCH STATS (quand rôle dispo) -------------------
   useEffect(() => {
+    if (!profil || !userRole) return; // attendre que tout soit prêt
     fetchStats();
-  }, [selectedLieu, selectedMonth, selectedYear]);
+  }, [profil, userRole, selectedLieu, selectedMonth, selectedYear]);
 
   async function fetchStats() {
-    const { data: parties, error: partiesError } = await supabase
-      .from("parties")
-      .select("id, jeu_id, date_partie, lieu");
-    if (partiesError) return console.error(partiesError);
+    try {
+      const { data: parties, error: partiesError } = await supabase
+        .from("parties")
+        .select("id, jeu_id, date_partie, lieu");
+      if (partiesError) throw partiesError;
 
-    const { data: jeux, error: jeuxError } = await supabase
-      .from("jeux")
-      .select("id, nom, couverture_url, poids");
-    if (jeuxError) return console.error(jeuxError);
+      const { data: jeux, error: jeuxError } = await supabase
+        .from("jeux")
+        .select("id, nom, couverture_url, poids");
+      if (jeuxError) throw jeuxError;
 
-    const { data: users, error: userError } = await supabase
-      .from("profils")
-      .select("id, nom, role");
-    if (userError) return console.error(userError);
+      const { data: users, error: userError } = await supabase
+        .from("profils")
+        .select("id, nom, role");
+      if (userError) throw userError;
 
-    const { data: inscriptions, error: inscriptionsError } = await supabase
-      .from("inscriptions")
-      .select("partie_id, utilisateur_id, rank");
-    if (inscriptionsError) return console.error(inscriptionsError);
+      const { data: inscriptions, error: inscriptionsError } = await supabase
+        .from("inscriptions")
+        .select("partie_id, utilisateur_id, rank");
+      if (inscriptionsError) throw inscriptionsError;
 
-    // 🎯 Extraire les lieux uniques
-    const uniqueLieux = [...new Set(parties.map((p) => p.lieu).filter(Boolean))];
-    setLieux(uniqueLieux);
+      // 🎯 Extraire les lieux uniques
+      const uniqueLieux = [...new Set(parties.map((p) => p.lieu).filter(Boolean))];
+      setLieux(uniqueLieux);
 
-    // 🔹 Si pas admin → forcer les valeurs par défaut
-    const lieu = userRole === "admin" ? selectedLieu : "La loi des cartes";
-    const mois = userRole === "admin" ? selectedMonth : now.getMonth() + 1;
-    const annee = userRole === "admin" ? selectedYear : now.getFullYear();
+      // 🔹 Si pas admin → forcer les valeurs par défaut
+      const lieu = userRole === "admin" ? selectedLieu : "La loi des cartes";
+      const mois = userRole === "admin" ? selectedMonth : now.getMonth() + 1;
+      const annee = userRole === "admin" ? selectedYear : now.getFullYear();
 
-    const filteredParties = parties.filter((p) => p.lieu === lieu);
+      const filteredParties = parties.filter((p) => p.lieu === lieu);
 
-    // 🧮 Calcul des points
-    const calcPoints = (rank, poids, nbJoueurs) => {
-      if (!rank || rank < 1) return 0;
-      const basePoints =
-        rank === 1 ? 2.5 :
-        rank === 2 ? 2 :
-        rank === 3 ? 1.5 :
-        1;
-      const boostPoids = 0.5 * ((Math.sqrt(poids || 1) - 1) / (Math.sqrt(5) - 1));
-      const boostJoueurs = 0.1 * Math.log(nbJoueurs || 1);
-      const multiplier = 1 + boostPoids + boostJoueurs;
-      return Math.round(basePoints * multiplier * 100) / 100;
-    };
+      // 🧮 Calcul des points
+      const calcPoints = (rank, poids, nbJoueurs) => {
+        if (!rank || rank < 1) return 0;
+        const basePoints =
+          rank === 1 ? 2.5 :
+          rank === 2 ? 2 :
+          rank === 3 ? 1.5 :
+          1;
+        const boostPoids = 0.5 * ((Math.sqrt(poids || 1) - 1) / (Math.sqrt(5) - 1));
+        const boostJoueurs = 0.1 * Math.log(nbJoueurs || 1);
+        const multiplier = 1 + boostPoids + boostJoueurs;
+        return Math.round(basePoints * multiplier * 100) / 100;
+      };
 
-    const calculatePointsForUser = (userId, filterFn) => {
-      return inscriptions
-        .filter((ins) => ins.utilisateur_id === userId)
-        .filter((ins) => {
-          const partie = filteredParties.find((p) => p.id === ins.partie_id);
-          return partie && filterFn(partie);
-        })
-        .reduce((acc, ins) => {
-          const partie = filteredParties.find((p) => p.id === ins.partie_id);
-          if (!partie || !ins.rank || ins.rank < 1) return acc;
-          const jeu = jeux.find((j) => j.id === partie.jeu_id);
-          const nbJoueurs = inscriptions.filter((i) => i.partie_id === partie.id).length;
-          return acc + calcPoints(ins.rank, jeu?.poids, nbJoueurs);
-        }, 0);
-    };
+      const calculatePointsForUser = (userId, filterFn) => {
+        return inscriptions
+          .filter((ins) => ins.utilisateur_id === userId)
+          .filter((ins) => {
+            const partie = filteredParties.find((p) => p.id === ins.partie_id);
+            return partie && filterFn(partie);
+          })
+          .reduce((acc, ins) => {
+            const partie = filteredParties.find((p) => p.id === ins.partie_id);
+            if (!partie || !ins.rank || ins.rank < 1) return acc;
+            const jeu = jeux.find((j) => j.id === partie.jeu_id);
+            const nbJoueurs = inscriptions.filter((i) => i.partie_id === partie.id).length;
+            return acc + calcPoints(ins.rank, jeu?.poids, nbJoueurs);
+          }, 0);
+      };
 
-    // --- Statistiques mensuelles ---
-    const statsByMonth = users.map((user) => {
-      const points = calculatePointsForUser(user.id, (p) => {
-        const d = new Date(p.date_partie);
-        return d.getMonth() + 1 === mois && d.getFullYear() === annee;
-      });
-      return { nom: user.nom, points };
-    });
-
-    // --- Statistiques annuelles ---
-    const statsByYear = users.map((user) => {
-      const points = calculatePointsForUser(user.id, (p) => {
-        const d = new Date(p.date_partie);
-        return d.getFullYear() === annee;
-      });
-      return { nom: user.nom, points };
-    });
-
-    setMonthlyStats(statsByMonth.sort((a, b) => b.points - a.points));
-    setYearlyStats(statsByYear.sort((a, b) => b.points - a.points));
-
-    // --- Statistiques générales ---
-    const totalParties = filteredParties.length;
-    const gameCounts = filteredParties.reduce((acc, p) => {
-      acc[p.jeu_id] = (acc[p.jeu_id] || 0) + 1;
-      return acc;
-    }, {});
-
-    const topGames = Object.entries(gameCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([jeuId, count]) => {
-        const jeu = jeux.find((j) => j.id === jeuId);
-        return {
-          id: jeuId,
-          nom: jeu?.nom || "?",
-          couverture_url: jeu?.couverture_url,
-          count,
-        };
+      // --- Statistiques mensuelles ---
+      const statsByMonth = users.map((user) => {
+        const points = calculatePointsForUser(user.id, (p) => {
+          const d = new Date(p.date_partie);
+          return d.getMonth() + 1 === mois && d.getFullYear() === annee;
+        });
+        return { nom: user.nom, points };
       });
 
-    setGeneralStats({ totalParties, topGames });
+      // --- Statistiques annuelles ---
+      const statsByYear = users.map((user) => {
+        const points = calculatePointsForUser(user.id, (p) => {
+          const d = new Date(p.date_partie);
+          return d.getFullYear() === annee;
+        });
+        return { nom: user.nom, points };
+      });
 
-    // --- Classement général ---
-    const ranking = users.map((user) => ({
-      nom: user.nom,
-      points: calculatePointsForUser(user.id, () => true),
-    }));
-    setGeneralRanking(ranking.sort((a, b) => b.points - a.points));
+      setMonthlyStats(statsByMonth.sort((a, b) => b.points - a.points));
+      setYearlyStats(statsByYear.sort((a, b) => b.points - a.points));
+
+      // --- Statistiques générales ---
+      const totalParties = filteredParties.length;
+      const gameCounts = filteredParties.reduce((acc, p) => {
+        acc[p.jeu_id] = (acc[p.jeu_id] || 0) + 1;
+        return acc;
+      }, {});
+
+      const topGames = Object.entries(gameCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([jeuId, count]) => {
+          const jeu = jeux.find((j) => j.id === jeuId);
+          return {
+            id: jeuId,
+            nom: jeu?.nom || "?",
+            couverture_url: jeu?.couverture_url,
+            count,
+          };
+        });
+
+      setGeneralStats({ totalParties, topGames });
+
+      // --- Classement général ---
+      const ranking = users.map((user) => ({
+        nom: user.nom,
+        points: calculatePointsForUser(user.id, () => true),
+      }));
+      setGeneralRanking(ranking.sort((a, b) => b.points - a.points));
+    } catch (err) {
+      console.error("Erreur fetchStats :", err);
+    }
   }
 
   const resetFilters = () => {
