@@ -26,24 +26,33 @@ export default function Statistiques({ profil }) {
 
   // ------------------- FETCH ROLE UTILISATEUR -------------------
   useEffect(() => {
-    if (!profil?.id) return;
+    if (!profil?.id) {
+      console.warn("Profil pas encore chargé, on attend...");
+      return;
+    }
 
     const fetchRole = async () => {
+      console.log("Fetching role for user id:", profil.id);
       const { data, error } = await supabase
         .from("profils")
         .select("role")
         .eq("id", profil.id)
         .single();
 
+      console.log("Résultat Supabase :", { data, error });
+
       if (error) {
         console.error("Erreur récupération rôle :", error);
+        setUserRole("membre"); // fallback
         return;
       }
 
       if (data?.role) {
         setUserRole(data.role);
+        console.log("✅ Rôle défini :", data.role);
       } else {
-        setUserRole("membre"); // rôle par défaut
+        console.warn("Aucun rôle trouvé, on met membre par défaut");
+        setUserRole("membre");
       }
     };
 
@@ -57,6 +66,7 @@ export default function Statistiques({ profil }) {
   }, [profil, userRole, selectedLieu, selectedMonth, selectedYear]);
 
   async function fetchStats() {
+    console.log("🧮 fetchStats lancé avec rôle :", userRole);
     try {
       const { data: parties, error: partiesError } = await supabase
         .from("parties")
