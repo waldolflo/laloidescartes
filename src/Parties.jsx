@@ -93,6 +93,20 @@ export default function Parties({ user, authUser }) {
       else past.push(partieWithInscrits);
     }
 
+    // Trier les parties archivées (past) de la plus récente à la plus ancienne
+    past.sort((a, b) => {
+      const dateA = new Date(`${a.date_partie}T${a.heure_partie}`);
+      const dateB = new Date(`${b.date_partie}T${b.heure_partie}`);
+      return dateB - dateA; // du plus récent au plus ancien
+    });
+
+    // Trier les parties à venir (upcoming) dans l’ordre chronologique normal
+    upcoming.sort((a, b) => {
+      const dateA = new Date(`${a.date_partie}T${a.heure_partie}`);
+      const dateB = new Date(`${b.date_partie}T${b.heure_partie}`);
+      return dateA - dateB; // du plus proche au plus lointain
+    });
+
     setParties({ upcoming, past });
   };
 
