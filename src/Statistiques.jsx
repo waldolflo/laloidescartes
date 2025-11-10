@@ -10,6 +10,13 @@ export default function Statistiques() {
   });
   const [generalRanking, setGeneralRanking] = useState([]);
 
+  const [lieux, setLieux] = useState([]);
+  const [selectedLieu, setSelectedLieu] = useState("La loi des cartes");
+
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
   useEffect(() => {
     async function fetchStats() {
       const { data: parties, error: partiesError } = await supabase
@@ -33,15 +40,19 @@ export default function Statistiques() {
         .select("partie_id, utilisateur_id, rank");
       if (inscriptionsError) return console.error(inscriptionsError);
 
-      // 👉 On ne garde que les parties jouées à "La loi des cartes"
-      const filteredParties = parties.filter((p) => p.lieu === "La loi des cartes");
+      // 🎯 Extraire tous les lieux disponibles (uniques)
+      const uniqueLieux = [...new Set(parties.map((p) => p.lieu).filter(Boolean))];
+      setLieux(uniqueLieux);
 
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
+      // 👉 Filtrer les parties selon le lieu choisi
+      const filteredParties = selectedLieu
+        ? parties.filter((p) => p.lieu === selectedLieu)
+        : parties;
 
-      // 🧮 Nouvelle formule de calcul des points
+      // 🧮 Calcul des points
       const calcPoints = (rank, poids, nbJoueurs) => {
+        if (!rank || rank < 1) return 0;
+
         const basePoints =
           rank === 1 ? 2.5 :
           rank === 2 ? 2 :
@@ -55,7 +66,6 @@ export default function Statistiques() {
         return Math.round(basePoints * multiplier * 100) / 100;
       };
 
-      // --- Fonction pour calculer les points d'un utilisateur selon une condition ---
       const calculatePointsForUser = (userId, filterFn) => {
         return inscriptions
           .filter((ins) => ins.utilisateur_id === userId)
@@ -65,10 +75,9 @@ export default function Statistiques() {
           })
           .reduce((acc, ins) => {
             const partie = filteredParties.find((p) => p.id === ins.partie_id);
-            if (!partie) return acc;
+            if (!partie || !ins.rank || ins.rank < 1) return acc;
             const jeu = jeux.find((j) => j.id === partie.jeu_id);
             const nbJoueurs = inscriptions.filter((i) => i.partie_id === partie.id).length;
-            if (!ins.rank || ins.rank < 1) return acc; // Ignorer si pas de rang défini
             return acc + calcPoints(ins.rank, jeu?.poids, nbJoueurs);
           }, 0);
       };
@@ -77,7 +86,7 @@ export default function Statistiques() {
       const statsByMonth = users.map((user) => {
         const points = calculatePointsForUser(user.id, (p) => {
           const d = new Date(p.date_partie);
-          return d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear;
+          return d.getMonth() + 1 === selectedMonth && d.getFullYear() === selectedYear;
         });
         return { nom: user.nom, points };
       });
@@ -86,7 +95,7 @@ export default function Statistiques() {
       const statsByYear = users.map((user) => {
         const points = calculatePointsForUser(user.id, (p) => {
           const d = new Date(p.date_partie);
-          return d.getFullYear() === currentYear;
+          return d.getFullYear() === selectedYear;
         });
         return { nom: user.nom, points };
       });
@@ -125,7 +134,7 @@ export default function Statistiques() {
     }
 
     fetchStats();
-  }, []);
+  }, [selectedLieu, selectedMonth, selectedYear]);
 
   // --- Rendu graphique des barres ---
   const renderBars = (data) => {
@@ -150,9 +159,66 @@ export default function Statistiques() {
 
   const medalEmojis = ["🥇", "🥈", "🥉", "🏅", "🎖️"];
 
+  const months = [
+    "Janvier","Février","Mars","Avril","Mai","Juin",
+    "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
+  ];
+
+  const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mt-10 mb-4">📊 Statistiques Générales</h2>
+    <div className="p-6 space-y-6">
+      {/* 🎯 Filtres */}
+      {profil.role === "admin" && (
+        <div className="flex flex-wrap gap-4 items-center mb-6">
+          <div>
+            <label className="font-semibold mr-2">🏠 Lieu :</label>
+            <select
+              value={selectedLieu}
+              onChange={(e) => setSelectedLieu(e.target.value)}
+              className="border rounded px-2 py-1"
+            >
+              {lieux.map((lieu) => (
+                <option key={lieu} value={lieu}>
+                  {lieu}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="font-semibold mr-2">📅 Mois :</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="border rounded px-2 py-1"
+            >
+              {months.map((m, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="font-semibold mr-2">🗓️ Année :</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="border rounded px-2 py-1"
+            >
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      <h2 className="text-2xl font-bold mb-4">📊 Statistiques Générales ({selectedLieu})</h2>
       <p className="mb-2">Nombre total de parties : {generalStats.totalParties}</p>
 
       {/* ✅ TOP 5 jeux les plus joués */}
@@ -173,7 +239,6 @@ export default function Statistiques() {
                   🎲
                 </div>
               )}
-              {/* Médaille en badge */}
               <span className="absolute -top-2 -right-2 text-2xl">
                 {medalEmojis[index]}
               </span>
@@ -185,10 +250,14 @@ export default function Statistiques() {
       <h2 className="text-2xl font-bold mt-10">🏆 Classement Général</h2>
       {renderBars(generalRanking)}
 
-      <h2 className="text-2xl font-bold mt-10">📅 Classement du Mois</h2>
+      <h2 className="text-2xl font-bold mt-10">
+        📅 Classement du Mois : {months[selectedMonth - 1]} {selectedYear}
+      </h2>
       {renderBars(monthlyStats)}
 
-      <h2 className="text-2xl font-bold mt-10">📆 Classement Annuel</h2>
+      <h2 className="text-2xl font-bold mt-10">
+        📆 Classement Annuel : {selectedYear}
+      </h2>
       {renderBars(yearlyStats)}
     </div>
   );
