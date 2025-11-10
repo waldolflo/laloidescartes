@@ -122,7 +122,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
               <Route path="/" element={<Catalogue user={currentUser} />} />
               <Route path="/parties" element={<Parties user={currentUser} authUser={authUser} />} />
               <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
-              <Route path="/statistiques" element={<Statistiques user={currentUser} authUser={authUser} />} />
+              <Route path="/statistiques" element={<Statistiques user={currentUser} authUser={authUser} profil={currentUser} />} />
               <Route
                 path="/profils"
                 element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} setAuthUser={setAuthUser} setUser={setUser} />}

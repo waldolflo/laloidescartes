@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 
-export default function Statistiques({ profil }) {
-  console.log("Profil reçu :", profil);
+export default function Statistiques({ user }) {
+  console.log("Profil reçu :", user);
 
   const [monthlyStats, setMonthlyStats] = useState([]);
   const [yearlyStats, setYearlyStats] = useState([]);
@@ -26,70 +26,24 @@ export default function Statistiques({ profil }) {
   const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
 
   // -------------------
-  // 🕒 Gestion du profil (attente sécurisée)
-  // -------------------
-  if (!profil) {
-    console.warn("Profil encore vide, affichage du loader...");
-    return (
-      <div className="p-6 text-center text-gray-500">
-        Chargement du profil...
-      </div>
-    );
-  }
-
-  // -------------------
-  // 🎭 FETCH ROLE UTILISATEUR
+  // 🎭 FETCH ROLE UTILISATEUR 📊 FETCH STATS
   // -------------------
   useEffect(() => {
-    if (!profil?.id) {
-      console.warn("Profil pas encore chargé, on attend...");
-      return;
-    }
+    if (!user) return;
 
     const fetchRole = async () => {
-      console.log("Fetching role for user id:", profil.id);
       const { data, error } = await supabase
         .from("profils")
         .select("role")
-        .eq("id", profil.id)
+        .eq("id", user.id)
         .single();
 
-      console.log("Résultat Supabase :", { data, error });
-
-      if (error) {
-        console.error("Erreur récupération rôle :", error);
-        setUserRole("membre"); // fallback
-        return;
-      }
-
-      if (data?.role) {
-        setUserRole(data.role);
-        console.log("✅ Rôle défini :", data.role);
-      } else {
-        console.warn("Aucun rôle trouvé, on met membre par défaut");
-        setUserRole("membre");
-      }
+      if (!error) setUserRole(data?.role || "");
     };
 
     fetchRole();
-  }, [profil]);
-
-  // -------------------
-  // 📊 FETCH STATS (quand tout est prêt)
-  // -------------------
-  useEffect(() => {
-    if (!profil?.id) {
-      console.warn("⏳ fetchStats ignoré : profil.id absent");
-      return;
-    }
-    if (!userRole) {
-      console.warn("⏳ fetchStats ignoré : userRole pas encore dispo");
-      return;
-    }
-
-    console.log("✅ Conditions remplies → fetchStats lancé !");
     fetchStats();
-  }, [profil, userRole, selectedLieu, selectedMonth, selectedYear]);
+  }, [user, userRole, selectedLieu, selectedMonth, selectedYear]);
 
   // -------------------
   // 🧮 FONCTION fetchStats
