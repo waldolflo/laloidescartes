@@ -25,20 +25,20 @@ export default function Statistiques({ profil }) {
 
   // ------------------- FETCH ROLE UTILISATEUR -------------------
   useEffect(() => {
-    if (!user) return;
+    if (!profil) return;
 
     const fetchRole = async () => {
       const { data, error } = await supabase
         .from("profils")
         .select("role")
-        .eq("id", user.id)
+        .eq("id", profil.id)
         .single();
 
       if (!error) setUserRole(data?.role || "");
     };
 
     fetchRole();
-  }, [user]);
+  }, [profil]);
 
   useEffect(() => {
     fetchStats();
@@ -57,7 +57,7 @@ export default function Statistiques({ profil }) {
 
     const { data: users, error: userError } = await supabase
       .from("profils")
-      .select("id, nom");
+      .select("id, nom, role");
     if (userError) return console.error(userError);
 
     const { data: inscriptions, error: inscriptionsError } = await supabase
