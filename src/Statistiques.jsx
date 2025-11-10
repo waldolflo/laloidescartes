@@ -24,6 +24,14 @@ export default function Statistiques({ profil }) {
   ];
   const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
 
+  if (!profil) {
+    return (
+      <div className="p-6 text-center text-gray-500">
+        Chargement du profil...
+      </div>
+    );
+  }
+
   // ------------------- FETCH ROLE UTILISATEUR -------------------
   useEffect(() => {
     if (!profil?.id) {
