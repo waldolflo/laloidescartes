@@ -3,6 +3,7 @@ import { supabase } from "./supabaseClient";
 
 export default function Statistiques({ profil }) {
   console.log("Profil reçu :", profil);
+
   const [monthlyStats, setMonthlyStats] = useState([]);
   const [yearlyStats, setYearlyStats] = useState([]);
   const [generalStats, setGeneralStats] = useState({
@@ -24,7 +25,11 @@ export default function Statistiques({ profil }) {
   ];
   const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
 
+  // -------------------
+  // 🕒 Gestion du profil (attente sécurisée)
+  // -------------------
   if (!profil) {
+    console.warn("Profil encore vide, affichage du loader...");
     return (
       <div className="p-6 text-center text-gray-500">
         Chargement du profil...
@@ -32,7 +37,9 @@ export default function Statistiques({ profil }) {
     );
   }
 
-  // ------------------- FETCH ROLE UTILISATEUR -------------------
+  // -------------------
+  // 🎭 FETCH ROLE UTILISATEUR
+  // -------------------
   useEffect(() => {
     if (!profil?.id) {
       console.warn("Profil pas encore chargé, on attend...");
@@ -67,12 +74,26 @@ export default function Statistiques({ profil }) {
     fetchRole();
   }, [profil]);
 
-  // ------------------- FETCH STATS (quand rôle dispo) -------------------
+  // -------------------
+  // 📊 FETCH STATS (quand tout est prêt)
+  // -------------------
   useEffect(() => {
-    if (!profil || !userRole) return; // attendre que tout soit prêt
+    if (!profil?.id) {
+      console.warn("⏳ fetchStats ignoré : profil.id absent");
+      return;
+    }
+    if (!userRole) {
+      console.warn("⏳ fetchStats ignoré : userRole pas encore dispo");
+      return;
+    }
+
+    console.log("✅ Conditions remplies → fetchStats lancé !");
     fetchStats();
   }, [profil, userRole, selectedLieu, selectedMonth, selectedYear]);
 
+  // -------------------
+  // 🧮 FONCTION fetchStats
+  // -------------------
   async function fetchStats() {
     console.log("🧮 fetchStats lancé avec rôle :", userRole);
     try {
@@ -191,12 +212,18 @@ export default function Statistiques({ profil }) {
     }
   }
 
+  // -------------------
+  // 🔄 RESET DES FILTRES
+  // -------------------
   const resetFilters = () => {
     setSelectedLieu("La loi des cartes");
     setSelectedMonth(now.getMonth() + 1);
     setSelectedYear(now.getFullYear());
   };
 
+  // -------------------
+  // 📈 AFFICHAGE DES BARRES
+  // -------------------
   const renderBars = (data) => {
     const maxValue = Math.max(...data.map((d) => d.points), 1);
     return (
@@ -217,6 +244,9 @@ export default function Statistiques({ profil }) {
     );
   };
 
+  // -------------------
+  // 🏅 RENDU FINAL
+  // -------------------
   const medalEmojis = ["🥇", "🥈", "🥉", "🏅", "🎖️"];
 
   return (
