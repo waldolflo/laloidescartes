@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 
 export default function Statistiques({ user }) {
-  console.log("Profil reçu :", user);
-
   const [monthlyStats, setMonthlyStats] = useState([]);
   const [yearlyStats, setYearlyStats] = useState([]);
   const [generalStats, setGeneralStats] = useState({
@@ -49,7 +47,6 @@ export default function Statistiques({ user }) {
   // 🧮 FONCTION fetchStats
   // -------------------
   async function fetchStats() {
-    console.log("🧮 fetchStats lancé avec rôle :", userRole);
     try {
       const { data: parties, error: partiesError } = await supabase
         .from("parties")
@@ -63,7 +60,7 @@ export default function Statistiques({ user }) {
 
       const { data: users, error: userError } = await supabase
         .from("profils")
-        .select("id, nom, role");
+        .select("id, nom");
       if (userError) throw userError;
 
       const { data: inscriptions, error: inscriptionsError } = await supabase
@@ -205,6 +202,47 @@ export default function Statistiques({ user }) {
 
   return (
     <div className="p-6 space-y-6">
+      <h2 className="text-2xl font-bold mb-4">📊 Statistiques Générales ({selectedLieu})</h2>
+      <p className="mb-2">Nombre total de parties : {generalStats.totalParties}</p>
+
+      {/* ✅ TOP 5 jeux les plus joués */}
+      <div>
+        <h3 className="text-xl font-semibold mb-3">🎮 Top 5 jeux les plus joués</h3>
+        <div className="flex flex-wrap gap-4 items-center">
+          {generalStats.topGames.map((jeu, index) => (
+            <div key={jeu.id} className="relative">
+              {jeu.couverture_url ? (
+                <img
+                  src={jeu.couverture_url}
+                  alt={jeu.nom}
+                  className="w-20 h-20 object-cover rounded-lg shadow-md border border-gray-300"
+                  title={`${jeu.nom} (${jeu.count} parties)`}
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gray-200 flex items-center justify-center rounded-lg border text-gray-600">
+                  🎲
+                </div>
+              )}
+              <span className="absolute -top-2 -right-2 text-2xl">
+                {medalEmojis[index]}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <h2 className="text-2xl font-bold mt-10">🏆 Classement Général</h2>
+      {renderBars(generalRanking)}
+
+      <h2 className="text-2xl font-bold mt-10">
+        📅 Classement du Mois : {months[selectedMonth - 1]} {selectedYear}
+      </h2>
+      {renderBars(monthlyStats)}
+
+      <h2 className="text-2xl font-bold mt-10">
+        📆 Classement Annuel : {selectedYear}
+      </h2>
+      {renderBars(yearlyStats)}
       {/* 🎯 Filtres (admin uniquement) */}
       {userRole === "admin" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 items-end mb-8">
@@ -253,12 +291,12 @@ export default function Statistiques({ user }) {
             </select>
           </div>
 
-          <button
+          {/* <button
             onClick={fetchStats}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
           >
             🔄 Actualiser
-          </button>
+          </button> */}
 
           <button
             onClick={resetFilters}
@@ -268,48 +306,6 @@ export default function Statistiques({ user }) {
           </button>
         </div>
       )}
-
-      <h2 className="text-2xl font-bold mb-4">📊 Statistiques Générales ({selectedLieu})</h2>
-      <p className="mb-2">Nombre total de parties : {generalStats.totalParties}</p>
-
-      {/* ✅ TOP 5 jeux les plus joués */}
-      <div>
-        <h3 className="text-xl font-semibold mb-3">🎮 Top 5 jeux les plus joués</h3>
-        <div className="flex flex-wrap gap-4 items-center">
-          {generalStats.topGames.map((jeu, index) => (
-            <div key={jeu.id} className="relative">
-              {jeu.couverture_url ? (
-                <img
-                  src={jeu.couverture_url}
-                  alt={jeu.nom}
-                  className="w-20 h-20 object-cover rounded-lg shadow-md border border-gray-300"
-                  title={`${jeu.nom} (${jeu.count} parties)`}
-                />
-              ) : (
-                <div className="w-20 h-20 bg-gray-200 flex items-center justify-center rounded-lg border text-gray-600">
-                  🎲
-                </div>
-              )}
-              <span className="absolute -top-2 -right-2 text-2xl">
-                {medalEmojis[index]}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <h2 className="text-2xl font-bold mt-10">🏆 Classement Général</h2>
-      {renderBars(generalRanking)}
-
-      <h2 className="text-2xl font-bold mt-10">
-        📅 Classement du Mois : {months[selectedMonth - 1]} {selectedYear}
-      </h2>
-      {renderBars(monthlyStats)}
-
-      <h2 className="text-2xl font-bold mt-10">
-        📆 Classement Annuel : {selectedYear}
-      </h2>
-      {renderBars(yearlyStats)}
     </div>
   );
 }
