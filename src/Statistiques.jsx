@@ -70,9 +70,9 @@ export default function Statistiques({ profil }) {
     setLieux(uniqueLieux);
 
     // 🔹 Si pas admin → forcer les valeurs par défaut
-    const lieu = profil.role === "admin" ? selectedLieu : "La loi des cartes";
-    const mois = profil.role === "admin" ? selectedMonth : now.getMonth() + 1;
-    const annee = profil.role === "admin" ? selectedYear : now.getFullYear();
+    const lieu = userRole === "admin" ? selectedLieu : "La loi des cartes";
+    const mois = userRole === "admin" ? selectedMonth : now.getMonth() + 1;
+    const annee = userRole === "admin" ? selectedYear : now.getFullYear();
 
     const filteredParties = parties.filter((p) => p.lieu === lieu);
 
