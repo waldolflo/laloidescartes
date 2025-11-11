@@ -177,7 +177,6 @@ export default function Statistiques({ user }) {
   // -------------------
   const renderBars = (data) => {
     const maxValue = Math.max(...data.map((d) => d.points.toFixed(2)), 1);
-    console.log("maxValue", maxValue);
     return (
       <div className="space-y-2">
         {data.map((d) => (
@@ -189,7 +188,7 @@ export default function Statistiques({ user }) {
                 style={{ width: `${(d.points.toFixed(2) / maxValue) * 100}%` }}
               ></div>
             </div>
-            <span className="w-12 text-right">{d.points.toFixed(2)}</span>
+            {d.points !== null && d.points !== undefined && <span className="w-12 text-right">{d.points.toFixed(2)}</span>}
           </div>
         ))}
       </div>
