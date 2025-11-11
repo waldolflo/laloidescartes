@@ -90,7 +90,7 @@ export default function Statistiques({ user }) {
         const boostPoids = 0.5 * ((Math.sqrt(poids || 1) - 1) / (Math.sqrt(5) - 1));
         const boostJoueurs = 0.1 * Math.log(nbJoueurs || 1);
         const multiplier = 1 + boostPoids + boostJoueurs;
-        return Math.round(basePoints * multiplier * 100) / 100;
+        return parseFloat((Math.round(basePoints * multiplier * 100) / 100).toFixed(2));
       };
 
       const calculatePointsForUser = (userId, filterFn) => {
