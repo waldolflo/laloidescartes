@@ -176,7 +176,7 @@ export default function Statistiques({ user }) {
   // 📈 AFFICHAGE DES BARRES
   // -------------------
   const renderBars = (data) => {
-    const maxValue = Math.max(...data.map((d) => d.points), 1);
+    const maxValue = Math.max(...data.map((d) => d.points.toFixed(2)), 1);
     return (
       <div className="space-y-2">
         {data.map((d) => (
@@ -185,7 +185,7 @@ export default function Statistiques({ user }) {
             <div className="bg-gray-300 h-6 flex-1 rounded overflow-hidden">
               <div
                 className="bg-green-500 h-6 rounded"
-                style={{ width: `${(d.points / maxValue) * 100}%` }}
+                style={{ width: `${(d.points.toFixed(2) / maxValue) * 100}%` }}
               ></div>
             </div>
             <span className="w-12 text-right">{d.points.toFixed(2)}</span>
