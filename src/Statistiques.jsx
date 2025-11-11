@@ -177,6 +177,7 @@ export default function Statistiques({ user }) {
   // -------------------
   const renderBars = (data) => {
     const maxValue = Math.max(...data.map((d) => d.points.toFixed(2)), 1);
+    console.log("maxValue", maxValue);
     return (
       <div className="space-y-2">
         {data.map((d) => (
