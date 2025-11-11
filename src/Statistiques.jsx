@@ -176,20 +176,27 @@ export default function Statistiques({ user }) {
   // 📈 AFFICHAGE DES BARRES
   // -------------------
   const renderBars = (data) => {
-    const maxValue = Math.max(...data.map((d) => d.points.toFixed(2)), 1);
+    const maxValue = Math.max(...data.map((d) => Number(d.points.toFixed(2))), 1);
+    // Si maxValue est 0 (aucun score), on n'affiche rien
+    if (maxValue === 0) return (
+      <p className="text-gray-500">Aucun score disponible pour cette période.</p>
+    );
     return (
       <div className="space-y-2">
-        {data.map((d) => (
-          <div key={d.nom} className="flex items-center space-x-2">
-            <span className="w-32 truncate">{d.nom}</span>
-            <div className="bg-gray-300 h-6 flex-1 rounded overflow-hidden">
-              <div
-                className="bg-green-500 h-6 rounded"
-                style={{ width: `${(d.points.toFixed(2) / maxValue) * 100}%` }}
-              ></div>
+        {data
+          // On n'affiche que les joueurs ayant des points non nuls
+          .filter((d) => d.points && Number(d.points.toFixed(2)) !== 0)
+          .map((d) => (
+            <div key={d.nom} className="flex items-center space-x-2">
+              <span className="w-32 truncate">{d.nom}</span>
+              <div className="bg-gray-300 h-6 flex-1 rounded overflow-hidden">
+                <div
+                  className="bg-green-500 h-6 rounded"
+                  style={{ width: `${(Number(d.points.toFixed(2)) / maxValue) * 100}%` }}
+                ></div>
+              </div>
+              <span className="w-12 text-right">{d.points.toFixed(2)}</span>
             </div>
-            {d.points !== null && d.points !== undefined && d.points !== 0.00 && <span className="w-12 text-right">{d.points.toFixed(2)}</span>}
-          </div>
         ))}
       </div>
     );
