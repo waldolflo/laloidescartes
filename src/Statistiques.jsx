@@ -90,7 +90,7 @@ export default function Statistiques({ user }) {
         const boostPoids = 0.5 * ((Math.sqrt(poids || 1) - 1) / (Math.sqrt(5) - 1));
         const boostJoueurs = 0.1 * Math.log(nbJoueurs || 1);
         const multiplier = 1 + boostPoids + boostJoueurs;
-        return parseFloat((Math.round(basePoints * multiplier * 100) / 100).toFixed(2));
+        return Math.round(basePoints * multiplier * 100) / 100;
       };
 
       const calculatePointsForUser = (userId, filterFn) => {
@@ -188,7 +188,7 @@ export default function Statistiques({ user }) {
                 style={{ width: `${(d.points / maxValue) * 100}%` }}
               ></div>
             </div>
-            <span className="w-12 text-right">{d.points}</span>
+            <span className="w-12 text-right">{d.points.toFixed(2)}</span>
           </div>
         ))}
       </div>
