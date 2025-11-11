@@ -178,8 +178,10 @@ export default function Statistiques({ user }) {
   const renderBars = (data) => {
     const maxValue = Math.max(...data.map((d) => Number(d.points.toFixed(2))), 1);
     // Si maxValue est 0 (aucun score), on n'affiche rien
-    if (maxValue === 0) return (
-      <p className="text-gray-500">Aucun score disponible pour cette période.</p>
+    if (maxValue === 0.00) return (
+      <div className="space-y-2">
+        <p className="text-gray-500">Aucun score disponible pour cette période.</p>
+      </div>
     );
     return (
       <div className="space-y-2">
