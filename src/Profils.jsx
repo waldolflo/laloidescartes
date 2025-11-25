@@ -286,6 +286,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                           }}
                           className="border p-1 rounded"
                         >
+                          <option value="fauxcompte">fauxcompte</option>
                           <option value="user">user</option>
                           <option value="membre">membre</option>
                           <option value="ludo">ludo</option>
