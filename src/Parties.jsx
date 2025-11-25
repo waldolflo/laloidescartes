@@ -4,7 +4,7 @@ import EditPartie from "./EditPartie";
 import RankModal from "./RankModal";
 
 export default function Parties({ user, authUser }) {
-  const currentUser = user || authUser; // fallback si user pas encore passé
+  const currentUser = user || authUser;
 
   const [parties, setParties] = useState({ upcoming: [], past: [] });
   const [jeux, setJeux] = useState([]);
@@ -21,9 +21,12 @@ export default function Parties({ user, authUser }) {
   const [showModal, setShowModal] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [search, setSearch] = useState("");
+
   const [selectedPartieForRank, setSelectedPartieForRank] = useState(null);
 
-  // ------------------- PROTECTION SI PAS D'UTILISATEUR -------------------
+  // 🔥🔥🔥 *** NOUVEAU : Filtre des lieux pour parties archivées ***
+  const [selectedLieu, setSelectedLieu] = useState("La loi des cartes");
+
   if (!currentUser) return <p>Chargement de l’utilisateur…</p>;
 
   // ------------------- FETCH ROLE UTILISATEUR -------------------
@@ -70,7 +73,6 @@ export default function Parties({ user, authUser }) {
     for (let p of data || []) {
       const partDate = new Date(`${p.date_partie}T${p.heure_partie}`);
 
-      // Récupérer les inscrits pour cette partie
       const { data: insData } = await supabase
         .from("inscriptions")
         .select("utilisateur_id, rank, score")
@@ -93,18 +95,16 @@ export default function Parties({ user, authUser }) {
       else past.push(partieWithInscrits);
     }
 
-    // Trier les parties archivées (past) de la plus récente à la plus ancienne
     past.sort((a, b) => {
       const dateA = new Date(`${a.date_partie}T${a.heure_partie}`);
       const dateB = new Date(`${b.date_partie}T${b.heure_partie}`);
-      return dateB - dateA; // du plus récent au plus ancien
+      return dateB - dateA;
     });
 
-    // Trier les parties à venir (upcoming) dans l’ordre chronologique normal
     upcoming.sort((a, b) => {
       const dateA = new Date(`${a.date_partie}T${a.heure_partie}`);
       const dateB = new Date(`${b.date_partie}T${b.heure_partie}`);
-      return dateA - dateB; // du plus proche au plus lointain
+      return dateA - dateB;
     });
 
     setParties({ upcoming, past });
@@ -115,7 +115,6 @@ export default function Parties({ user, authUser }) {
     const isInscrit = partie.inscrits?.some((i) => i.utilisateur_id === currentUser.id);
 
     if (isInscrit) {
-      // Se désinscrire
       const { error } = await supabase
         .from("inscriptions")
         .delete()
@@ -123,7 +122,6 @@ export default function Parties({ user, authUser }) {
         .eq("utilisateur_id", currentUser.id);
       if (error) return alert("Erreur de désinscription : " + error.message);
     } else {
-      // S’inscrire
       if ((partie.inscrits?.length || 0) >= (partie.jeux?.max_joueurs || 0)) {
         return alert("La partie est complète !");
       }
@@ -150,7 +148,9 @@ export default function Parties({ user, authUser }) {
       return;
     }
 
-    const nomDefault = `${jeu.nom} ${formatDate(newPartie.date_partie)} ${formatHeure(newPartie.heure_partie)}`;
+    const nomDefault = `${jeu.nom} ${formatDate(newPartie.date_partie)} ${formatHeure(
+      newPartie.heure_partie
+    )}`;
 
     const { error } = await supabase.from("parties").insert([
       {
@@ -179,7 +179,6 @@ export default function Parties({ user, authUser }) {
     }
   };
 
-  // ------------------- UTILS -------------------
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString("fr-FR");
@@ -214,7 +213,10 @@ export default function Parties({ user, authUser }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo" || userRole === "membre") && (
+        {(userRole === "admin" ||
+          userRole === "ludoplus" ||
+          userRole === "ludo" ||
+          userRole === "membre") && (
           <button
             onClick={() => setShowModal(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -244,6 +246,7 @@ export default function Parties({ user, authUser }) {
                 </option>
               ))}
             </select>
+
             <input
               type="date"
               value={newPartie.date_partie}
@@ -252,6 +255,7 @@ export default function Parties({ user, authUser }) {
               }
               className="w-full border p-2 rounded mb-2"
             />
+
             <input
               type="time"
               value={newPartie.heure_partie}
@@ -260,6 +264,7 @@ export default function Parties({ user, authUser }) {
               }
               className="w-full border p-2 rounded mb-2"
             />
+
             <input
               type="text"
               placeholder="Description (optionnelle)"
@@ -269,6 +274,7 @@ export default function Parties({ user, authUser }) {
               }
               className="w-full border p-2 rounded mb-2"
             />
+
             <input
               type="text"
               placeholder="Lieu (optionnel)"
@@ -278,6 +284,7 @@ export default function Parties({ user, authUser }) {
               }
               className="w-full border p-2 rounded mb-2"
             />
+
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowModal(false)}
@@ -285,6 +292,7 @@ export default function Parties({ user, authUser }) {
               >
                 Annuler
               </button>
+
               <button
                 onClick={addPartie}
                 className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
@@ -300,8 +308,11 @@ export default function Parties({ user, authUser }) {
       <h2 className="text-xl font-bold mb-2">Parties à venir</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filterParties(parties.upcoming).map((p) => {
-          const isInscrit = p.inscrits?.some((i) => i.utilisateur_id === currentUser.id);
-          const placesRestantes = (p.jeux?.max_joueurs || 0) - (p.inscrits?.length || 0);
+          const isInscrit = p.inscrits?.some(
+            (i) => i.utilisateur_id === currentUser.id
+          );
+          const placesRestantes =
+            (p.jeux?.max_joueurs || 0) - (p.inscrits?.length || 0);
 
           return (
             <div
@@ -320,17 +331,29 @@ export default function Parties({ user, authUser }) {
               <p className="text-sm text-gray-600 text-center">
                 {formatDate(p.date_partie)} — {formatHeure(p.heure_partie)}
               </p>
-              {p.description && <p className="text-sm text-gray-600 text-center">{p.description}</p>}
-              {p.lieu && <p className="text-sm text-gray-600 text-center">{p.lieu}</p>}
+              {p.description && (
+                <p className="text-sm text-gray-600 text-center">
+                  {p.description}
+                </p>
+              )}
+              {p.lieu && (
+                <p className="text-sm text-gray-600 text-center">{p.lieu}</p>
+              )}
               <p className="text-sm text-gray-700 text-center">
                 Organisateur : {p.organisateur?.nom || "?"}
               </p>
-              <p className="text-sm text-gray-700 text-center">Joueurs inscrits : {p.nombredejoueurs} / {p.jeux?.max_joueurs}</p>
 
               {p.inscrits?.length > 0 && (
                 <ul className="flex flex-col gap-1 mt-3">
                   {p.inscrits.map((i) => (
-                    <li className="flex justify-between items-center rounded px-3 py-1 border" key={i.utilisateur_id}><span className="font-medium flex items-center gap-2">{i.profil?.nom || i.utilisateur_id}</span></li>
+                    <li
+                      className="flex justify-between items-center rounded px-3 py-1 border"
+                      key={i.utilisateur_id}
+                    >
+                      <span className="font-medium flex items-center gap-2">
+                        {i.profil?.nom || i.utilisateur_id}
+                      </span>
+                    </li>
                   ))}
                 </ul>
               )}
@@ -347,7 +370,8 @@ export default function Parties({ user, authUser }) {
                   {isInscrit ? "Se désinscrire" : "S’inscrire"}
                 </button>
 
-                {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
+                {(p.utilisateur_id === currentUser.id ||
+                  userRole === "admin") && (
                   <div className="flex gap-2 w-full">
                     <button
                       onClick={() => setEditingPartie(p)}
@@ -355,9 +379,15 @@ export default function Parties({ user, authUser }) {
                     >
                       Modifier
                     </button>
+
                     <button
                       onClick={async () => {
-                        if (!window.confirm("Voulez-vous vraiment supprimer cette partie ?")) return;
+                        if (
+                          !window.confirm(
+                            "Voulez-vous vraiment supprimer cette partie ?"
+                          )
+                        )
+                          return;
                         try {
                           const { error } = await supabase
                             .from("parties")
@@ -386,12 +416,37 @@ export default function Parties({ user, authUser }) {
         })}
       </div>
 
-      {/* Parties passées */}
+      {/* 🔥🔥🔥 FILTRE DES ARCHIVES PAR LIEU */}
       {parties.past?.length > 0 && (
         <>
           <h2 className="text-xl font-bold mt-6 mb-2">Archives de parties</h2>
+
+          {/* Liste déroulante des lieux */}
+          <div className="mb-4">
+            <select
+              value={selectedLieu}
+              onChange={(e) => setSelectedLieu(e.target.value)}
+              className="border p-2 rounded"
+            >
+              <option value="Tous">Tous les lieux</option>
+
+              {[...new Set(parties.past.map((p) => p.lieu || "Inconnu"))].map(
+                (lieu) => (
+                  <option key={lieu} value={lieu}>
+                    {lieu}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          {/* Application du filtre : lieu sélectionné */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filterParties(parties.past).map((p) => (
+            {filterParties(
+              parties.past.filter(
+                (p) => selectedLieu === "Tous" || p.lieu === selectedLieu
+              )
+            ).map((p) => (
               <div
                 key={p.id}
                 className="border rounded p-4 bg-gray-100 shadow flex flex-col gap-4 hover:shadow-lg transition"
@@ -403,6 +458,7 @@ export default function Parties({ user, authUser }) {
                     className="w-full h-40 object-contain"
                   />
                 )}
+
                 <div className="flex-1 flex flex-col justify-between">
                   <h2 className="text-lg font-bold text-center">{p.jeux?.nom}</h2>
                   <p className="text-sm text-gray-600 text-center">
@@ -414,7 +470,9 @@ export default function Parties({ user, authUser }) {
 
                   {p.inscrits?.length > 0 && (
                     <div className="mt-2">
-                      <h3 className="font-semibold text-sm mb-1 text-center">Classement :</h3>
+                      <h3 className="font-semibold text-sm mb-1 text-center">
+                        Classement :
+                      </h3>
                       <ul className="flex flex-col gap-1">
                         {p.inscrits
                           .sort((a, b) => (a.rank || 99) - (b.rank || 99))
@@ -446,9 +504,8 @@ export default function Parties({ user, authUser }) {
                                   {nom}
                                 </span>
                                 <div className="text-sm text-gray-700 flex items-center gap-2">
-                                  {score !== null && score !== undefined && (
-                                    <span>{score}</span>
-                                  )}
+                                  {score !== null &&
+                                    score !== undefined && <span>{score}</span>}
                                   {rank && <span>Rang : {rank}</span>}
                                 </div>
                               </li>
@@ -457,8 +514,9 @@ export default function Parties({ user, authUser }) {
                       </ul>
                     </div>
                   )}
-                  {/* Bouton attribuer les rangs (admin ou organisateur) */}
-                  {(p.utilisateur_id === currentUser.id || userRole === "admin") && (
+
+                  {(p.utilisateur_id === currentUser.id ||
+                    userRole === "admin") && (
                     <div className="mt-3 text-center">
                       <button
                         onClick={() => setSelectedPartieForRank(p)}
@@ -475,7 +533,6 @@ export default function Parties({ user, authUser }) {
         </>
       )}
 
-      {/* MODAL EDITION */}
       {editingPartie && (
         <EditPartie
           partie={editingPartie}
@@ -483,7 +540,7 @@ export default function Parties({ user, authUser }) {
           onUpdate={fetchParties}
         />
       )}
-      {/* MODAL RANKING */}
+
       {selectedPartieForRank && (
         <RankModal
           partie={selectedPartieForRank}
