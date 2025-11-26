@@ -67,8 +67,21 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       if (jeuxData) setJeux(jeuxData);
     };
 
+    const fetchGlobalImage = async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 1)
+        .single();
+
+      if (!error && data) {
+        setGlobalImageUrl(data.global_image_url || "");
+      }
+    };
+
     fetchProfil();
     fetchJeux();
+    fetchGlobalImage();
   }, [authUser, setProfilGlobal]);
 
   const updateNom = async () => {
@@ -219,10 +232,10 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
       <p><strong>Rôle :</strong> {profil.role}</p>
 
-      {profil.global_image_url && (
+      {globalImageUrl && (
         <div className="mt-4 flex justify-end">
           <img
-            src={profil.global_image_url}
+            src={globalImageUrl}
             alt="Image globale"
             className="w-20 h-20 object-contain border rounded shadow"
           />
@@ -345,14 +358,15 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           <button
             onClick={async () => {
               const { data, error } = await supabase
-                .from("profils")
-                .update({ global_image_url: globalImageUrl })
-                .eq("id", profil.id)
+                .from("settings")
+                .update({
+                  global_image_url: globalImageUrl,
+                  updated_at: new Date(),
+                })
+                .eq("id", 1)
                 .select()
                 .single();
-
               if (!error) {
-                setProfil(data);
                 alert("✅ Planning mis à jour !");
               }
             }}
