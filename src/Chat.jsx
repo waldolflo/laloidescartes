@@ -12,9 +12,9 @@ export default function Chat({ user }) {
   const endRef = useRef(null);
 
   // 🔔 Son de notification
-  const notifSound = new Audio(
-    "https://cdn.pixabay.com/download/audio/2022/03/15/audio_5785c33f9d.mp3"
-  );
+  //const notifSound = new Audio(
+  //  "https://cdn.pixabay.com/download/audio/2022/03/15/audio_5785c33f9d.mp3"
+  //);
 
   // 📌 Scrolldown automatique
   const scrollToBottom = () => {
@@ -58,7 +58,7 @@ export default function Chat({ user }) {
           setMessages((prev) => [...prev, payload.new]);
           scrollToBottom();
 
-          if (payload.new.user_id !== user.id) notifSound.play();
+          //if (payload.new.user_id !== user.id) notifSound.play();
         }
       )
       .on(
