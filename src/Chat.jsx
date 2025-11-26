@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import { Smile, SendHorizonal, Edit3, Trash2, Check, X } from "lucide-react";
+import useNotifications from "./useNotifications";
 
 export default function Chat({ user }) {
   const [messages, setMessages] = useState([]);
@@ -13,6 +14,7 @@ export default function Chat({ user }) {
 
   const typingRef = useRef(null);
   const endRef = useRef(null);
+  const { newMessage } = useNotifications();
 
   // Auto scroll
   const scrollToBottom = () => {
@@ -57,6 +59,9 @@ export default function Chat({ user }) {
         (payload) => {
           setMessages((prev) => [...prev, payload.new]);
           scrollToBottom();
+          // Notifications
+          const isMention = payload.new.content.includes(`@${user.nom}`);
+          newMessage(payload.new, isMention);
         }
       )
       .on(
