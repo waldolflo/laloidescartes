@@ -128,9 +128,32 @@ export default function Chat({ user }) {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "chat" },
-        (payload) => {
+        async (payload) => {
+          // Récupérer le profil
+          const { data: profil } = await supabase
+            .from("profils")
+            .select("id, nom, jeufavoris1")
+            .eq("id", payload.new.user_id)
+            .single();
+
+          let coverage_url = "/default_avatar.png";
+          if (profil?.jeufavoris1) {
+            const { data: jeu } = await supabase
+              .from("jeux")
+              .select("couverture_url")
+              .eq("id", profil.jeufavoris1)
+              .single();
+            coverage_url = jeu?.couverture_url || coverage_url;
+          }
+
+          const updatedMessage = {
+            ...payload.new,
+            user_name: profil?.nom || payload.new.user_name,
+            coverage_url,
+          };
+
           setMessages((prev) =>
-            prev.map((m) => (m.id === payload.new.id ? payload.new : m))
+            prev.map((m) => (m.id === payload.new.id ? updatedMessage : m))
           );
         }
       )
