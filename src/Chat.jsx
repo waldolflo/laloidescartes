@@ -233,7 +233,8 @@ export default function Chat({ user }) {
     if (match) {
       const search = match[1].toLowerCase();
       setMentionSuggestions(
-        usersList.filter((u) => u.nom.toLowerCase().startsWith(search))
+        usersList
+          .filter((u) => u.nom?.toLowerCase().startsWith(search))
       );
     } else {
       setMentionSuggestions([]);
