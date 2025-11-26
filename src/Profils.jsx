@@ -9,6 +9,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [allUsers, setAllUsers] = useState([]);
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
   const [globalImageUrl, setGlobalImageUrl] = useState("");
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   // ✅ Hooks toujours au même niveau
   useEffect(() => {
@@ -242,12 +243,13 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             <img
               src={globalImageUrl}
               alt="Image globale"
+              onClick={() => setZoomOpen(true)}
               className="w-40 h-40 lg:w-48 lg:h-48 object-contain border rounded shadow"
             />
           </div>
         )}
       </div>
-      
+
       {profil.role === "user" && (
         <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
       )}
@@ -403,6 +405,27 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           Supprimer mon compte
         </button>
       </div>
+
+      {zoomOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          
+          {/* Bouton X pour fermer */}
+          <button
+            onClick={() => setZoomOpen(false)}
+            className="absolute top-5 right-5 text-white text-3xl font-bold cursor-pointer hover:scale-110 transition"
+          >
+            ×
+          </button>
+
+          {/* Image zoomée */}
+          <img
+            src={globalImageUrl}
+            alt="Zoom"
+            className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg animate-zoom"
+          />
+
+        </div>
+      )}
     </div>
   );
 }

@@ -2,3 +2,18 @@
 /*@plugin "daisyui" {
   themes: light --default, dark --prefersdark, cupcake;
 } */
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-zoom {
+  animation: zoomIn 0.2s ease-out;
+}
