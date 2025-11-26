@@ -18,7 +18,8 @@ import Statistiques from "./Statistiques";
 import Profils from "./Profils";
 import Auth from "./Auth";
 import FooterBGG from "./FooterBGG"; // <-- importe ton FooterBGG
-import { BookOpen, CalendarDays, Users, User, LogOut } from "lucide-react";
+import Chat from "./Chat";
+import { BookOpen, CalendarDays, Users, User, LogOut, MessageCircle } from "lucide-react";
 
 // --- Navbar responsive ---
 function Navbar({ currentUser, onLogout }) {
@@ -30,6 +31,7 @@ function Navbar({ currentUser, onLogout }) {
     //{ to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/statistiques", label: "Statistiques", icon: Users },
     { to: "/profils", label: "Profil", icon: User },
+    { to: "/chat", label: "Chat", icon: MessageCircle },
   ];
 
   return (
@@ -127,6 +129,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
                 path="/profils"
                 element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} setAuthUser={setAuthUser} setUser={setUser} />}
               />
+              <Route path="/chat" element={<Chat user={currentUser} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
