@@ -23,8 +23,34 @@ export default function Chat({ user }) {
     }, 50);
   };
 
-  // Charger les messages et avatars via plusieurs requêtes
+  // --- UTILITAIRE : récupérer message complet avec profil et couverture ---
+  const enrichMessage = async (message) => {
+    const { data: profil } = await supabase
+      .from("profils")
+      .select("id, nom, jeufavoris1")
+      .eq("id", message.user_id)
+      .single();
+
+    let coverage_url = "/default_avatar.png";
+    if (profil?.jeufavoris1) {
+      const { data: jeu } = await supabase
+        .from("jeux")
+        .select("couverture_url")
+        .eq("id", profil.jeufavoris1)
+        .single();
+      coverage_url = jeu?.couverture_url || coverage_url;
+    }
+
+    return {
+      ...message,
+      user_name: profil?.nom || message.user_name,
+      coverage_url,
+    };
+  };
+
+  // Charger les messages initiaux
   const loadMessages = async () => {
+    // 1. Charger les messages
     const { data: chatData } = await supabase
       .from("chat")
       .select("*")
@@ -33,24 +59,24 @@ export default function Chat({ user }) {
 
     if (!chatData) return;
 
-    // Récupérer les profils
+    // 2. Récupérer tous les profils en une seule requête
     const userIds = [...new Set(chatData.map((m) => m.user_id))];
     const { data: profilsData } = await supabase
       .from("profils")
       .select("id, nom, jeufavoris1")
       .in("id", userIds);
 
-    // Récupérer les jeux
+    // 3. Récupérer tous les jeux en une seule requête
     const jeuxIds = [
-      ...new Set(profilsData.filter((p) => p.jeufavoris1).map((p) => p.jeufavoris1)),
+      ...new Set(profilsData.filter((p) => p.jeufavoris1).map((p) => p.jeufavoris1))
     ];
     const { data: jeuxData } = await supabase
       .from("jeux")
       .select("id, couverture_url")
       .in("id", jeuxIds);
 
-    // Fusionner tout
-    const messagesWithAvatar = chatData.map((m) => {
+    // 4. Fusionner tout en mémoire
+    const messagesWithDetails = chatData.map((m) => {
       const profil = profilsData.find((p) => p.id === m.user_id);
       const jeu = jeuxData.find((j) => j.id === profil?.jeufavoris1);
       return {
@@ -60,7 +86,7 @@ export default function Chat({ user }) {
       };
     });
 
-    setMessages(messagesWithAvatar);
+    setMessages(messagesWithDetails);
     scrollToBottom();
   };
 
@@ -93,28 +119,7 @@ export default function Chat({ user }) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat" },
         async (payload) => {
-          // Récupérer profil et jeu
-          const { data: profil } = await supabase
-            .from("profils")
-            .select("id, nom, jeufavoris1")
-            .eq("id", payload.new.user_id)
-            .single();
-
-          let coverage_url = "/default_avatar.png";
-          if (profil?.jeufavoris1) {
-            const { data: jeu } = await supabase
-              .from("jeux")
-              .select("couverture_url")
-              .eq("id", profil.jeufavoris1)
-              .single();
-            coverage_url = jeu?.couverture_url || coverage_url;
-          }
-
-          const newMessage = {
-            ...payload.new,
-            user_name: profil?.nom || payload.new.user_name,
-            coverage_url,
-          };
+          const newMessage = await enrichMessage(payload.new);
 
           setMessages((prev) => [...prev, newMessage]);
           scrollToBottom();
@@ -129,28 +134,7 @@ export default function Chat({ user }) {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "chat" },
         async (payload) => {
-          // Récupérer le profil
-          const { data: profil } = await supabase
-            .from("profils")
-            .select("id, nom, jeufavoris1")
-            .eq("id", payload.new.user_id)
-            .single();
-
-          let coverage_url = "/default_avatar.png";
-          if (profil?.jeufavoris1) {
-            const { data: jeu } = await supabase
-              .from("jeux")
-              .select("couverture_url")
-              .eq("id", profil.jeufavoris1)
-              .single();
-            coverage_url = jeu?.couverture_url || coverage_url;
-          }
-
-          const updatedMessage = {
-            ...payload.new,
-            user_name: profil?.nom || payload.new.user_name,
-            coverage_url,
-          };
+          const updatedMessage = await enrichMessage(payload.new);
 
           setMessages((prev) =>
             prev.map((m) => (m.id === payload.new.id ? updatedMessage : m))
