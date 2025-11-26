@@ -11,12 +11,7 @@ export default function Chat({ user }) {
   const typingRef = useRef(null);
   const endRef = useRef(null);
 
-  // 🔔 Son de notification
-  //const notifSound = new Audio(
-  //  "https://cdn.pixabay.com/download/audio/2022/03/15/audio_5785c33f9d.mp3"
-  //);
-
-  // 📌 Scrolldown automatique
+  // 📌 Scroll vers le bas
   const scrollToBottom = () => {
     setTimeout(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,55 +32,50 @@ export default function Chat({ user }) {
     }
   };
 
-  // 👥 Charger les utilisateurs pour les mentions
+  // 👥 Charger la liste des utilisateurs pour les mentions
   const loadUsers = async () => {
     const { data } = await supabase.from("profils").select("id, nom");
     if (data) setUsersList(data);
   };
 
-  // 🔄 Évènements temps réel
+  // 🔄 Abonnements en temps réel
   useEffect(() => {
     loadMessages();
     loadUsers();
 
-    // 🔊 Nouveau message
-    const sub = supabase
-      .channel("chat-room")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat" },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new]);
-          scrollToBottom();
+    const channel = supabase.channel("chat-room");
 
-          //if (payload.new.user_id !== user.id) notifSound.play();
-        }
-      )
-      .on(
-        "broadcast",
-        { event: "typing" },
-        ({ payload }) => {
-          const { name } = payload;
-          if (name === user.nom) return;
+    // 📥 Nouveau message
+    channel.on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "chat" },
+      (payload) => {
+        setMessages((prev) => [...prev, payload.new]);
+        scrollToBottom();
+      }
+    );
 
-          setTypingUsers((prev) =>
-            prev.includes(name) ? prev : [...prev, name]
-          );
+    // ✍️ Typing
+    channel.on("broadcast", { event: "typing" }, ({ payload }) => {
+      const { name } = payload;
+      if (name === user.nom) return;
 
-          clearTimeout(typingRef.current);
-          typingRef.current = setTimeout(() => {
-            setTypingUsers([]);
-          }, 1500);
-        }
-      )
-      .subscribe();
+      setTypingUsers((prev) =>
+        prev.includes(name) ? prev : [...prev, name]
+      );
 
-    return () => {
-      supabase.removeChannel(sub);
-    };
+      clearTimeout(typingRef.current);
+      typingRef.current = setTimeout(() => {
+        setTypingUsers([]);
+      }, 1500);
+    });
+
+    channel.subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, []);
 
-  // ✍️ Signaler qu’on écrit
+  // ✍️ Envoyer l'indicateur d'écriture
   const sendTyping = () => {
     supabase.channel("chat-room").send({
       type: "broadcast",
@@ -107,7 +97,7 @@ export default function Chat({ user }) {
 
     setInput("");
 
-    // 🔧 Nettoyage automatique si > 100 messages
+    // 🧹 Garder uniquement les 100 derniers messages
     const { data } = await supabase
       .from("chat")
       .select("id")
@@ -119,13 +109,11 @@ export default function Chat({ user }) {
     }
   };
 
-  // 😄 Ajouter une réaction
+  // 😄 Ajouter une réaction (via fonction SQL)
   const addReaction = async (msgId, emoji) => {
-    await supabase.from("chat").update({
-      reactions: supabase.rpc("append_reaction", {
-        message_id: msgId,
-        reaction: emoji,
-      }),
+    await supabase.rpc("append_reaction", {
+      message_id: msgId,
+      reaction: emoji,
     });
   };
 
@@ -144,7 +132,12 @@ export default function Chat({ user }) {
       {/* Zone messages */}
       <div className="flex-1 overflow-y-auto bg-white p-3 rounded-lg shadow-inner space-y-2 border">
         {messages.map((m) => (
-          <div key={m.id} className={`flex flex-col ${m.user_id === user.id ? "items-end" : "items-start"}`}>
+          <div
+            key={m.id}
+            className={`flex flex-col ${
+              m.user_id === user.id ? "items-end" : "items-start"
+            }`}
+          >
             <div
               className={`px-3 py-2 rounded-lg max-w-[80%] ${
                 m.user_id === user.id
@@ -154,10 +147,12 @@ export default function Chat({ user }) {
             >
               <div className="text-xs opacity-70 mb-1">{m.user_name}</div>
               <div>{m.content}</div>
-              <div className="text-[10px] text-right opacity-70 mt-1">{formatDate(m.created_at)}</div>
+              <div className="text-[10px] text-right opacity-70 mt-1">
+                {formatDate(m.created_at)}
+              </div>
             </div>
 
-            {/* Reactions */}
+            {/* Boutons réactions */}
             <div className="flex gap-1 mt-1">
               {["👍", "❤️", "😂", "😮"].map((emoji) => (
                 <button
@@ -170,7 +165,7 @@ export default function Chat({ user }) {
               ))}
             </div>
 
-            {/* Affichage reactions */}
+            {/* Affichage réactions */}
             {m.reactions && m.reactions.length > 0 && (
               <div className="text-sm ml-2 opacity-70">
                 {m.reactions.join(" ")}
@@ -179,11 +174,10 @@ export default function Chat({ user }) {
           </div>
         ))}
 
-        {/* Fin scroll */}
         <div ref={endRef}></div>
       </div>
 
-      {/* Typing */}
+      {/* Affichage "X écrit..." */}
       {typingUsers.length > 0 && (
         <div className="text-sm text-gray-600 mt-2">
           ✍️ {typingUsers.join(", ")} écrit...
