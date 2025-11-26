@@ -23,34 +23,45 @@ export default function Chat({ user }) {
     }, 50);
   };
 
-  // Charger les messages avec l'avatar du jeu favori
+  // Charger les messages et avatars via plusieurs requêtes
   const loadMessages = async () => {
-    const { data } = await supabase
+    const { data: chatData } = await supabase
       .from("chat")
-      .select(`
-        *,
-        profils:user_id (
-          id,
-          nom,
-          jeufavoris1
-        ),
-        jeux:jeufavoris1 (
-          couverture_url
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: true })
       .limit(100);
 
-    if (data) {
-      // Ajouter cover_url à chaque message
-      const messagesWithAvatar = data.map((m) => ({
+    if (!chatData) return;
+
+    // Récupérer les profils
+    const userIds = [...new Set(chatData.map((m) => m.user_id))];
+    const { data: profilsData } = await supabase
+      .from("profils")
+      .select("id, nom, jeufavoris1")
+      .in("id", userIds);
+
+    // Récupérer les jeux
+    const jeuxIds = [
+      ...new Set(profilsData.filter((p) => p.jeufavoris1).map((p) => p.jeufavoris1)),
+    ];
+    const { data: jeuxData } = await supabase
+      .from("jeux")
+      .select("id, couverture_url")
+      .in("id", jeuxIds);
+
+    // Fusionner tout
+    const messagesWithAvatar = chatData.map((m) => {
+      const profil = profilsData.find((p) => p.id === m.user_id);
+      const jeu = jeuxData.find((j) => j.id === profil?.jeufavoris1);
+      return {
         ...m,
-        coverage_url: m.jeux?.couverture_url || "/default_avatar.png",
-        user_name: m.profils?.nom || m.user_name,
-      }));
-      setMessages(messagesWithAvatar);
-      scrollToBottom();
-    }
+        user_name: profil?.nom || m.user_name,
+        coverage_url: jeu?.couverture_url || "/default_avatar.png",
+      };
+    });
+
+    setMessages(messagesWithAvatar);
+    scrollToBottom();
   };
 
   // Charger les utilisateurs pour @mentions
@@ -81,8 +92,31 @@ export default function Chat({ user }) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat" },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new]);
+        async (payload) => {
+          // Récupérer profil et jeu
+          const { data: profil } = await supabase
+            .from("profils")
+            .select("id, nom, jeufavoris1")
+            .eq("id", payload.new.user_id)
+            .single();
+
+          let coverage_url = "/default_avatar.png";
+          if (profil?.jeufavoris1) {
+            const { data: jeu } = await supabase
+              .from("jeux")
+              .select("couverture_url")
+              .eq("id", profil.jeufavoris1)
+              .single();
+            coverage_url = jeu?.couverture_url || coverage_url;
+          }
+
+          const newMessage = {
+            ...payload.new,
+            user_name: profil?.nom || payload.new.user_name,
+            coverage_url,
+          };
+
+          setMessages((prev) => [...prev, newMessage]);
           scrollToBottom();
 
           if (payload.new.user_id !== user.id) {
@@ -160,11 +194,7 @@ export default function Chat({ user }) {
   };
 
   const saveEdit = async () => {
-    await supabase
-      .from("chat")
-      .update({ content: editText })
-      .eq("id", editingId);
-
+    await supabase.from("chat").update({ content: editText }).eq("id", editingId);
     setEditingId(null);
     setEditText("");
   };
