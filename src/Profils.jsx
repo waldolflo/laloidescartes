@@ -208,40 +208,46 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Mon profil</h2>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+        {/* Bloc Nom + Rôle */}
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold mb-2">Mon profil</h2>
 
-      {/* Prénom */}
-      <div className="mb-4">
-        <label className="block font-medium mb-1">Prénom :</label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            className="border p-2 rounded w-full"
-            placeholder="Entrez votre prénom"
-          />
-          <button
-            onClick={updateNom}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Valider
-          </button>
+          {/* Prénom */}
+          <div className="mb-3">
+            <label className="block font-medium mb-1">Prénom :</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Entrez votre prénom"
+              />
+              <button
+                onClick={updateNom}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                Valider
+              </button>
+            </div>
+          </div>
+
+          <p className="font-medium mt-1"><strong>Rôle :</strong> {profil.role}</p>
         </div>
+
+        {/* Image à droite en grand écran */}
+        {globalImageUrl && (
+          <div className="mt-4 lg:mt-0 lg:ml-6 flex justify-center lg:justify-end">
+            <img
+              src={globalImageUrl}
+              alt="Image globale"
+              className="w-40 h-40 lg:w-48 lg:h-48 object-contain border rounded shadow"
+            />
+          </div>
+        )}
       </div>
-
-      <p><strong>Rôle :</strong> {profil.role}</p>
-
-      {globalImageUrl && (
-        <div className="mt-4 flex justify-end">
-          <img
-            src={globalImageUrl}
-            alt="Image globale"
-            className="w-20 h-20 object-contain border rounded shadow"
-          />
-        </div>
-      )}
-
+      
       {profil.role === "user" && (
         <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
       )}
