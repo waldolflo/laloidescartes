@@ -1,49 +1,74 @@
+// src/Chat.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabaseClient";
-import { Smile, SendHorizonal, Edit3, Trash2, Check, X } from "lucide-react";
-import useNotifications from "./useNotifications";
+import { SendHorizonal, Edit3, Trash2, Check, X } from "lucide-react";
 
 export default function Chat({ user }) {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
   const [input, setInput] = useState("");
   const [usersList, setUsersList] = useState([]);
+  const [mentionSuggestions, setMentionSuggestions] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
-  const [mentionList, setMentionList] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const typingRef = useRef(null);
   const endRef = useRef(null);
-  const { newMessage } = useNotifications();
 
-  // Auto scroll
+  // Scroll automatique
   const scrollToBottom = () => {
     setTimeout(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 50);
   };
 
-  // Load messages
+  // Charger les messages avec l'avatar du jeu favori
   const loadMessages = async () => {
     const { data } = await supabase
       .from("chat")
-      .select("*")
+      .select(`
+        *,
+        profils:user_id (
+          id,
+          nom,
+          jeufavoris1
+        ),
+        jeux:jeufavoris1 (
+          couverture_url
+        )
+      `)
       .order("created_at", { ascending: true })
       .limit(100);
 
     if (data) {
-      setMessages(data);
+      // Ajouter cover_url à chaque message
+      const messagesWithAvatar = data.map((m) => ({
+        ...m,
+        coverage_url: m.jeux?.couverture_url || "/default_avatar.png",
+        user_name: m.profils?.nom || m.user_name,
+      }));
+      setMessages(messagesWithAvatar);
       scrollToBottom();
     }
   };
 
-  // Load users list for @mentions and avatars
+  // Charger les utilisateurs pour @mentions
   const loadUsers = async () => {
-    const { data } = await supabase
-      .from("profils")
-      .select("id, nom, couverture_url");
-
+    const { data } = await supabase.from("profils").select("id, nom");
     if (data) setUsersList(data);
+  };
+
+  // Notifications navigateur
+  const notifyBrowser = (title, body) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      new Notification(title, { body });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then((perm) => {
+        if (perm === "granted") new Notification(title, { body });
+      });
+    }
   };
 
   // Real-time
@@ -59,9 +84,11 @@ export default function Chat({ user }) {
         (payload) => {
           setMessages((prev) => [...prev, payload.new]);
           scrollToBottom();
-          // Notifications
-          const isMention = payload.new.content.includes(`@${user.nom}`);
-          newMessage(payload.new, isMention);
+
+          if (payload.new.user_id !== user.id) {
+            setUnreadCount((c) => c + 1);
+            notifyBrowser("Nouveau message", payload.new.content);
+          }
         }
       )
       .on(
@@ -77,30 +104,32 @@ export default function Chat({ user }) {
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "chat" },
         (payload) => {
-          setMessages((prev) =>
-            prev.filter((m) => m.id !== payload.old.id)
-          );
+          setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
         }
       )
-      .on("broadcast", { event: "typing" }, ({ payload }) => {
-        const { name } = payload;
-        if (name === user.nom) return;
+      .on(
+        "broadcast",
+        { event: "typing" },
+        ({ payload }) => {
+          const { name } = payload;
+          if (name === user.nom) return;
 
-        setTypingUsers((prev) =>
-          prev.includes(name) ? prev : [...prev, name]
-        );
+          setTypingUsers((prev) =>
+            prev.includes(name) ? prev : [...prev, name]
+          );
 
-        clearTimeout(typingRef.current);
-        typingRef.current = setTimeout(() => {
-          setTypingUsers([]);
-        }, 1500);
-      })
+          clearTimeout(typingRef.current);
+          typingRef.current = setTimeout(() => {
+            setTypingUsers([]);
+          }, 1500);
+        }
+      )
       .subscribe();
 
     return () => supabase.removeChannel(sub);
   }, []);
 
-  // Send typing
+  // Typing indicator
   const sendTyping = () => {
     supabase.channel("chat-room").send({
       type: "broadcast",
@@ -109,7 +138,7 @@ export default function Chat({ user }) {
     });
   };
 
-  // Send message
+  // Envoyer un message
   const sendMessage = async () => {
     const text = input.trim();
     if (!text) return;
@@ -121,25 +150,21 @@ export default function Chat({ user }) {
     });
 
     setInput("");
-    setMentionList([]);
+    setMentionSuggestions([]);
   };
 
-  // Reactions
-  const addReaction = async (msgId, emoji) => {
-    await supabase.rpc("append_reaction", {
-      message_id: msgId,
-      reaction: emoji,
-    });
-  };
-
-  // Editing
+  // Édition
   const startEdit = (msg) => {
     setEditingId(msg.id);
     setEditText(msg.content);
   };
 
   const saveEdit = async () => {
-    await supabase.from("chat").update({ content: editText }).eq("id", editingId);
+    await supabase
+      .from("chat")
+      .update({ content: editText })
+      .eq("id", editingId);
+
     setEditingId(null);
     setEditText("");
   };
@@ -149,131 +174,110 @@ export default function Chat({ user }) {
     setEditText("");
   };
 
-  // Delete
+  // Supprimer un message
   const deleteMessage = async (id) => {
     await supabase.from("chat").delete().eq("id", id);
   };
 
   // Format date
-  const formatDate = (ts) => {
-    return new Date(ts).toLocaleTimeString("fr-FR", {
+  const formatDate = (ts) =>
+    new Date(ts).toLocaleTimeString("fr-FR", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
-  // Mentions suggestion
-  const detectMention = (text) => {
-    const match = text.match(/@(\w*)$/);
-    if (!match) return setMentionList([]);
+  // Gestion @mention
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setInput(val);
+    sendTyping();
 
-    const search = match[1].toLowerCase();
-    if (search.length === 0) return setMentionList([]);
-
-    setMentionList(
-      usersList.filter((u) => u.nom.toLowerCase().includes(search))
-    );
-  };
-
-  // Insert mention
-  const applyMention = (nom) => {
-    setInput((prev) => prev.replace(/@\w*$/, `@${nom} `));
-    setMentionList([]);
+    const match = val.match(/@(\w*)$/);
+    if (match) {
+      const search = match[1].toLowerCase();
+      setMentionSuggestions(
+        usersList.filter((u) => u.nom.toLowerCase().startsWith(search))
+      );
+    } else {
+      setMentionSuggestions([]);
+    }
   };
 
   return (
-    <div className="flex flex-col h-[85vh] max-w-3xl mx-auto p-4">
+    <div className="flex-1 flex flex-col h-[85vh] p-4 max-w-4xl mx-auto relative">
+      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
+        💬 Chat du Club
+        {unreadCount > 0 && (
+          <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs">
+            {unreadCount}
+          </span>
+        )}
+      </h1>
 
-      <h1 className="text-2xl font-bold mb-3">💬 Chat du Club</h1>
-
-      {/* Messages list */}
-      <div className="flex-1 overflow-y-auto bg-white p-3 rounded-lg shadow-inner space-y-3 border">
-        {messages.map((m) => {
-          const profil = usersList.find((u) => u.id === m.user_id);
-
-          return (
-            <div key={m.id} className={`flex gap-2 ${m.user_id === user.id ? "flex-row-reverse text-right" : ""}`}>
-
-              {/* Avatar */}
-              <img
-                src={profil?.couverture_url || "/default.jpg"}
-                className="w-10 h-10 rounded-lg object-cover"
-              />
-
-              <div className="flex flex-col max-w-[75%]">
-
-                {/* Bubble */}
-                <div
-                  className={`px-3 py-2 rounded-lg ${
-                    m.user_id === user.id
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-900"
-                  }`}
-                >
-                  <div className="text-xs opacity-70">{m.user_name}</div>
-
-                  {editingId === m.id ? (
-                    <input
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      className="w-full px-2 py-1 text-black rounded mt-1"
-                    />
-                  ) : (
-                    <div className="mt-1">{m.content}</div>
-                  )}
-
-                  <div className="text-[10px] opacity-70 mt-1">
-                    {formatDate(m.created_at)}
-                  </div>
-                </div>
-
-                {/* Edit/Delete */}
-                {m.user_id === user.id && (
-                  <div className="flex gap-2 mt-1 text-xs opacity-70">
-                    {editingId === m.id ? (
-                      <>
-                        <button onClick={saveEdit} className="text-green-600">
-                          <Check size={14} />
-                        </button>
-                        <button onClick={cancelEdit} className="text-red-600">
-                          <X size={14} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => startEdit(m)}>
-                          <Edit3 size={14} />
-                        </button>
-                        <button onClick={() => deleteMessage(m.id)}>
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
-                  </div>
+      {/* Zone messages */}
+      <div className="flex-1 overflow-y-auto bg-white p-3 rounded-lg shadow-inner space-y-2 border relative">
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={`flex items-start gap-2 ${
+              m.user_id === user.id ? "justify-end" : "justify-start"
+            }`}
+          >
+            <img
+              src={m.coverage_url || "/default_avatar.png"}
+              alt="Avatar"
+              className="w-8 h-8 rounded-full object-cover"
+            />
+            <div className="flex flex-col max-w-[80%]">
+              <div
+                className={`px-3 py-2 rounded-lg ${
+                  m.user_id === user.id
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-900"
+                }`}
+              >
+                <div className="text-xs opacity-70 mb-1">{m.user_name}</div>
+                {editingId === m.id ? (
+                  <input
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="w-full px-2 py-1 text-black rounded"
+                  />
+                ) : (
+                  <div>{m.content}</div>
                 )}
-
-                {/* Reactions */}
-                <div className="flex gap-1 mt-1">
-                  {["👍", "❤️", "😂", "😮"].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => addReaction(m.id, emoji)}
-                      className="text-xs hover:scale-125 transition"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+                <div className="text-[10px] text-right opacity-70 mt-1">
+                  {formatDate(m.created_at)}
                 </div>
-
-                {m.reactions?.length > 0 && (
-                  <div className="text-sm opacity-70 mt-1">
-                    {m.reactions.join(" ")}
-                  </div>
-                )}
               </div>
+
+              {/* Actions édition / suppression */}
+              {m.user_id === user.id && (
+                <div className="flex gap-2 mt-1 text-xs opacity-70">
+                  {editingId === m.id ? (
+                    <>
+                      <button onClick={saveEdit} className="text-green-600">
+                        <Check size={14} />
+                      </button>
+                      <button onClick={cancelEdit} className="text-red-600">
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(m)}>
+                        <Edit3 size={14} />
+                      </button>
+                      <button onClick={() => deleteMessage(m.id)}>
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-          );
-        })}
+          </div>
+        ))}
         <div ref={endRef}></div>
       </div>
 
@@ -284,40 +288,39 @@ export default function Chat({ user }) {
         </div>
       )}
 
-      {/* Mentions suggestion */}
-      {mentionList.length > 0 && (
-        <div className="bg-white border rounded shadow p-2 absolute bottom-20 w-64">
-          {mentionList.map((u) => (
-            <div
-              key={u.id}
-              className="p-2 hover:bg-gray-100 cursor-pointer"
-              onClick={() => applyMention(u.nom)}
-            >
-              @{u.nom}
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Input */}
       <div className="flex mt-3 gap-2 relative">
         <input
           value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            sendTyping();
-            detectMention(e.target.value);
-          }}
+          onChange={handleInputChange}
           placeholder="Écrire un message... @pseudo"
           className="flex-1 px-3 py-2 border rounded-lg shadow-sm"
         />
-
         <button
           onClick={sendMessage}
           className="bg-blue-600 text-white px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1"
         >
           <SendHorizonal size={18} />
         </button>
+
+        {/* Mention suggestions */}
+        {mentionSuggestions.length > 0 && (
+          <div className="absolute bottom-12 left-0 bg-white border rounded shadow max-h-40 overflow-y-auto z-50 w-full">
+            {mentionSuggestions.map((u) => (
+              <div
+                key={u.id}
+                className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  const newText = input.replace(/@\w*$/, `@${u.nom} `);
+                  setInput(newText);
+                  setMentionSuggestions([]);
+                }}
+              >
+                {u.nom}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
