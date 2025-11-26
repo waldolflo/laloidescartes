@@ -8,6 +8,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [jeux, setJeux] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
+  const [globalImageUrl, setGlobalImageUrl] = useState("");
 
   // ✅ Hooks toujours au même niveau
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         }
 
         setProfil(updatedData);
+        setGlobalImageUrl(updatedData.global_image_url || "");
         setNom(updatedData.nom);
         setProfilGlobal?.(updatedData);
 
@@ -217,6 +219,16 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
       <p><strong>Rôle :</strong> {profil.role}</p>
 
+      {profil.global_image_url && (
+        <div className="mt-4 flex justify-end">
+          <img
+            src={profil.global_image_url}
+            alt="Image globale"
+            className="w-20 h-20 object-contain border rounded shadow"
+          />
+        </div>
+      )}
+
       {profil.role === "user" && (
         <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
       )}
@@ -315,6 +327,50 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             <li>Pour les parties qu'ils organisent : Ajouter de nouveaux inscrits (une fois la partie archivée)</li>
             <li>Pour les parties qu'ils organisent : Gérer le classement et les scores des inscrits (une fois la partie archivée)</li>
           </ul>
+        </div>
+      )}
+
+      {profil.role === "admin" && (
+        <div className="mt-10 p-4 border rounded bg-gray-50">
+          <h3 className="text-xl font-semibold mb-2">🖼️ Planning des prochaines rencontres</h3>
+
+          <input
+            type="text"
+            className="border p-2 rounded w-full"
+            placeholder="URL de l’image"
+            value={globalImageUrl}
+            onChange={(e) => setGlobalImageUrl(e.target.value)}
+          />
+
+          <button
+            onClick={async () => {
+              const { data, error } = await supabase
+                .from("profils")
+                .update({ global_image_url: globalImageUrl })
+                .eq("id", profil.id)
+                .select()
+                .single();
+
+              if (!error) {
+                setProfil(data);
+                alert("✅ Planning mis à jour !");
+              }
+            }}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Mettre à jour
+          </button>
+
+          {globalImageUrl && (
+            <div className="mt-4">
+              <p className="font-medium mb-1">Aperçu :</p>
+              <img
+                src={globalImageUrl}
+                alt="Aperçu global"
+                className="w-32 h-32 object-contain border rounded shadow"
+              />
+            </div>
+          )}
         </div>
       )}
 
