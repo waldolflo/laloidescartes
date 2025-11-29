@@ -13,6 +13,7 @@ import { supabase } from "./supabaseClient";
 
 import Catalogue from "./Catalogue";
 import Parties from "./Parties";
+import Archives from "./Archives";
 import Inscriptions from "./Inscriptions";
 import Statistiques from "./Statistiques";
 import Profils from "./Profils";
@@ -123,6 +124,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
             <>
               <Route path="/" element={<Catalogue user={currentUser} />} />
               <Route path="/parties" element={<Parties user={currentUser} authUser={authUser} />} />
+              <Route path="/archives" element={<Archives user={currentUser} authUser={authUser} />} />
               <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
               <Route path="/statistiques" element={<Statistiques user={currentUser} authUser={authUser} profil={currentUser} />} />
               <Route
