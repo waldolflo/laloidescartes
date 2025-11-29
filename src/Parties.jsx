@@ -283,7 +283,7 @@ export default function Parties({ user, authUser }) {
       )}
 
       {/* LISTE DES PARTIES */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filterParties(parties).map((p) => {
           const isInscrit = p.inscrits?.some(
             (i) => i.utilisateur_id === currentUser.id
