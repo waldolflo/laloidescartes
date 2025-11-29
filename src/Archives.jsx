@@ -123,11 +123,12 @@ export default function Archives({ user, authUser }) {
         ).map((p) => (
           <div
             key={p.id}
-            className="border rounded p-4 bg-gray-100 shadow"
+            className="border rounded p-4 bg-gray-100 shadow hover:shadow-lg transition"
           >
             {p.jeux?.couverture_url && (
               <img
                 src={p.jeux.couverture_url}
+                alt={p.jeux.nom}
                 className="w-full h-40 object-contain mb-2"
               />
             )}
@@ -147,12 +148,30 @@ export default function Archives({ user, authUser }) {
 
                 {p.inscrits
                   .sort((a, b) => (a.rank || 999) - (b.rank || 999))
-                  .map((i) => (
-                    <div key={i.utilisateur_id} className="flex justify-between px-3 py-1 border rounded mb-1 bg-white">
-                      <span>{i.profil?.nom}</span>
-                      <span>{i.score} pts — Rank {i.rank}</span>
+                  .map((i) => {
+                    const rank = i.rank;
+                    const score = i.score;
+                    const nom = i.profil?.nom || "Joueur inconnu";
+                    let bgColor = "bg-white";
+                    let emoji = "";
+                    if (rank === 1) {
+                      bgColor = "bg-yellow-100";
+                      emoji = "🥇";
+                    } else if (rank === 2) {
+                      bgColor = "bg-gray-200";
+                      emoji = "🥈";
+                    } else if (rank === 3) {
+                      bgColor = "bg-orange-200";
+                      emoji = "🥉";
+                    }
+                    return (
+                    <div key={i.utilisateur_id} className={`flex justify-between px-3 py-1 border rounded mb-1 ${bgColor}`}>
+                      <span className="font-medium flex items-center gap-2">{emoji && <span>{emoji}</span>}{nom}</span>
+                      <span className="text-sm text-gray-700 flex items-center gap-2">{score !== null && score !== undefined && <span>{score}</span>} pts — {rank && <span>Rang {rank}</span>}</span>
                     </div>
-                  ))}
+                    );
+                  })
+                }
               </div>
             )}
 
