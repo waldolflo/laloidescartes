@@ -18,7 +18,7 @@ import Inscriptions from "./Inscriptions";
 import Statistiques from "./Statistiques";
 import Profils from "./Profils";
 import Auth from "./Auth";
-import FooterBGG from "./FooterBGG"; // <-- importe ton FooterBGG
+import FooterBGG from "./FooterBGG";
 import Chat from "./Chat";
 import { BookOpen, CalendarDays, Users, User, LogOut, MessageCircle } from "lucide-react";
 
@@ -29,7 +29,6 @@ function Navbar({ currentUser, onLogout }) {
   const tabs = [
     { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
-    //{ to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/statistiques", label: "Statistiques", icon: Users },
     { to: "/profils", label: "Profil", icon: User },
     { to: "/chat", label: "Chat", icon: MessageCircle },
@@ -61,7 +60,7 @@ function Navbar({ currentUser, onLogout }) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm">
-              Bonjour <strong>{currentUser?.nom || currentUser?.email}</strong>
+              Bonjour <strong>{currentUser.nom || currentUser.email}</strong>
             </span>
             <button
               onClick={onLogout}
@@ -172,85 +171,80 @@ function GDPRBanner() {
   );
 }
 
+// --- Création de profil si nécessaire ---
+const createProfileIfNeeded = async (userId) => {
+  if (!userId) return null;
+
+  const generateRandomName = () => {
+    const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
+    const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
+    const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomCreature = creatures[Math.floor(Math.random() * creatures.length)];
+    const randomNum = Math.floor(100 + Math.random() * 900);
+    return `${randomAdj}${randomCreature}${randomNum}`;
+  };
+
+  try {
+    const { data: existing } = await supabase.from("profils").select("*").eq("user_id", userId).maybeSingle();
+    if (existing) return existing;
+
+    const randomName = generateRandomName();
+    const { data: inserted } = await supabase
+      .from("profils")
+      .insert([{ id: crypto.randomUUID(), user_id: userId, nom: randomName, role: "user" }])
+      .select()
+      .single();
+
+    return inserted;
+  } catch (err) {
+    console.error("Erreur createProfileIfNeeded :", err);
+    return null;
+  }
+};
+
 // --- App principale ---
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const [loadingSession, setLoadingSession] = useState(true);
 
-  // --- Récupère la session et le profil au chargement ---
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    const loadSessionAndProfile = async () => {
+      const { data } = await supabase.auth.getSession();
       if (!mounted) return;
 
       const session = data.session;
       if (session?.user) {
         setAuthUser(session.user);
-
-        const { data: profilData } = await supabase
-          .from("profils")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-
-        setUser(profilData);
+        const profile = await createProfileIfNeeded(session.user.id);
+        setUser(profile);
       }
 
-      setLoadingUser(false);
-    });
+      setLoadingSession(false);
+    };
 
-    return () => { mounted = false };
+    loadSessionAndProfile();
+
+    return () => { mounted = false; };
   }, []);
 
-  // --- Corrige le retour depuis le lien email / SIGNED_IN ---
   useEffect(() => {
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session?.user) {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        if (authUser && authUser.id === session.user.id) return;
 
-          // Empêche double création / boucle infinie
-          if (authUser && authUser.id === session.user.id) return;
-
-          setAuthUser(session.user);
-          setLoadingUser(true);
-
-          // Vérifie si un profil existe
-          const { data: profilExists } = await supabase
-            .from("profils")
-            .select("id")
-            .eq("user_id", session.user.id)
-            .maybeSingle();
-
-          if (!profilExists) {
-            await supabase.from("profils").insert([
-              {
-                id: crypto.randomUUID(),
-                user_id: session.user.id,
-                nom: "Nouveau joueur",
-                role: "user",
-              },
-            ]);
-          }
-
-          // Charge profil
-          const { data: profil } = await supabase
-            .from("profils")
-            .select("*")
-            .eq("user_id", session.user.id)
-            .maybeSingle();
-
-          setUser(profil);
-          setLoadingUser(false);
-        }
-
-        if (event === "SIGNED_OUT") {
-          setAuthUser(null);
-          setUser(null);
-        }
+        setAuthUser(session.user);
+        const profile = await createProfileIfNeeded(session.user.id);
+        setUser(profile);
       }
-    );
+
+      if (event === "SIGNED_OUT") {
+        setAuthUser(null);
+        setUser(null);
+      }
+    });
 
     return () => subscription.subscription.unsubscribe();
   }, [authUser]);
@@ -263,9 +257,7 @@ export default function App() {
 
   const currentUser = user || authUser;
 
-  if (loadingUser) {
-    return <div className="p-4">Chargement...</div>;
-  }
+  if (loadingSession) return <div className="p-4">Chargement...</div>;
 
   return (
     <Router>
