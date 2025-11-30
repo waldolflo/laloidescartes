@@ -39,21 +39,23 @@ export default function Auth({ onLogin }) {
       await supabase.auth.signOut();
     } else {
       // Vérifie profil
-      const { data: profilData, error: fetchError } = await supabase
+      const { data: profilData } = await supabase
         .from("profils")
         .select("*")
         .eq("user_id", data.user.id)
-        .maybeSingle(); // 🔥 évite certaines erreurs PGRST
+        .maybeSingle();
 
       if (!profilData) {
-        await supabase.from("profils").insert([
+        const { error } = await supabase.from("profils").insert([
           {
+            id: data.user.id,
             user_id: data.user.id,
             nom: "",
             role: "user",
-            created_at: new Date().toISOString(),
           },
         ]);
+
+        if (error) console.error("Insert error:", error);
       }
 
       onLogin(data.user);
