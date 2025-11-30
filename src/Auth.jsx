@@ -13,6 +13,27 @@ export default function Auth({ onLogin }) {
   const captchaRef = useRef(null);
   const navigate = useNavigate();
 
+  const createProfileIfNeeded = async (userId) => {
+    const { data: profilData } = await supabase
+      .from("profils")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!profilData) {
+      const { error: insertError } = await supabase.from("profils").insert([
+        {
+          id: crypto.randomUUID(), // 🔥 ton id local UUID indépendant
+          user_id: userId, // 🔥 le vrai user_id lié à auth.users
+          nom: "",
+          role: "user",
+        },
+      ]);
+
+      if (insertError) console.error("Insert error:", insertError);
+    }
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
       setErrorMsg("Veuillez entrer email et mot de passe.");
@@ -29,7 +50,7 @@ export default function Auth({ onLogin }) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: { captchaToken }, // ✅ envoie le captcha à Supabase
+      options: { captchaToken },
     });
 
     if (error) {
@@ -38,32 +59,13 @@ export default function Auth({ onLogin }) {
       setErrorMsg("❌ Vous devez confirmer votre email avant de vous connecter.");
       await supabase.auth.signOut();
     } else {
-      // Vérifie profil
-      const { data: profilData } = await supabase
-        .from("profils")
-        .select("*")
-        .eq("user_id", data.user.id)
-        .maybeSingle();
-
-      if (!profilData) {
-        const { error } = await supabase.from("profils").insert([
-          {
-            id: data.user.id,
-            user_id: data.user.id,
-            nom: "",
-            role: "user",
-          },
-        ]);
-
-        if (error) console.error("Insert error:", error);
-      }
-
+      await createProfileIfNeeded(data.user.id);
       onLogin(data.user);
       navigate("/profils", { replace: true });
     }
 
     setLoading(false);
-    setCaptchaToken(null); // reset après usage
+    setCaptchaToken(null);
     captchaRef.current?.resetCaptcha();
   };
 
@@ -80,15 +82,16 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { captchaToken }, // ✅ aussi pour l'inscription
+      options: { captchaToken },
     });
 
     if (error) {
       setErrorMsg("Erreur d'inscription : " + error.message);
     } else {
+      // Pas de profil ici → on le créera à la connexion une fois email validé
       setErrorMsg(
         "✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter."
       );
@@ -118,10 +121,9 @@ export default function Auth({ onLogin }) {
         className="w-full border p-2 rounded mb-2"
       />
 
-      {/* ✅ Ajout du captcha */}
       <div className="mb-3">
         <HCaptcha
-          sitekey={import.meta.env.VITE_HCAPTCHA_SITEKEY} // clé publique
+          sitekey={import.meta.env.VITE_HCAPTCHA_SITEKEY}
           onVerify={(token) => setCaptchaToken(token)}
           ref={captchaRef}
         />
