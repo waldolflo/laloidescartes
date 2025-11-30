@@ -176,59 +176,82 @@ function GDPRBanner() {
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
+  const [loadingSession, setLoadingSession] = useState(true);
 
+  // --- Récupère la session au chargement ---
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (data?.user) {
-        setAuthUser(data.user);
+    let mounted = true;
+
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!mounted) return;
+
+      const session = data.session;
+      if (session?.user) {
+        setAuthUser(session.user);
+
         const { data: profilData } = await supabase
           .from("profils")
           .select("*")
-          .eq("user_id", data.user.id)
-          .maybeSingle();
-        setUser(profilData);
-      }
-    });
-  }, []);
-
-  // 🔥 Corrige le retour depuis le lien email
-  useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-
-        // Vérifie si un profil existe déjà
-        const { data: profilExists } = await supabase
-          .from("profils")
-          .select("id")
           .eq("user_id", session.user.id)
           .maybeSingle();
 
-        // S'il n'existe pas → on le crée
-        if (!profilExists) {
-          await supabase.from("profils").insert([
-            {
-              id: crypto.randomUUID(),
-              user_id: session.user.id,
-              nom: "Nouveau joueur",
-              role: "user",
-            },
-          ]);
+        setUser(profilData);
+      }
+
+      setLoadingSession(false);
+    });
+
+    return () => { mounted = false };
+  }, []);
+
+  // --- Corrige le retour depuis le lien email ---
+  useEffect(() => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session?.user) {
+
+          // Empêche double création / boucle infinie
+          if (authUser && authUser.id === session.user.id) return;
+
+          setAuthUser(session.user);
+
+          // Vérifie si un profil existe
+          const { data: profilExists } = await supabase
+            .from("profils")
+            .select("id")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+
+          if (!profilExists) {
+            await supabase.from("profils").insert([
+              {
+                id: crypto.randomUUID(),
+                user_id: session.user.id,
+                nom: "Nouveau joueur",
+                role: "user",
+              },
+            ]);
+          }
+
+          // Charge profil
+          const { data: profil } = await supabase
+            .from("profils")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+
+          setUser(profil);
         }
 
-        // Recharge le profil dans ton state global
-        const { data: profilData } = await supabase
-          .from("profils")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-
-        setUser(profilData);
-        setAuthUser(session.user);
+        if (event === "SIGNED_OUT") {
+          setAuthUser(null);
+          setUser(null);
+        }
       }
-    });
+    );
 
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    return () => subscription.subscription.unsubscribe();
+  }, [authUser]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -237,6 +260,10 @@ export default function App() {
   };
 
   const currentUser = user || authUser;
+
+  if (loadingSession) {
+    return <div className="p-4">Chargement...</div>;
+  }
 
   return (
     <Router>
