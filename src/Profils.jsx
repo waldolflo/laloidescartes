@@ -19,8 +19,8 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       const { data, error } = await supabase
         .from("profils")
         .select("id, nom, role, jeufavoris1, jeufavoris2")
-        .eq("id", authUser.id)
-        .single();
+        .eq("user_id", authUser.id)
+        .maybeSingle();
 
       if (!error && data) {
         let updatedData = data;

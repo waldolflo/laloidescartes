@@ -31,7 +31,7 @@ export default function Auth({ onLogin }) {
         const { error: insertError } = await supabase.from("profils").insert([
           {
             id: crypto.randomUUID(),   // ID primaire unique
-            //user_id: userId,           // lié à auth.users
+            user_id: userId,           // lié à auth.users
             nom: "",
             role: "user",
             created_at: new Date().toISOString(),
