@@ -191,41 +191,54 @@ export default function App() {
     });
   }, []);
 
-  // --- PATCH : gestion retour email (signup / magic link) ---
+  // --- PATCH FINAL : création auto du profil au retour email ---
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("🔄 Auth state change:", event, session);
 
-        // On arrive depuis le lien email
         if (event === "SIGNED_IN" && session?.user) {
-          const userId = session.user.id;
+          const user = session.user;
+          const userId = user.id;
 
-          // Vérifie si un profil existe déjà
-          const { data: existingProfile } = await supabase
+          // ⚡ Vérifier si un profil existe déjà
+          const { data: existingProfile, error: selectError } = await supabase
             .from("profils")
             .select("*")
             .eq("user_id", userId)
             .maybeSingle();
 
-          // Si pas de profil → on le crée
-          if (!existingProfile) {
-            console.log("📌 Création automatique du profil (retour email)...");
-            await supabase.from("profils").insert({
-              user_id: userId,
-              nom: session.user.user_metadata?.nom || "", // si prénom envoyé à signup
-              email: session.user.email,
-            });
+          if (selectError) {
+            console.error("Erreur SELECT profil:", selectError);
           }
 
-          // Recharge le profil pour l'app
+          // ⚡ Si pas de profil → on le crée
+          if (!existingProfile) {
+            console.log("📌 Création auto du profil au retour email…");
+
+            const insertPayload = {
+              user_id: userId,
+              email: user.email,
+              nom: user.user_metadata?.nom || "Nouveau joueur",
+            };
+
+            const { error: insertError } = await supabase
+              .from("profils")
+              .insert(insertPayload);
+
+            if (insertError) {
+              console.error("❌ INSERT profil bloqué:", insertError);
+            }
+          }
+
+          // ⚡ Recharger le profil dans l'app
           const { data: profilData } = await supabase
             .from("profils")
             .select("*")
             .eq("user_id", userId)
             .maybeSingle();
 
-          setAuthUser(session.user);
+          setAuthUser(user);
           setUser(profilData);
         }
       }
