@@ -61,7 +61,7 @@ function Navbar({ currentUser, onLogout }) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm">
-              Bonjour <strong>{currentUser.nom || currentUser.email}</strong>
+              Bonjour <strong>{currentUser?.nom || currentUser?.email}</strong>
             </span>
             <button
               onClick={onLogout}
@@ -176,9 +176,9 @@ function GDPRBanner() {
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
-  const [loadingSession, setLoadingSession] = useState(true);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  // --- Récupère la session au chargement ---
+  // --- Récupère la session et le profil au chargement ---
   useEffect(() => {
     let mounted = true;
 
@@ -198,13 +198,13 @@ export default function App() {
         setUser(profilData);
       }
 
-      setLoadingSession(false);
+      setLoadingUser(false);
     });
 
     return () => { mounted = false };
   }, []);
 
-  // --- Corrige le retour depuis le lien email ---
+  // --- Corrige le retour depuis le lien email / SIGNED_IN ---
   useEffect(() => {
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -214,6 +214,7 @@ export default function App() {
           if (authUser && authUser.id === session.user.id) return;
 
           setAuthUser(session.user);
+          setLoadingUser(true);
 
           // Vérifie si un profil existe
           const { data: profilExists } = await supabase
@@ -241,6 +242,7 @@ export default function App() {
             .maybeSingle();
 
           setUser(profil);
+          setLoadingUser(false);
         }
 
         if (event === "SIGNED_OUT") {
@@ -261,7 +263,7 @@ export default function App() {
 
   const currentUser = user || authUser;
 
-  if (loadingSession) {
+  if (loadingUser) {
     return <div className="p-4">Chargement...</div>;
   }
 
