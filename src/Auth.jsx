@@ -36,8 +36,8 @@ export default function Auth({ onLogin }) {
             role: "user",
             created_at: new Date().toISOString(),
           },
-        ]);
-
+        ]).select();
+        console.log("Insert profil :", inserted, insertError);
         if (insertError) console.error("Insert error:", insertError);
       }
     } catch (err) {
@@ -71,6 +71,7 @@ export default function Auth({ onLogin }) {
       await supabase.auth.signOut();
     } else {
       // ⚡ Crée le profil si nécessaire
+      console.log("User connecté :", data.user);
       await createProfileIfNeeded(data.user.id);
 
       onLogin(data.user);
