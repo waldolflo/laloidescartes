@@ -27,47 +27,88 @@ export default function Auth({ onLogin }) {
 
   // Création du profil immédiatement après login/signup
   const createProfileIfNeeded = async (userId) => {
-    console.log("Création profil pour userId :", userId);
-    if (!userId) return console.error("userId undefined !");
+    console.log("➡️ createProfileIfNeeded userId:", userId);
+    if (!userId) {
+      console.error("❌ userId undefined ! (ne peut pas créer de profil)");
+      return;
+    }
 
     try {
-      const { data: profilData, error } = await supabase
+      // 1) check existant
+      const { data: profilData, error: fetchError } = await supabase
         .from("profils")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (error) throw error;
-
-      console.log("Profil existant :", profilData);
-
-      if (!profilData) {
-        const randomName = generateRandomName();
-
-        const { data, error: insertError } = await supabase
-          .from("profils")
-          .insert([
-            {
-              id: crypto.randomUUID(),
-              user_id: userId,
-              nom: randomName,
-              role: "user",
-              jeufavoris1: null,
-              jeufavoris2: null
-            },
-          ])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-
-        console.log("Insert profil :", data);
-        return data;
+      if (fetchError) {
+        console.error("Fetch profil error:", fetchError);
+        // continue: on va tenter d'insérer si aucune ligne trouvée
+      } else if (profilData) {
+        console.log("✔ Profil déjà présent:", profilData);
+        return profilData;
       }
 
-      return profilData;
+      // 2) tentative d'insert AVEC user_id (valeur fournie)
+      console.log("Tentative INSERT avec user_id...");
+      const { data: insertedWithUserId, error: insertErr1 } = await supabase
+        .from("profils")
+        .insert([
+          {
+            id: crypto.randomUUID(),
+            user_id: userId,
+            nom: "Nouvel utilisateur",
+            role: "user",
+          },
+        ])
+        .select()
+        .single();
+
+      if (!insertErr1 && insertedWithUserId) {
+        console.log("✔ Insert with user_id OK:", insertedWithUserId);
+        return insertedWithUserId;
+      }
+
+      console.warn("Insert with user_id failed:", insertErr1);
+
+      // 3) si échec, tenter insert SANS user_id (utile si colonne a DEFAULT auth.uid())
+      console.log("Tentative INSERT sans user_id (laisser DB poser auth.uid())...");
+      const { data: insertedNoUser, error: insertErr2 } = await supabase
+        .from("profils")
+        .insert([
+          {
+            id: crypto.randomUUID(),
+            nom: "Nouvel utilisateur",
+            role: "user",
+          },
+        ])
+        .select()
+        .single();
+
+      if (!insertErr2 && insertedNoUser) {
+        console.log("✔ Insert without user_id OK:", insertedNoUser);
+
+        // 4) vérification : relire par user_id (au cas où DB a posé user_id)
+        const { data: finalProfile, error: finalFetchErr } = await supabase
+          .from("profils")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (finalFetchErr) {
+          console.error("Erreur fetch final :", finalFetchErr);
+          return insertedNoUser; // on retourne la ligne insérée même si user_id n'est pas fixé
+        }
+
+        console.log("Final profile by user_id:", finalProfile);
+        return finalProfile || insertedNoUser;
+      }
+
+      console.error("Insert sans user_id aussi échoué :", insertErr2);
+      return null;
     } catch (err) {
-      console.error("Unexpected error in createProfileIfNeeded:", err);
+      console.error("Unexpected error createProfileIfNeeded:", err);
+      return null;
     }
   };
 
