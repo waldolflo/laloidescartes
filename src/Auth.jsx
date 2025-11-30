@@ -13,24 +13,35 @@ export default function Auth({ onLogin }) {
   const captchaRef = useRef(null);
   const navigate = useNavigate();
 
+  // ✅ Fonction pour créer le profil si nécessaire
   const createProfileIfNeeded = async (userId) => {
-    const { data: profilData } = await supabase
-      .from("profils")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
+    try {
+      const { data: profilData, error: fetchError } = await supabase
+        .from("profils")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    if (!profilData) {
-      const { error: insertError } = await supabase.from("profils").insert([
-        {
-          id: crypto.randomUUID(), // 🔥 ton id local UUID indépendant
-          user_id: userId, // 🔥 le vrai user_id lié à auth.users
-          nom: "",
-          role: "user",
-        },
-      ]);
+      if (fetchError) {
+        console.error("Fetch error:", fetchError);
+        return;
+      }
 
-      if (insertError) console.error("Insert error:", insertError);
+      if (!profilData) {
+        const { error: insertError } = await supabase.from("profils").insert([
+          {
+            id: crypto.randomUUID(),   // ID primaire unique
+            user_id: userId,           // lié à auth.users
+            nom: "",
+            role: "user",
+            created_at: new Date().toISOString(),
+          },
+        ]);
+
+        if (insertError) console.error("Insert error:", insertError);
+      }
+    } catch (err) {
+      console.error("Unexpected error in createProfileIfNeeded:", err);
     }
   };
 
@@ -59,7 +70,9 @@ export default function Auth({ onLogin }) {
       setErrorMsg("❌ Vous devez confirmer votre email avant de vous connecter.");
       await supabase.auth.signOut();
     } else {
+      // ⚡ Crée le profil si nécessaire
       await createProfileIfNeeded(data.user.id);
+
       onLogin(data.user);
       navigate("/profils", { replace: true });
     }
@@ -91,7 +104,6 @@ export default function Auth({ onLogin }) {
     if (error) {
       setErrorMsg("Erreur d'inscription : " + error.message);
     } else {
-      // Pas de profil ici → on le créera à la connexion une fois email validé
       setErrorMsg(
         "✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter."
       );
