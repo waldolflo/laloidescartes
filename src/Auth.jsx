@@ -15,30 +15,33 @@ export default function Auth({ onLogin }) {
 
   // ✅ Fonction pour créer le profil si nécessaire
   const createProfileIfNeeded = async (userId) => {
+    console.log("Création profil pour userId :", userId);
+    if (!userId) return console.error("userId undefined !");
+
     try {
-      const { data: profilData, error: fetchError } = await supabase
+      const { data: profilData, error } = await supabase
         .from("profils")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (fetchError) {
-        console.error("Fetch error:", fetchError);
-        return;
-      }
+      if (error) throw error;
+
+      console.log("Profil existant :", profilData);
 
       if (!profilData) {
-        const { error: insertError } = await supabase.from("profils").insert([
+        const { data, error: insertError } = await supabase.from("profils").insert([
           {
-            id: crypto.randomUUID(),   // ID primaire unique
-            user_id: userId,           // lié à auth.users
+            id: crypto.randomUUID(),
+            user_id: userId,
             nom: "",
             role: "user",
-            created_at: new Date().toISOString(),
           },
-        ]).select();
-        console.log("Insert profil :", inserted, insertError);
-        if (insertError) console.error("Insert error:", insertError);
+        ]).select(); // ← select() pour récupérer l’insert
+
+        if (insertError) throw insertError;
+
+        console.log("Insert profil :", data);
       }
     } catch (err) {
       console.error("Unexpected error in createProfileIfNeeded:", err);
