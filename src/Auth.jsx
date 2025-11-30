@@ -42,13 +42,14 @@ export default function Auth({ onLogin }) {
       const { data: profilData, error: fetchError } = await supabase
         .from("profils")
         .select("*")
-        .eq("id", data.user.id)
+        .eq("user_id", data.user.id)
         .single();
 
       if (fetchError && fetchError.code === "PGRST116") {
         await supabase.from("profils").insert([
           {
             id: data.user.id,
+            user_id: data.user.id,
             nom: "",
             role: "user",
             created_at: new Date().toISOString(),
