@@ -191,6 +191,51 @@ export default function App() {
     });
   }, []);
 
+  // --- PATCH : gestion retour email (signup / magic link) ---
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("🔄 Auth state change:", event, session);
+
+        // On arrive depuis le lien email
+        if (event === "SIGNED_IN" && session?.user) {
+          const userId = session.user.id;
+
+          // Vérifie si un profil existe déjà
+          const { data: existingProfile } = await supabase
+            .from("profils")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          // Si pas de profil → on le crée
+          if (!existingProfile) {
+            console.log("📌 Création automatique du profil (retour email)...");
+            await supabase.from("profils").insert({
+              user_id: userId,
+              nom: session.user.user_metadata?.nom || "", // si prénom envoyé à signup
+              email: session.user.email,
+            });
+          }
+
+          // Recharge le profil pour l'app
+          const { data: profilData } = await supabase
+            .from("profils")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          setAuthUser(session.user);
+          setUser(profilData);
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setAuthUser(null);

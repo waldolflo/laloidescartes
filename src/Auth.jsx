@@ -51,13 +51,14 @@ export default function Auth({ onLogin }) {
 
       // 2) tentative d'insert AVEC user_id (valeur fournie)
       console.log("Tentative INSERT avec user_id...");
+      const randomName = generateRandomName();
       const { data: insertedWithUserId, error: insertErr1 } = await supabase
         .from("profils")
         .insert([
           {
             id: crypto.randomUUID(),
             user_id: userId,
-            nom: "Nouvel utilisateur",
+            nom: randomName,
             role: "user",
           },
         ])
@@ -78,7 +79,7 @@ export default function Auth({ onLogin }) {
         .insert([
           {
             id: crypto.randomUUID(),
-            nom: "Nouvel utilisateur",
+            nom: randomName,
             role: "user",
           },
         ])
