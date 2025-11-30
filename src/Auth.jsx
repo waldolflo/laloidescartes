@@ -13,7 +13,19 @@ export default function Auth({ onLogin }) {
   const captchaRef = useRef(null);
   const navigate = useNavigate();
 
-  // ✅ Fonction pour créer le profil si nécessaire
+    // Génération pseudo fun
+  const generateRandomName = () => {
+    const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
+    const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
+
+    const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomCreature = creatures[Math.floor(Math.random() * creatures.length)];
+    const randomNum = Math.floor(100 + Math.random() * 900);
+
+    return `${randomAdj}${randomCreature}${randomNum}`;
+  };
+
+  // Création du profil immédiatement après login/signup
   const createProfileIfNeeded = async (userId) => {
     console.log("Création profil pour userId :", userId);
     if (!userId) return console.error("userId undefined !");
@@ -30,19 +42,30 @@ export default function Auth({ onLogin }) {
       console.log("Profil existant :", profilData);
 
       if (!profilData) {
-        const { data, error: insertError } = await supabase.from("profils").insert([
-          {
-            id: crypto.randomUUID(),
-            user_id: userId,
-            nom: "",
-            role: "user",
-          },
-        ]).select(); // ← select() pour récupérer l’insert
+        const randomName = generateRandomName();
+
+        const { data, error: insertError } = await supabase
+          .from("profils")
+          .insert([
+            {
+              id: crypto.randomUUID(),
+              user_id: userId,
+              nom: randomName,
+              role: "user",
+              jeufavoris1: null,
+              jeufavoris2: null
+            },
+          ])
+          .select()
+          .single();
 
         if (insertError) throw insertError;
 
         console.log("Insert profil :", data);
+        return data;
       }
+
+      return profilData;
     } catch (err) {
       console.error("Unexpected error in createProfileIfNeeded:", err);
     }
