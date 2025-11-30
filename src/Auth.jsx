@@ -43,12 +43,11 @@ export default function Auth({ onLogin }) {
         .from("profils")
         .select("*")
         .eq("user_id", data.user.id)
-        .single();
+        .maybeSingle(); // 🔥 évite certaines erreurs PGRST
 
-      if (fetchError && fetchError.code === "PGRST116") {
+      if (!profilData) {
         await supabase.from("profils").insert([
           {
-            id: data.user.id,
             user_id: data.user.id,
             nom: "",
             role: "user",
