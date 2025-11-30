@@ -13,115 +13,66 @@ export default function Auth({ onLogin }) {
   const captchaRef = useRef(null);
   const navigate = useNavigate();
 
-    // Génération pseudo fun
+  // Génération pseudo fun
   const generateRandomName = () => {
     const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
     const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
-
     const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const randomCreature = creatures[Math.floor(Math.random() * creatures.length)];
     const randomNum = Math.floor(100 + Math.random() * 900);
-
     return `${randomAdj}${randomCreature}${randomNum}`;
   };
 
-  // Création du profil immédiatement après login/signup
+  // Création du profil si nécessaire
   const createProfileIfNeeded = async (userId) => {
-    console.log("➡️ createProfileIfNeeded userId:", userId);
-    if (!userId) {
-      console.error("❌ userId undefined ! (ne peut pas créer de profil)");
-      return;
-    }
+    if (!userId) return null;
 
     try {
-      // 1) check existant
-      const { data: profilData, error: fetchError } = await supabase
+      // 1) Vérifie existant
+      const { data: existingProfile } = await supabase
         .from("profils")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (fetchError) {
-        console.error("Fetch profil error:", fetchError);
-        // continue: on va tenter d'insérer si aucune ligne trouvée
-      } else if (profilData) {
-        console.log("✔ Profil déjà présent:", profilData);
-        return profilData;
-      }
+      if (existingProfile) return existingProfile;
 
-      // 2) tentative d'insert AVEC user_id (valeur fournie)
-      console.log("Tentative INSERT avec user_id...");
       const randomName = generateRandomName();
-      const { data: insertedWithUserId, error: insertErr1 } = await supabase
+
+      // 2) Tente insertion avec user_id
+      const { data: inserted, error: insertError } = await supabase
         .from("profils")
-        .insert([
-          {
-            id: crypto.randomUUID(),
-            user_id: userId,
-            nom: randomName,
-            role: "user",
-          },
-        ])
+        .insert([{ id: crypto.randomUUID(), user_id: userId, nom: randomName, role: "user" }])
         .select()
         .single();
 
-      if (!insertErr1 && insertedWithUserId) {
-        console.log("✔ Insert with user_id OK:", insertedWithUserId);
-        return insertedWithUserId;
-      }
-
-      console.warn("Insert with user_id failed:", insertErr1);
-
-      // 3) si échec, tenter insert SANS user_id (utile si colonne a DEFAULT auth.uid())
-      console.log("Tentative INSERT sans user_id (laisser DB poser auth.uid())...");
-      const { data: insertedNoUser, error: insertErr2 } = await supabase
-        .from("profils")
-        .insert([
-          {
-            id: crypto.randomUUID(),
-            nom: randomName,
-            role: "user",
-          },
-        ])
-        .select()
-        .single();
-
-      if (!insertErr2 && insertedNoUser) {
-        console.log("✔ Insert without user_id OK:", insertedNoUser);
-
-        // 4) vérification : relire par user_id (au cas où DB a posé user_id)
-        const { data: finalProfile, error: finalFetchErr } = await supabase
+      if (insertError) {
+        // 3) Si échec, insertion sans user_id
+        const { data: fallbackInserted } = await supabase
+          .from("profils")
+          .insert([{ id: crypto.randomUUID(), nom: randomName, role: "user" }])
+          .select()
+          .single();
+        // 4) Récupération finale par user_id
+        const { data: finalProfile } = await supabase
           .from("profils")
           .select("*")
           .eq("user_id", userId)
           .maybeSingle();
-
-        if (finalFetchErr) {
-          console.error("Erreur fetch final :", finalFetchErr);
-          return insertedNoUser; // on retourne la ligne insérée même si user_id n'est pas fixé
-        }
-
-        console.log("Final profile by user_id:", finalProfile);
-        return finalProfile || insertedNoUser;
+        return finalProfile || fallbackInserted;
       }
 
-      console.error("Insert sans user_id aussi échoué :", insertErr2);
-      return null;
+      return inserted;
     } catch (err) {
-      console.error("Unexpected error createProfileIfNeeded:", err);
+      console.error("Erreur createProfileIfNeeded :", err);
       return null;
     }
   };
 
+  // Login
   const handleLogin = async () => {
-    if (!email || !password) {
-      setErrorMsg("Veuillez entrer email et mot de passe.");
-      return;
-    }
-    if (!captchaToken) {
-      setErrorMsg("Veuillez valider le Captcha.");
-      return;
-    }
+    if (!email || !password) return setErrorMsg("Veuillez entrer email et mot de passe.");
+    if (!captchaToken) return setErrorMsg("Veuillez valider le Captcha.");
 
     setLoading(true);
     setErrorMsg("");
@@ -138,10 +89,7 @@ export default function Auth({ onLogin }) {
       setErrorMsg("❌ Vous devez confirmer votre email avant de vous connecter.");
       await supabase.auth.signOut();
     } else {
-      // ⚡ Crée le profil si nécessaire
-      console.log("User connecté :", data.user);
       await createProfileIfNeeded(data.user.id);
-
       onLogin(data.user);
       navigate("/profils", { replace: true });
     }
@@ -151,32 +99,18 @@ export default function Auth({ onLogin }) {
     captchaRef.current?.resetCaptcha();
   };
 
+  // SignUp
   const handleSignUp = async () => {
-    if (!email || !password) {
-      setErrorMsg("Veuillez entrer email et mot de passe.");
-      return;
-    }
-    if (!captchaToken) {
-      setErrorMsg("Veuillez valider le Captcha.");
-      return;
-    }
+    if (!email || !password) return setErrorMsg("Veuillez entrer email et mot de passe.");
+    if (!captchaToken) return setErrorMsg("Veuillez valider le Captcha.");
 
     setLoading(true);
     setErrorMsg("");
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { captchaToken },
-    });
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { captchaToken } });
 
-    if (error) {
-      setErrorMsg("Erreur d'inscription : " + error.message);
-    } else {
-      setErrorMsg(
-        "✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter."
-      );
-    }
+    if (error) setErrorMsg("Erreur d'inscription : " + error.message);
+    else setErrorMsg("✅ Un email de confirmation vous a été envoyé. Veuillez confirmer avant de vous connecter.");
 
     setLoading(false);
     setCaptchaToken(null);
@@ -201,7 +135,6 @@ export default function Auth({ onLogin }) {
         onChange={(e) => setPassword(e.target.value)}
         className="w-full border p-2 rounded mb-2"
       />
-
       <div className="mb-3">
         <HCaptcha
           sitekey={import.meta.env.VITE_HCAPTCHA_SITEKEY}
@@ -209,7 +142,6 @@ export default function Auth({ onLogin }) {
           ref={captchaRef}
         />
       </div>
-
       <button
         onClick={handleLogin}
         disabled={loading}
