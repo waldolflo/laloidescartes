@@ -191,62 +191,43 @@ export default function App() {
     });
   }, []);
 
-  // --- PATCH FINAL : création auto du profil au retour email ---
+  // 🔥 Corrige le retour depuis le lien email
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("🔄 Auth state change:", event, session);
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
 
-        if (event === "SIGNED_IN" && session?.user) {
-          const user = session.user;
-          const userId = user.id;
+        // Vérifie si un profil existe déjà
+        const { data: profilExists } = await supabase
+          .from("profils")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
 
-          // ⚡ Vérifier si un profil existe déjà
-          const { data: existingProfile, error: selectError } = await supabase
-            .from("profils")
-            .select("*")
-            .eq("user_id", userId)
-            .maybeSingle();
-
-          if (selectError) {
-            console.error("Erreur SELECT profil:", selectError);
-          }
-
-          // ⚡ Si pas de profil → on le crée
-          if (!existingProfile) {
-            console.log("📌 Création auto du profil au retour email…");
-
-            const insertPayload = {
-              user_id: userId,
-              email: user.email,
-              nom: user.user_metadata?.nom || "Nouveau joueur",
-            };
-
-            const { error: insertError } = await supabase
-              .from("profils")
-              .insert(insertPayload);
-
-            if (insertError) {
-              console.error("❌ INSERT profil bloqué:", insertError);
-            }
-          }
-
-          // ⚡ Recharger le profil dans l'app
-          const { data: profilData } = await supabase
-            .from("profils")
-            .select("*")
-            .eq("user_id", userId)
-            .maybeSingle();
-
-          setAuthUser(user);
-          setUser(profilData);
+        // S'il n'existe pas → on le crée
+        if (!profilExists) {
+          await supabase.from("profils").insert([
+            {
+              id: crypto.randomUUID(),
+              user_id: session.user.id,
+              nom: "Nouveau joueur",
+              role: "user",
+            },
+          ]);
         }
-      }
-    );
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+        // Recharge le profil dans ton state global
+        const { data: profilData } = await supabase
+          .from("profils")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        setUser(profilData);
+        setAuthUser(session.user);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
