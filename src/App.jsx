@@ -171,7 +171,7 @@ function GDPRBanner() {
   );
 }
 
-// --- Création de profil si nécessaire ---
+// --- Création de profil si nécessaire avec UPSERT ---
 const createProfileIfNeeded = async (userId) => {
   if (!userId) return null;
 
@@ -185,19 +185,25 @@ const createProfileIfNeeded = async (userId) => {
   };
 
   try {
-    const { data: existing } = await supabase.from("profils").select("*").eq("user_id", userId).maybeSingle();
-    if (existing) return existing;
-
-    const randomName = generateRandomName();
-    const { data: inserted } = await supabase
+    const { data, error } = await supabase
       .from("profils")
-      .insert([{ id: crypto.randomUUID(), user_id: userId, nom: randomName, role: "user" }])
+      .upsert(
+        [
+          { user_id: userId, nom: generateRandomName(), role: "user" }
+        ],
+        { onConflict: "user_id", returning: "representation" }
+      )
       .select()
       .single();
 
-    return inserted;
+    if (error) {
+      console.error("Erreur upsert profil:", error);
+      return null;
+    }
+
+    return data;
   } catch (err) {
-    console.error("Erreur createProfileIfNeeded :", err);
+    console.error("Unexpected error in createProfileIfNeeded:", err);
     return null;
   }
 };
@@ -231,23 +237,20 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        if (authUser && authUser.id === session.user.id) return;
-
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const userId = session?.user?.id;
+      if (userId) {
         setAuthUser(session.user);
-        const profile = await createProfileIfNeeded(session.user.id);
+        const profile = await createProfileIfNeeded(userId);
         setUser(profile);
-      }
-
-      if (event === "SIGNED_OUT") {
+      } else {
         setAuthUser(null);
         setUser(null);
       }
     });
 
     return () => subscription.subscription.unsubscribe();
-  }, [authUser]);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

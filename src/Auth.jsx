@@ -13,7 +13,6 @@ export default function Auth({ onLogin }) {
   const captchaRef = useRef(null);
   const navigate = useNavigate();
 
-  // Génération pseudo fun
   const generateRandomName = () => {
     const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
     const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
@@ -23,53 +22,31 @@ export default function Auth({ onLogin }) {
     return `${randomAdj}${randomCreature}${randomNum}`;
   };
 
-  // Création du profil si nécessaire
   const createProfileIfNeeded = async (userId) => {
     if (!userId) return null;
 
     try {
-      // 1) Vérifie existant
-      const { data: existingProfile } = await supabase
+      const { data, error } = await supabase
         .from("profils")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (existingProfile) return existingProfile;
-
-      const randomName = generateRandomName();
-
-      // 2) Tente insertion avec user_id
-      const { data: inserted, error: insertError } = await supabase
-        .from("profils")
-        .insert([{ id: crypto.randomUUID(), user_id: userId, nom: randomName, role: "user" }])
+        .upsert(
+          [{ user_id: userId, nom: generateRandomName(), role: "user" }],
+          { onConflict: "user_id", returning: "representation" }
+        )
         .select()
         .single();
 
-      if (insertError) {
-        // 3) Si échec, insertion sans user_id
-        const { data: fallbackInserted } = await supabase
-          .from("profils")
-          .insert([{ id: crypto.randomUUID(), nom: randomName, role: "user" }])
-          .select()
-          .single();
-        // 4) Récupération finale par user_id
-        const { data: finalProfile } = await supabase
-          .from("profils")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
-        return finalProfile || fallbackInserted;
+      if (error) {
+        console.error("Erreur upsert profil:", error);
+        return null;
       }
 
-      return inserted;
+      return data;
     } catch (err) {
-      console.error("Erreur createProfileIfNeeded :", err);
+      console.error("Unexpected error in createProfileIfNeeded:", err);
       return null;
     }
   };
 
-  // Login
   const handleLogin = async () => {
     if (!email || !password) return setErrorMsg("Veuillez entrer email et mot de passe.");
     if (!captchaToken) return setErrorMsg("Veuillez valider le Captcha.");
@@ -99,7 +76,6 @@ export default function Auth({ onLogin }) {
     captchaRef.current?.resetCaptcha();
   };
 
-  // SignUp
   const handleSignUp = async () => {
     if (!email || !password) return setErrorMsg("Veuillez entrer email et mot de passe.");
     if (!captchaToken) return setErrorMsg("Veuillez valider le Captcha.");
