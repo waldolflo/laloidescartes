@@ -19,11 +19,31 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       const { data, error } = await supabase
         .from("profils")
         .select("id, nom, role, jeufavoris1, jeufavoris2")
-        .eq("user_id", authUser.id)
-        .maybeSingle();
+        .eq("id", authUser.id)
+        .single();
 
       if (!error && data) {
         let updatedData = data;
+
+        // Génération d’un pseudo fun si nom vide
+        if (!data.nom) {
+          const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
+          const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
+          const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+          const randomCreature = creatures[Math.floor(Math.random() * creatures.length)];
+          const randomNum = Math.floor(100 + Math.random() * 900);
+
+          const defaultName = `${randomAdj}${randomCreature}${randomNum}`;
+
+          const { data: newData, error: updateError } = await supabase
+            .from("profils")
+            .update({ nom: defaultName })
+            .eq("id", authUser.id)
+            .select()
+            .single();
+
+          if (!updateError) updatedData = newData;
+        }
 
         setProfil(updatedData);
         setGlobalImageUrl(updatedData.global_image_url || "");

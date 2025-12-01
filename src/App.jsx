@@ -18,7 +18,7 @@ import Inscriptions from "./Inscriptions";
 import Statistiques from "./Statistiques";
 import Profils from "./Profils";
 import Auth from "./Auth";
-import FooterBGG from "./FooterBGG";
+import FooterBGG from "./FooterBGG"; // <-- importe ton FooterBGG
 import Chat from "./Chat";
 import { BookOpen, CalendarDays, Users, User, LogOut, MessageCircle } from "lucide-react";
 
@@ -29,6 +29,7 @@ function Navbar({ currentUser, onLogout }) {
   const tabs = [
     { to: "/", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
+    //{ to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/statistiques", label: "Statistiques", icon: Users },
     { to: "/profils", label: "Profil", icon: User },
     { to: "/chat", label: "Chat", icon: MessageCircle },
@@ -171,83 +172,24 @@ function GDPRBanner() {
   );
 }
 
-// --- Création de profil si nécessaire ---
-const createProfileIfNeeded = async (userId) => {
-  if (!userId) return null;
-
-  const generateRandomName = () => {
-    const adjectives = ["Rapide", "Mystique", "Épique", "Fougueux", "Sombre", "Lumineux", "Vaillant", "Astucieux"];
-    const creatures = ["Dragon", "Licorne", "Phoenix", "Ninja", "Pirate", "Viking", "Samouraï", "Gobelin"];
-    const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const randomCreature = creatures[Math.floor(Math.random() * creatures.length)];
-    const randomNum = Math.floor(100 + Math.random() * 900);
-    return `${randomAdj}${randomCreature}${randomNum}`;
-  };
-
-  try {
-    const { data: existing } = await supabase.from("profils").select("*").eq("user_id", userId).maybeSingle();
-    if (existing) return existing;
-
-    const randomName = generateRandomName();
-    const { data: inserted } = await supabase
-      .from("profils")
-      .insert([{ id: crypto.randomUUID(), user_id: userId, nom: randomName, role: "user" }])
-      .select()
-      .single();
-
-    return inserted;
-  } catch (err) {
-    console.error("Erreur createProfileIfNeeded :", err);
-    return null;
-  }
-};
-
 // --- App principale ---
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
-  const [loadingSession, setLoadingSession] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    const loadSessionAndProfile = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-
-      const session = data.session;
-      if (session?.user) {
-        setAuthUser(session.user);
-        const profile = await createProfileIfNeeded(session.user.id);
-        setUser(profile);
-      }
-
-      setLoadingSession(false);
-    };
-
-    loadSessionAndProfile();
-
-    return () => { mounted = false; };
-  }, []);
-
-  useEffect(() => {
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        if (authUser && authUser.id === session.user.id) return;
-
-        setAuthUser(session.user);
-        const profile = await createProfileIfNeeded(session.user.id);
-        setUser(profile);
-      }
-
-      if (event === "SIGNED_OUT") {
-        setAuthUser(null);
-        setUser(null);
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        setAuthUser(data.user);
+        const { data: profilData } = await supabase
+          .from("profils")
+          .select("*")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+        setUser(profilData);
       }
     });
-
-    return () => subscription.subscription.unsubscribe();
-  }, [authUser]);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -256,8 +198,6 @@ export default function App() {
   };
 
   const currentUser = user || authUser;
-
-  if (loadingSession) return <div className="p-4">Chargement...</div>;
 
   return (
     <Router>
