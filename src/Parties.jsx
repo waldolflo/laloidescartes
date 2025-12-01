@@ -313,9 +313,9 @@ export default function Parties({ user, authUser }) {
 
               {/* Inscrits */}
               {p.inscrits?.map((i) => (
-                <p key={i.utilisateur_id} className="text-sm text-center">
-                  {i.profil?.nom}
-                </p>
+                <div key={i.utilisateur_id} className={`flex justify-between px-3 py-1 border rounded mb-1 bg-white`}>
+                  <span className="font-medium flex items-center gap-2">{i.profil?.nom}</span>
+                </div>
               ))}
 
               {/* Boutons */}
