@@ -292,15 +292,87 @@ export default function Parties({ user, authUser }) {
             (p.jeux?.max_joueurs || 0) - (p.inscrits?.length || 0);
 
           return (
-            <div
-              key={p.id}
-              className="border p-4 rounded shadow bg-white hover:shadow-lg transition flex flex-col"
-            >
+            <div key={p.id} className="relative border rounded p-4 bg-white shadow overflow-hidden">
+              {/* Badges empilés en haut à droite */}
+              <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
+                {/* Favori */}
+                {p.jeux?.fav > 0 && (
+                  <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-1 shadow">
+                    ❤️ {p.jeux.fav}
+                  </span>
+                )}
+                {/* Note */}
+                {p.jeux?.note && p.jeux?.note > 0 && (
+                  <span className="bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-lg shadow">
+                    ⭐ {parseFloat(p.jeux.note).toFixed(1)} / 10
+                  </span>
+                )}
+                {/* Poids */}
+                {p.jeux?.poids && p.jeux?.poids > 0 && (
+                  <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow">
+                    ⚖️ {parseFloat(p.jeux.poids).toFixed(2)} / 5
+                  </span>
+                )}
+                {/* Score max */}
+                {p.jeux?.bestScore && p.jeux?.bestScore > 0 && (
+                  <span
+                    className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow cursor-pointer"
+                    title={p.jeux?.bestUsers.join(", ")} // infobulle desktop
+                    onClick={() => alert(`Meilleur score par ${p.jeux?.bestUsers.join(", ")}`)} // mobile tap
+                  >
+                    🏆 {p.jeux.bestScore}
+                  </span>
+                )}
+              </div>
+
+              {/* Image + lien BGG */}
               {p.jeux?.couverture_url && (
-                <img
-                  src={p.jeux.couverture_url}
-                  className="w-full h-40 object-contain mb-2"
-                />
+                <div className="relative mt-2 mb-2">
+                  {p.jeux.bgg_api ? (
+                    <a
+                      href={`https://boardgamegeek.com/boardgame/${p.jeux.bgg_api}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src={p.jeux.couverture_url}
+                        alt={p.jeux?.nom}
+                        className="w-full h-40 object-contain mt-2 mb-2 rounded"
+                      />
+                    </a>
+                  ) : (
+                    <img
+                      src={p.jeux.couverture_url}
+                      alt={p.jeux?.nom}
+                      className="w-full h-40 object-contain mt-2 mb-2 rounded"
+                    />
+                  )}
+                  {/* 🎬 Bouton règles – overlay discret */}
+                  {p.jeux?.regle_youtube && (
+                    <a
+                      href={p.jeux.regle_youtube}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-2 right-2
+                                inline-flex items-center gap-1
+                                px-2 py-1
+                                bg-red-600/90 text-white
+                                text-xs font-semibold
+                                rounded-lg shadow
+                                hover:bg-red-700 hover:scale-105
+                                transition"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 576 512"
+                        className="w-4 h-4 fill-white"
+                      >
+                        <path d="M549.655 124.083c-6.281-23.65-24.764-42.148-48.378-48.433C456.727 64 288 64 288 64s-168.727 0-213.277 11.65c-23.614 6.285-42.097 24.783-48.378 48.433C16 168.64 16 256.004 16 256.004s0 87.36 10.345 131.917c6.281 23.65 24.764 42.148 48.378 48.433C119.273 448 288 448 288 448s168.727 0 213.277-11.65c23.614-6.285 42.097-24.783 48.378-48.433C560 343.364 560 256.004 560 256.004s0-87.36-10.345-131.921zM232 336V176l142 80-142 80z" />
+                      </svg>
+                      Règles
+                    </a>
+                  )}
+                </div>
               )}
 
               <h2 className="text-lg font-bold text-center">{p.jeux?.nom}</h2>
