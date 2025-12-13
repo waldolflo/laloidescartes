@@ -63,7 +63,7 @@ function Navbar({ currentUser, onLogout }) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm">
-              Bonjour <strong>{currentUser.nom || currentUser.email}</strong>
+              Bonjour <strong>{currentUser?.nom || currentUser?.email}</strong>
             </span>
             <button
               onClick={onLogout}
@@ -176,6 +176,7 @@ function GDPRBanner() {
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -188,6 +189,7 @@ export default function App() {
           .maybeSingle();
         setUser(profilData);
       }
+      setLoadingAuth(false); // 🔴 essentiel
     });
   }, []);
 
