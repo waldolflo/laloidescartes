@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import Chat from "./Chat";
 import CountUp from "react-countup"; // pour les stats animées
+import { Phone, Mail } from "lucide-react";
 
 export default function Home({ user }) {
   const currentUser = user || null;
@@ -253,22 +254,60 @@ export default function Home({ user }) {
 
       {/* --- Section ADRESSE & CARTE --- */}
       <section className="mt-16 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-6 md:p-8 text-center">
-          <h2 className="text-2xl font-bold mb-2">Nous trouver</h2>
-          <p className="text-gray-300">
-            2 Rue Albert Leroy<br />
-            62170 Neuville-sous-Montreuil
-          </p>
-        </div>
+        <div className="p-6 md:p-10">
+          <h2 className="text-2xl font-bold text-center mb-8">Nous trouver</h2>
 
-        <div className="w-full h-[350px]">
-          <iframe
-            title="Carte Google Maps"
-            src="https://www.google.com/maps?q=2%20Rue%20Albert%20Leroy%2062170%20Neuville-sous-Montreuil&output=embed"
-            className="w-full h-full border-0"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
+          <div className="grid md:grid-cols-2 gap-10 items-start">
+            
+            {/* GAUCHE : adresse + image */}
+            <div className="space-y-6">
+              <div>
+                <p className="text-lg font-semibold">📍 Adresse</p>
+                <p className="text-gray-300 mt-1">
+                  2 Rue Albert Leroy<br />
+                  62170 Neuville-sous-Montreuil
+                </p>
+              </div>
+
+              <img
+                src="https://laloidescartes.my.canva.site/_assets/media/e330db1ce4e0a769721d6668a95d40f4.png"
+                alt="Lieu de l'association"
+                className="rounded-lg shadow-md max-h-64 object-contain"
+              />
+            </div>
+
+            {/* DROITE : contact + carte */}
+            <div className="space-y-6">
+              
+              {/* Contact */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Phone size={20} className="text-rose-400" />
+                  <span className="text-lg">06 44 17 10 82</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Mail size={20} className="text-rose-400" />
+                  <a
+                    href="mailto:laloidescartes@gmail.com"
+                    className="text-lg hover:underline"
+                  >
+                    laloidescartes@gmail.com
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Carte */}
+          <div className="w-full h-[300px] rounded-lg overflow-hidden">
+            <iframe
+              title="Carte Google Maps"
+              src="https://www.google.com/maps?q=2%20Rue%20Albert%20Leroy%2062170%20Neuville-sous-Montreuil&output=embed"
+              className="w-full h-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
         </div>
       </section>
 
