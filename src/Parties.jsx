@@ -317,8 +317,22 @@ export default function Parties({ user, authUser }) {
                 {p.jeux?.best_score && p.jeux?.best_score > 0 && (
                   <span
                     className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow cursor-pointer"
-                    title={p.jeux?.best_users.join(", ")} // infobulle desktop
-                    onClick={() => alert(`Meilleur score par ${p.jeux.best_users.join(", ")}`)} // mobile tap
+                    // Pour infobulle desktop
+                    title={
+                      Array.isArray(p.jeux.best_users)
+                        ? p.jeux.best_users.join(", ")
+                        : p.jeux.best_users
+                    }
+                    // Pour mobile tap
+                    onClick={() =>
+                      alert(
+                        `Meilleur score par ${
+                          Array.isArray(p.jeux.best_users)
+                            ? p.jeux.best_users.join(", ")
+                            : p.jeux.best_users
+                        }`
+                      )
+                    }
                   >
                     🏆 {p.jeux.best_score}
                   </span>
