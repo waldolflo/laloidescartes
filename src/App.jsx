@@ -25,7 +25,6 @@ import { House, BookOpen, CalendarDays, Dices, User, LogOut, MessageCircle } fro
 
 // --- Navbar responsive ---
 function Navbar({ currentUser, authUser, onLogout }) {
-  if (!currentUser) return null; // 👈 AJOUT
   const location = useLocation();
 
   const publicTabs = [
@@ -109,13 +108,23 @@ function Navbar({ currentUser, authUser, onLogout }) {
           );
         })}
 
-        <button
-          onClick={onLogout}
-          className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
-        >
-          <LogOut size={22} />
-          <span>Quitter</span>
-        </button>
+        {authUser ? (
+          <button
+            onClick={onLogout}
+            className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
+          >
+            <LogOut size={22} />
+            <span>Quitter</span>
+          </button>
+        ) : (
+          <Link
+            to="/auth"
+            className="flex flex-col items-center text-xs text-gray-300 hover:text-white"
+          >
+            <User size={22} />
+            <span>Connexion</span>
+          </Link>
+        )}
       </nav>
     </>
   );
