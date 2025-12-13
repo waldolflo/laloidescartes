@@ -53,46 +53,49 @@ export default function Parties({ user, authUser }) {
   };
 
   const fetchParties = async () => {
-    const { data, error } = await supabase
-      .from("parties")
-      .select("*, jeux(*), organisateur:profils!parties_utilisateur_id_fkey(id, nom)")
-      .order("date_partie", { ascending: true })
-      .order("heure_partie", { ascending: true });
+    try {
+      // 1️⃣ Récupérer toutes les parties à venir avec leurs jeux
+      const { data: partiesData, error: partiesError } = await supabase
+        .from("parties")
+        .select("*, jeux(*)")
+        .order("date_partie", { ascending: true })
+        .order("heure_partie", { ascending: true });
 
-    if (error) return;
+      if (partiesError || !partiesData?.length) return setParties([]);
 
-    const now = new Date();
+      const now = new Date();
 
-    const upcoming = [];
+      // Filtrer seulement les parties à venir
+      const upcomingParties = partiesData.filter(
+        (p) => new Date(`${p.date_partie}T${p.heure_partie}`) >= now
+      );
 
-    for (let p of data || []) {
-      const dateFull = new Date(`${p.date_partie}T${p.heure_partie}`);
+      const partieIds = upcomingParties.map((p) => p.id);
 
-      const { data: insData } = await supabase
+      // 2️⃣ Récupérer toutes les inscriptions en une seule requête
+      const { data: allInscriptions } = await supabase
         .from("inscriptions")
-        .select("utilisateur_id, rank, score")
-        .eq("partie_id", p.id);
+        .select("partie_id, utilisateur_id, rank, score")
+        .in("partie_id", partieIds);
 
-      const userIds = (insData || []).map((i) => i.utilisateur_id);
-
+      // 3️⃣ Récupérer tous les profils nécessaires en une seule requête
+      const userIds = [...new Set((allInscriptions || []).map(i => i.utilisateur_id))];
       const { data: profilsData } = await supabase
         .from("profils")
-        .select("id, nom")
-        .in("id", userIds);
+        .select("id, nom");
 
-      const inscrits = (insData || []).map((i) => ({
-        ...i,
-        profil: profilsData?.find((u) => u.id === i.utilisateur_id),
-      }));
+      // 4️⃣ Mapper les inscriptions et profils sur chaque partie
+      const partiesFull = upcomingParties.map((p) => {
+        const inscrits = (allInscriptions || [])
+          .filter(i => i.partie_id === p.id)
+          .map(i => ({ ...i, profil: profilsData.find(u => u.id === i.utilisateur_id) }));
+        return { ...p, inscrits };
+      });
 
-      const fullPartie = { ...p, inscrits };
-
-      if (dateFull >= now) upcoming.push(fullPartie);
+      setParties(partiesFull);
+    } catch (err) {
+      console.error("Erreur fetchParties :", err);
     }
-
-    upcoming.sort((a, b) => new Date(a.date_partie) - new Date(b.date_partie));
-
-    setParties(upcoming);
   };
 
   // -----------------------------------------------------
