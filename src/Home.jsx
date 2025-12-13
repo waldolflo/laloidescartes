@@ -44,10 +44,10 @@ export default function Home({ user }) {
   const fetchPresidentMessage = async () => {
     try {
       const { data, error } = await supabase
-        .from("president_message") // ou nom réel de la table
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1);
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 1)
+        .single();
         
       if (error) {
         console.warn("Table president_message absente ou autre erreur", error.message);
@@ -55,7 +55,7 @@ export default function Home({ user }) {
         return;
       }
 
-      setMessagePresident(data?.[0]?.message || "");
+      setMessagePresident(data.global_image_url || "");
     } catch (err) {
       console.error(err);
       setMessagePresident("");
@@ -80,7 +80,7 @@ export default function Home({ user }) {
       <header className="text-center mb-12">
         <img src="/logo.png" alt="Logo" className="mx-auto h-28" />
         <h1 className="text-4xl font-bold mt-4">Bienvenue sur notre association !</h1>
-        <p className="text-gray-700 mt-2">Découvrez nos jeux, nos rencontres et notre communauté.</p>
+        <p className="text-gray-700 mt-2">Découvrez nos jeux, nos rencontres et notre association.</p>
       </header>
 
       {/* STATS */}
