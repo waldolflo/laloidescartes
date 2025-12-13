@@ -46,7 +46,7 @@ export default function Home({ user }) {
       const { data, error } = await supabase
         .from("settings")
         .select("global_image_url")
-        .eq("id", 1)
+        .eq("id", 2)
         .single();
         
       if (error) {
