@@ -37,9 +37,15 @@ export default function Home({ user }) {
       const [jeuxRes, partiesRes, membresRes] = await Promise.all([
         supabase.from("jeux").select("id", { count: "exact" }),
         supabase.from("parties").select("id", { count: "exact" }),
-        supabase.from("profils").select("id", { count: "exact" }).in("role", ["membre", "ludo", "ludoplus", "admin"]),
+        supabase
+          .from("profils")
+          .select("id", { count: "exact" })
+          .in("role", ["membre", "ludo", "ludoplus", "admin"]),
       ]);
 
+      // ----------------------
+      // Rencontres (jours distincts)
+      // ----------------------
       const { data: partiesDates } = await supabase
         .from("parties")
         .select("date_partie")
@@ -51,11 +57,56 @@ export default function Home({ user }) {
         )
       ).size;
 
+      // ----------------------
+      // ⏱️ Heures de jeu (PAR PARTIE)
+      // ----------------------
+      const { data: parties } = await supabase
+        .from("parties")
+        .select("jeu_id")
+        .eq("lieu", "La loi des cartes");
+
+      let totalMinutes = 0;
+
+      if (parties && parties.length > 0) {
+        const jeuIds = parties.map(p => p.jeu_id);
+
+        const { data: jeux } = await supabase
+          .from("jeux")
+          .select("id, duree")
+          .in("id", jeuIds);
+
+        // Map id -> durée
+        const dureeParJeu = {};
+        (jeux || []).forEach(jeu => {
+          if (!jeu.duree) return;
+
+          const minutes = parseInt(
+            jeu.duree.toString().split("-")[0].trim(),
+            10
+          );
+
+          if (!isNaN(minutes)) {
+            dureeParJeu[jeu.id] = minutes;
+          }
+        });
+
+        // Addition par PARTIE
+        parties.forEach(partie => {
+          const minutes = dureeParJeu[partie.jeu_id];
+          if (minutes) {
+            totalMinutes += minutes;
+          }
+        });
+      }
+
+      const totalHeures = Math.round((totalMinutes / 60) * 10) / 10;
+
       setStats({
         jeux: jeuxRes?.count || 0,
         parties: partiesRes?.count || 0,
         rencontres: rencontresCount || 0,
         membres: membresRes?.count || 0,
+        heures: totalHeures || 0,
       });
     } catch (error) {
       console.error("Erreur fetchStats:", error);
@@ -133,12 +184,13 @@ export default function Home({ user }) {
           { label: "Création de l'asso", value: "2021", color: "text-black-600" },
           { label: "Jeux", value: stats.jeux, color: "text-blue-600" },
           { label: "Parties organisées sur l'App", value: stats.parties, color: "text-green-600" },
+          { label: "Heures de jeu", value: stats.heures, color: "text-orange-600" },
           { label: "Rencontres jeux", value: stats.rencontres, color: "text-purple-600" },
           { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
         ].map((stat) => (
           <div key={stat.label} className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
             <h2 className={`text-3xl font-bold ${stat.color}`}>
-              <CountUp end={stat.value} duration={1.5} />
+              <CountUp end={stat.value} duration={1.5} separator="" />
             </h2>
             <p className="text-gray-600 mt-1">{stat.label}</p>
           </div>
@@ -295,18 +347,18 @@ export default function Home({ user }) {
                     laloidescartes@gmail.com
                   </a>
                 </div>
+                {/* Carte */}
+                <div className="w-full h-[300px] rounded-lg overflow-hidden">
+                  <iframe
+                    title="Carte Google Maps"
+                    src="https://www.google.com/maps?q=2%20Rue%20Albert%20Leroy%2062170%20Neuville-sous-Montreuil&output=embed"
+                    className="w-full h-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          {/* Carte */}
-          <div className="w-full h-[300px] rounded-lg overflow-hidden">
-            <iframe
-              title="Carte Google Maps"
-              src="https://www.google.com/maps?q=2%20Rue%20Albert%20Leroy%2062170%20Neuville-sous-Montreuil&output=embed"
-              className="w-full h-full border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
           </div>
         </div>
       </section>
