@@ -186,7 +186,7 @@ export default function Home({ user }) {
           { label: "Jeux", value: stats.jeux, color: "text-yellow-600" },
           { label: "Parties organisées via l'App", value: stats.parties, color: "text-green-600" },
           { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
-          { label: "Rencontres jeux", value: stats.rencontres, color: "text-purple-600" },
+          { label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-purple-600" },
           { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
           { label: "Followers Facebook", value: "791", color: "text-blue-600" },
         ].map((stat) => (
