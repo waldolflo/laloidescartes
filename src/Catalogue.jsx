@@ -295,54 +295,56 @@ export default function Catalogue({ user }) {
                   🏆 {j.bestScore}
                 </span>
               )}
-              {/* 🎬 Bouton règles – overlay discret */}
-              {j.regle_youtube && (
-                <a
-                  href={j.regle_youtube}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="absolute bottom-2 right-2
-                            inline-flex items-center gap-1
-                            px-2 py-1
-                            bg-red-600/90 text-white
-                            text-xs font-semibold
-                            rounded-lg shadow
-                            hover:bg-red-700 hover:scale-105
-                            transition"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 576 512"
-                    className="w-4 h-4 fill-white"
-                  >
-                    <path d="M549.655 124.083c-6.281-23.65-24.764-42.148-48.378-48.433C456.727 64 288 64 288 64s-168.727 0-213.277 11.65c-23.614 6.285-42.097 24.783-48.378 48.433C16 168.64 16 256.004 16 256.004s0 87.36 10.345 131.917c6.281 23.65 24.764 42.148 48.378 48.433C119.273 448 288 448 288 448s168.727 0 213.277-11.65c23.614-6.285 42.097-24.783 48.378-48.433C560 343.364 560 256.004 560 256.004s0-87.36-10.345-131.921zM232 336V176l142 80-142 80z" />
-                  </svg>
-                  Règles
-                </a>
-              )}
             </div>
 
             {/* Image + lien BGG */}
             {j.couverture_url && (
-              j.bgg_api ? (
-                <a
-                  href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+              <div className="relative mt-2 mb-2">
+                {j.bgg_api ? (
+                  <a
+                    href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src={j.couverture_url}
+                      alt={j.nom}
+                      className="w-full h-40 object-contain mt-2 mb-2 rounded"
+                    />
+                  </a>
+                ) : (
                   <img
                     src={j.couverture_url}
                     alt={j.nom}
                     className="w-full h-40 object-contain mt-2 mb-2 rounded"
                   />
-                </a>
-              ) : (
-                <img
-                  src={j.couverture_url}
-                  alt={j.nom}
-                  className="w-full h-40 object-contain mt-2 mb-2 rounded"
-                />
-              )
+                )}
+                {/* 🎬 Bouton règles – overlay discret */}
+                {j.regle_youtube && (
+                  <a
+                    href={j.regle_youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-2 right-2
+                              inline-flex items-center gap-1
+                              px-2 py-1
+                              bg-red-600/90 text-white
+                              text-xs font-semibold
+                              rounded-lg shadow
+                              hover:bg-red-700 hover:scale-105
+                              transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 576 512"
+                      className="w-4 h-4 fill-white"
+                    >
+                      <path d="M549.655 124.083c-6.281-23.65-24.764-42.148-48.378-48.433C456.727 64 288 64 288 64s-168.727 0-213.277 11.65c-23.614 6.285-42.097 24.783-48.378 48.433C16 168.64 16 256.004 16 256.004s0 87.36 10.345 131.917c6.281 23.65 24.764 42.148 48.378 48.433C119.273 448 288 448 288 448s168.727 0 213.277-11.65c23.614-6.285 42.097-24.783 48.378-48.433C560 343.364 560 256.004 560 256.004s0-87.36-10.345-131.921zM232 336V176l142 80-142 80z" />
+                    </svg>
+                    Règles
+                  </a>
+                )}
+              </div>
             )}
 
             {/* Informations texte */}
