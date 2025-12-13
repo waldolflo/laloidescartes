@@ -7,6 +7,7 @@ import {
   Link,
   Navigate,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "./supabaseClient";
@@ -203,6 +204,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
 
+  const navigate = useNavigate(); // <-- ajouté ici
+
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
@@ -222,6 +225,7 @@ export default function App() {
     await supabase.auth.signOut();
     setAuthUser(null);
     setUser(null);
+    navigate("/"); // <-- redirection après déconnexion
   };
 
   const currentUser = user || authUser;

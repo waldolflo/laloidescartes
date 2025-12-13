@@ -121,7 +121,7 @@ export default function Home({ user }) {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* LOGO + Titre */}
       <header className="text-center mb-12">
-        <img src="/public/logo_loidc.png" alt="Logo" className="mx-auto h-28" />
+        <img src="/logo_loidc.png" alt="Logo" className="mx-auto h-28" />
         <h1 className="text-4xl font-bold mt-4">La Loi des Cartes</h1>
         <p className="text-gray-700 mt-2">Découvrez nos jeux, nos rencontres et notre association.</p>
       </header>
