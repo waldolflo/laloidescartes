@@ -182,7 +182,7 @@ export default function Home({ user }) {
       <section className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
         {[
           { label: "Création de l'asso", value: "2021", color: "text-black-600" },
-          { label: "Jeux", value: stats.jeux, color: "text-red-600" },
+          { label: "Jeux", value: stats.jeux, color: "text-yellow-600" },
           { label: "Parties organisées via l'App", value: stats.parties, color: "text-green-600" },
           { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
           { label: "Rencontres jeux", value: stats.rencontres, color: "text-purple-600" },
