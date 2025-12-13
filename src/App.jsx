@@ -130,7 +130,7 @@ function Navbar({ currentUser, authUser, onLogout }) {
 }
 
 // --- Animated Routes ---
-function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
+function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
   const location = useLocation();
   const currentUser = user || authUser || null;
 
@@ -145,7 +145,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
       >
         <Routes location={location}>
           <Route path="/" element={<Home user={currentUser} />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth" element={<Auth onLogin={onLogin} />} />
           {currentUser ? (
             <>
               <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
@@ -244,6 +244,16 @@ export default function App() {
             user={user}
             setAuthUser={setAuthUser}
             setUser={setUser}
+            onLogin={(newUser) => {
+              setAuthUser(newUser);
+              // Charger ou créer le profil Supabase
+              supabase
+                .from("profils")
+                .select("*")
+                .eq("id", newUser.id)
+                .maybeSingle()
+                .then(({ data }) => setUser(data || { id: newUser.id, nom: "" }));
+            }}
           />
         </div>
         <GDPRBanner />

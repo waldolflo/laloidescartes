@@ -33,7 +33,7 @@ export default function Home({ user }) {
   // ----------------------
   const fetchStats = async () => {
     try {
-      const [jeuxRes, partiesRes, rencontresRes, membresRes] = await Promise.all([
+      const [jeuxRes, partiesRes, membresRes] = await Promise.all([
         supabase.from("jeux").select("id", { count: "exact" }),
         supabase.from("parties").select("id", { count: "exact" }),
         supabase.from("profils").select("id", { count: "exact" }).in("role", ["membre", "ludo", "ludoplus", "admin"]),
