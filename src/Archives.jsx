@@ -140,6 +140,9 @@ export default function Archives({ user, authUser }) {
             <p className="text-sm text-gray-700 text-center">
               {p.organisateur?.nom} — {p.lieu}
             </p>
+            <p className="text-sm text-gray-700 text-center">
+              {p.description}
+            </p>
 
             {/* Classements */}
             {p.inscrits?.length > 0 && (

@@ -22,7 +22,7 @@ export default function Parties({ user, authUser }) {
   const [userRole, setUserRole] = useState("");
   const [search, setSearch] = useState("");
 
-  if (!currentUser) return <p>Chargement de l’utilisateur…</p>;
+  // a supprimer si sa change rien if (!currentUser) return <p>Chargement de l’utilisateur…</p>;
 
   // -----------------------------------------------------
   // FETCH ROLE
@@ -307,8 +307,14 @@ export default function Parties({ user, authUser }) {
               <p className="text-sm text-gray-600 text-center">
                 {formatDate(p.date_partie)} — {formatHeure(p.heure_partie)}
               </p>
+              <p className="text-sm text-gray-600 text-center">
+                Durée moyenne : {p.jeux?.duree} min
+              </p>
               {p.lieu && (
                 <p className="text-sm text-gray-700 text-center">{p.lieu}</p>
+              )}
+              {p.description && (
+                <p className="text-sm text-gray-700 text-center">{p.description}</p>
               )}
 
               {/* Inscrits */}

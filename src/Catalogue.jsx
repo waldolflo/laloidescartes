@@ -323,6 +323,27 @@ export default function Catalogue({ user }) {
             {/* Informations texte */}
             <h2 className="text-lg font-bold">{j.nom}</h2>
             {j.regle_youtube && (
+              <a
+                href={j.regle_youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 mt-2
+                          bg-red-600 text-white font-semibold
+                          rounded-xl shadow-md
+                          hover:bg-red-700 hover:scale-105
+                          transition-transform duration-200"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 576 512"
+                  className="w-5 h-5 fill-white"
+                >
+                  <path d="M549.655 124.083c-6.281-23.65-24.764-42.148-48.378-48.433C456.727 64 288 64 288 64s-168.727 0-213.277 11.65c-23.614 6.285-42.097 24.783-48.378 48.433C16 168.64 16 256.004 16 256.004s0 87.36 10.345 131.917c6.281 23.65 24.764 42.148 48.378 48.433C119.273 448 288 448 288 448s168.727 0 213.277-11.65c23.614-6.285 42.097-24.783 48.378-48.433C560 343.364 560 256.004 560 256.004s0-87.36-10.345-131.921zM232 336V176l142 80-142 80z" />
+                </svg>
+                Voir les règles
+              </a>
+            )}
+            {j.regle_youtube && (
               <p>
                 <a
                   href={j.regle_youtube}
