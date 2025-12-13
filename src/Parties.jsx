@@ -314,13 +314,13 @@ export default function Parties({ user, authUser }) {
                   </span>
                 )}
                 {/* Score max */}
-                {p.jeux?.bestScore && p.jeux?.bestScore > 0 && (
+                {p.jeux?.best_score && p.jeux?.best_score > 0 && (
                   <span
                     className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow cursor-pointer"
-                    title={p.jeux?.bestUsers.join(", ")} // infobulle desktop
-                    onClick={() => alert(`Meilleur score par ${p.jeux.bestUsers.join(", ")}`)} // mobile tap
+                    title={p.jeux?.best_users.join(", ")} // infobulle desktop
+                    onClick={() => alert(`Meilleur score par ${p.jeux.best_users.join(", ")}`)} // mobile tap
                   >
-                    🏆 {p.jeux.bestScore}
+                    🏆 {p.jeux.best_score}
                   </span>
                 )}
               </div>
