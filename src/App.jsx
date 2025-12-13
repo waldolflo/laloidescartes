@@ -184,7 +184,7 @@ export default function App() {
         const { data: profilData } = await supabase
           .from("profils")
           .select("*")
-          .eq("user_id", data.user.id)
+          .eq("id", data.user.id)
           .maybeSingle();
         setUser(profilData);
       }
