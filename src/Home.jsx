@@ -182,11 +182,12 @@ export default function Home({ user }) {
       <section className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
         {[
           { label: "Création de l'asso", value: "2021", color: "text-black-600" },
-          { label: "Jeux", value: stats.jeux, color: "text-blue-600" },
-          { label: "Parties organisées sur l'App", value: stats.parties, color: "text-green-600" },
-          { label: "Heures de jeu", value: stats.heures, color: "text-orange-600" },
+          { label: "Jeux", value: stats.jeux, color: "text-red-600" },
+          { label: "Parties organisées via l'App", value: stats.parties, color: "text-green-600" },
+          { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
           { label: "Rencontres jeux", value: stats.rencontres, color: "text-purple-600" },
           { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
+          { label: "Followers Facebook", value: "791", color: "text-blue-600" },
         ].map((stat) => (
           <div key={stat.label} className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
             <h2 className={`text-3xl font-bold ${stat.color}`}>
@@ -225,27 +226,24 @@ export default function Home({ user }) {
         </section>
       )}
 
-      {/* PUBLICATIONS FACEBOOK */}
-      {facebookPosts.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-4">Dernières publications</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {facebookPosts.map((post) => (
-              <div key={post.id} className="p-4 bg-white rounded shadow hover:shadow-lg transition">
-                <p className="text-gray-700 mb-2">{post.message}</p>
-                <a
-                  href={post.permalink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 font-medium hover:underline"
-                >
-                  Voir sur Facebook
-                </a>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* FACEBOOK */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold mb-4">📘 Suivez-nous sur Facebook</h2>
+
+        <div className="w-full flex justify-center">
+          <div
+            className="fb-page"
+            data-href="https://www.facebook.com/LaLoidesCartes"
+            data-tabs="timeline"
+            data-width="500"
+            data-height="600"
+            data-small-header="false"
+            data-adapt-container-width="true"
+            data-hide-cover="false"
+            data-show-facepile="true"
+          />
+        </div>
+      </section>
 
       {/* --- Section TARIFS --- */}
       <section className="mt-12 bg-white rounded-xl shadow-md p-6 md:p-10">
