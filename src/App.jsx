@@ -21,17 +21,18 @@ import Auth from "./Auth";
 import Home from "./Home";
 import FooterBGG from "./FooterBGG"; // <-- importe ton FooterBGG
 import Chat from "./Chat";
-import { BookOpen, CalendarDays, Users, User, LogOut, MessageCircle } from "lucide-react";
+import { House, BookOpen, CalendarDays, Dices, User, LogOut, MessageCircle } from "lucide-react";
 
 // --- Navbar responsive ---
 function Navbar({ currentUser, onLogout }) {
   const location = useLocation();
 
   const tabs = [
-    { to: "/", label: "Ludothèque", icon: BookOpen },
+    { to: "/", label: "Accueil", icon: House },
+    { to: "/catalogue", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
     //{ to: "/inscriptions", label: "Inscriptions", icon: Users },
-    { to: "/statistiques", label: "Statistiques", icon: Users },
+    { to: "/statistiques", label: "Statistiques", icon: Dices },
     { to: "/profils", label: "Profil", icon: User },
     { to: "/chat", label: "Chat", icon: MessageCircle },
   ];
