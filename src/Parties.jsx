@@ -320,7 +320,7 @@ export default function Parties({ user, authUser }) {
                     title={p.jeux.bestUsers.join(", ")} // infobulle desktop
                     onClick={() => alert(`Meilleur score par ${p.jeux.bestUsers.join(", ")}`)} // mobile tap
                   >
-                    🏆 {p.jeux?.bestScore}
+                    🏆 {p.jeux.bestScore}
                   </span>
                 )}
               </div>
