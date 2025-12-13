@@ -22,6 +22,7 @@ export default function Catalogue({ user }) {
   const [userRole, setUserRole] = useState("");
   const [selectedJeu, setSelectedJeu] = useState(null);
   const bestScoresFetched = useRef(false); // ✅ Empêche la boucle
+  const bestScoreSynced = useRef(false);// ✅ Empêche la boucle
 
   useEffect(() => {
     if (!user) return;
@@ -96,6 +97,7 @@ export default function Catalogue({ user }) {
         });
 
         setJeux(updatedJeux);
+        syncBestScores(updatedJeux);
       } catch (err) {
         console.error("Erreur fetchBestScores :", err);
       }
@@ -103,6 +105,40 @@ export default function Catalogue({ user }) {
 
     fetchBestScores();
   }, [jeux]); // ⚙️ se relance seulement quand jeux change
+
+  const syncBestScores = async (jeux) => {
+    if (bestScoreSynced.current) return;
+    bestScoreSynced.current = true;
+
+    for (const jeu of jeux) {
+      // 1️⃣ aucun score → skip
+      if (!jeu.bestScore || jeu.bestScore <= 0) continue;
+      if (!Array.isArray(jeu.bestUsers) || jeu.bestUsers.length === 0) continue;
+
+      // 2️⃣ valeurs identiques → skip
+      const sameScore = jeu.best_score === jeu.bestScore;
+      const sameUsers =
+        Array.isArray(jeu.best_users) &&
+        JSON.stringify(jeu.best_users) === JSON.stringify(jeu.bestUsers);
+
+      if (sameScore && sameUsers) continue;
+
+      // 3️⃣ update minimal
+      const { error } = await supabase
+        .from("jeux")
+        .update({
+          best_score: jeu.bestScore,
+          best_users: jeu.bestUsers,
+        })
+        .eq("id", jeu.id);
+
+      if (error) {
+        console.error(`❌ Sync bestScore (${jeu.nom})`, error);
+      } else {
+        console.log(`✔ BestScore sync (${jeu.nom})`);
+      }
+    }
+  };
 
   // 🔄 Réinitialise la protection quand on recharge les jeux depuis la base
   const fetchJeux = async () => {
@@ -113,6 +149,7 @@ export default function Catalogue({ user }) {
     if (!error) {
       setJeux(data || []);
       bestScoresFetched.current = false; // ✅ permet rechargement propre
+      bestScoreSynced.current = false;// ✅ permet rechargement propre
     }
   };
 
