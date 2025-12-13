@@ -4,6 +4,7 @@ import { supabase } from "./supabaseClient";
 import Chat from "./Chat";
 import CountUp from "react-countup"; // pour les stats animées
 import { Phone, Mail } from "lucide-react";
+import FacebookWidget from "./FacebookWidget";
 
 export default function Home({ user }) {
   const currentUser = user || null;
@@ -229,19 +230,8 @@ export default function Home({ user }) {
       {/* FACEBOOK */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold mb-4">📘 Suivez-nous sur Facebook</h2>
-
         <div className="w-full flex justify-center">
-          <div
-            className="fb-page"
-            data-href="https://www.facebook.com/LaLoidesCartes"
-            data-tabs="timeline"
-            data-width="500"
-            data-height="600"
-            data-small-header="false"
-            data-adapt-container-width="true"
-            data-hide-cover="false"
-            data-show-facepile="true"
-          />
+          <FacebookWidget />
         </div>
       </section>
 
