@@ -115,20 +115,20 @@ export default function Catalogue({ user }) {
       if (!jeu.bestScore || jeu.bestScore <= 0) continue;
       if (!Array.isArray(jeu.bestUsers) || jeu.bestUsers.length === 0) continue;
 
+      const bestUser = jeu.bestUsers[0]; // uniquement le premier
+
       // 2️⃣ valeurs identiques → skip
       const sameScore = jeu.best_score === jeu.bestScore;
-      const sameUsers =
-        Array.isArray(jeu.best_users) &&
-        JSON.stringify(jeu.best_users) === JSON.stringify(jeu.bestUsers);
+      const sameUser = jeu.best_users === bestUser;
 
-      if (sameScore && sameUsers) continue;
+      if (sameScore && sameUser) continue;
 
       // 3️⃣ update minimal
       const { error } = await supabase
         .from("jeux")
         .update({
           best_score: jeu.bestScore,
-          best_users: jeu.bestUsers,
+          best_users: bestUser,
         })
         .eq("id", jeu.id);
 
