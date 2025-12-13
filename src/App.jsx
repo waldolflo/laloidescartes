@@ -118,22 +118,19 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
         transition={{ duration: 0.25, ease: "easeInOut" }}
       >
         <Routes location={location}>
-          {!authUser ? (
-            <Route path="/*" element={<Auth onLogin={setAuthUser} />} />
-          ) : (
+          <Route path="/" element={<Home user={currentUser} />} />
+          {currentUser ? (
             <>
-              <Route path="/" element={<Catalogue user={currentUser} />} />
               <Route path="/parties" element={<Parties user={currentUser} authUser={authUser} />} />
               <Route path="/archives" element={<Archives user={currentUser} authUser={authUser} />} />
               <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
               <Route path="/statistiques" element={<Statistiques user={currentUser} authUser={authUser} profil={currentUser} />} />
-              <Route
-                path="/profils"
-                element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} setAuthUser={setAuthUser} setUser={setUser} />}
-              />
+              <Route path="/profils" element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} setAuthUser={setAuthUser} setUser={setUser} />} />
               <Route path="/chat" element={<Chat user={currentUser} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
+          ) : (
+            <Route path="/*" element={<Navigate to="/" replace />} />
           )}
         </Routes>
       </motion.div>
