@@ -25,6 +25,7 @@ import { House, BookOpen, CalendarDays, Dices, User, LogOut, MessageCircle } fro
 
 // --- Navbar responsive ---
 function Navbar({ currentUser, onLogout }) {
+  if (!currentUser) return null; // 👈 AJOUT
   const location = useLocation();
 
   const tabs = [
@@ -108,7 +109,7 @@ function Navbar({ currentUser, onLogout }) {
 // --- Animated Routes ---
 function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
   const location = useLocation();
-  const currentUser = user || authUser;
+  const currentUser = user || authUser || null;
 
   return (
     <AnimatePresence mode="wait">
@@ -200,6 +201,14 @@ export default function App() {
   };
 
   const currentUser = user || authUser;
+
+  if (loadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Chargement...
+      </div>
+    );
+  }
 
   return (
     <Router>

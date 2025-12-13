@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import { SendHorizonal, Edit3, Trash2, Check, X } from "lucide-react";
 
-export default function Chat({ user }) {
+export default function Chat({ user, readOnly = false }) {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
   const [input, setInput] = useState("");
@@ -15,6 +15,14 @@ export default function Chat({ user }) {
 
   const typingRef = useRef(null);
   const endRef = useRef(null);
+
+  if (!user) {
+    return (
+      <div className="p-6 bg-gray-50 rounded-lg text-center text-gray-500 italic">
+        🔒 Connectez-vous pour participer au chat
+      </div>
+    );
+  }
 
   // Scroll automatique
   const scrollToBottom = () => {
