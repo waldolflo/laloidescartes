@@ -7,7 +7,6 @@ import {
   Link,
   Navigate,
   useLocation,
-  useNavigate,
 } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "./supabaseClient";
@@ -20,24 +19,15 @@ import Statistiques from "./Statistiques";
 import Profils from "./Profils";
 import Auth from "./Auth";
 import Home from "./Home";
-import FooterBGG from "./FooterBGG"; // <-- importe ton FooterBGG
+import FooterBGG from "./FooterBGG";
 import Chat from "./Chat";
-import { House, BookOpen, CalendarDays, Dices, User, LogOut, MessageCircle } from "lucide-react";
+import { House, BookOpen, CalendarDays, Dices, User, LogOut } from "lucide-react";
 
 // --- Navbar responsive ---
 function Navbar({ currentUser, authUser, onLogout }) {
   const location = useLocation();
-  const navigate = useNavigate(); // <-- ajouté ici
 
-  const handleLogout = async () => {
-    await onLogout();
-    navigate("/"); // redirection après logout
-  };
-
-  const publicTabs = [
-    { to: "/", label: "Accueil", icon: House },
-  ];
-
+  const publicTabs = [{ to: "/", label: "Accueil", icon: House }];
   const privateTabs = [
     { to: "/catalogue", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
@@ -78,7 +68,7 @@ function Navbar({ currentUser, authUser, onLogout }) {
                   Bonjour <strong>{currentUser?.nom || currentUser?.email}</strong>
                 </span>
                 <button
-                  onClick={handleLogout}
+                  onClick={onLogout} // <-- plus de useNavigate ici
                   className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
                 >
                   Déconnexion
@@ -116,7 +106,7 @@ function Navbar({ currentUser, authUser, onLogout }) {
 
         {authUser ? (
           <button
-            onClick={handleLogout}
+            onClick={onLogout} // <-- idem, juste appel du callback
             className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
           >
             <LogOut size={22} />
@@ -209,6 +199,7 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const [redirect, setRedirect] = useState(false); // <-- nouveau state pour redirection
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -221,7 +212,7 @@ export default function App() {
           .maybeSingle();
         setUser(profilData);
       }
-      setLoadingAuth(false); // 🔴 essentiel
+      setLoadingAuth(false);
     });
   }, []);
 
@@ -229,6 +220,7 @@ export default function App() {
     await supabase.auth.signOut();
     setAuthUser(null);
     setUser(null);
+    setRedirect(true); // déclenche redirection
   };
 
   const currentUser = user || authUser;
@@ -243,6 +235,7 @@ export default function App() {
 
   return (
     <Router>
+      {redirect && <Navigate to="/" replace />} {/* redirection après logout */}
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
         <Navbar currentUser={currentUser} authUser={authUser} onLogout={handleLogout} />
         <div className="p-4">
@@ -253,7 +246,6 @@ export default function App() {
             setUser={setUser}
             onLogin={(newUser) => {
               setAuthUser(newUser);
-              // Charger ou créer le profil Supabase
               supabase
                 .from("profils")
                 .select("*")
