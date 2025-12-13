@@ -10,11 +10,22 @@ export default function Home({ user }) {
   const [stats, setStats] = useState({ jeux: 0, parties: 0, rencontres: 0, membres: 0 });
   const [messagePresident, setMessagePresident] = useState("");
   const [facebookPosts, setFacebookPosts] = useState([]);
+  const [planningImageUrl, setPlanningImageUrl] = useState("");
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
     fetchStats();
     fetchPresidentMessage();
+    fetchPlanningImage();
     fetchFacebookPosts();
+  }, []);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setZoomOpen(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
   // ----------------------
@@ -25,14 +36,24 @@ export default function Home({ user }) {
       const [jeuxRes, partiesRes, rencontresRes, membresRes] = await Promise.all([
         supabase.from("jeux").select("id", { count: "exact" }),
         supabase.from("parties").select("id", { count: "exact" }),
-        supabase.from("parties").select("date_partie", { distinct: true, count: "exact" }),
-        supabase.from("profils").select("id", { count: "exact" }).gte("role", "membre"),
+        supabase.from("profils").select("id", { count: "exact" }).in("role", ["membre", "ludo", "ludoplus", "admin"]),
       ]);
+
+      const { data: partiesDates } = await supabase
+        .from("parties")
+        .select("date_partie")
+        .eq("lieu", "La loi des cartes");
+
+      const rencontresCount = new Set(
+        (partiesDates || []).map(p =>
+          new Date(p.date_partie).toISOString().split("T")[0]
+        )
+      ).size;
 
       setStats({
         jeux: jeuxRes?.count || 0,
         parties: partiesRes?.count || 0,
-        rencontres: rencontresRes?.count || 0,
+        rencontres: rencontresCount || 0,
         membres: membresRes?.count || 0,
       });
     } catch (error) {
@@ -61,6 +82,22 @@ export default function Home({ user }) {
     } catch (err) {
       console.error("Erreur fetchPresidentMessage:", err);
       setMessagePresident("");
+    }
+  };
+
+  const fetchPlanningImage = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 1)
+        .single();
+
+      if (!error && data?.global_image_url) {
+        setPlanningImageUrl(data.global_image_url);
+      }
+    } catch (err) {
+      console.error("Erreur fetchPlanningImage:", err);
     }
   };
 
@@ -107,10 +144,30 @@ export default function Home({ user }) {
       </section>
 
       {/* MOT DU PRESIDENT */}
-      {messagePresident && (
+      {(messagePresident || planningImageUrl) && (
         <section className="mb-12 p-6 bg-blue-50 rounded shadow">
-          <h2 className="text-2xl font-bold mb-3">Mot du président</h2>
-          <p className="text-gray-700">{messagePresident}</p>
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            
+            {/* Texte président */}
+            {messagePresident && (
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold mb-3">Mot du président</h2>
+                <p className="text-gray-700">{messagePresident}</p>
+              </div>
+            )}
+
+            {/* Image planning */}
+            {planningImageUrl && (
+              <div className="flex justify-center lg:justify-end">
+                <img
+                  src={planningImageUrl}
+                  alt="Planning des prochaines rencontres"
+                  onClick={() => setZoomOpen(true)}
+                  className="w-56 h-56 lg:w-64 lg:h-64 object-contain border rounded shadow cursor-pointer hover:scale-105 transition-transform"
+                />
+              </div>
+            )}
+          </div>
         </section>
       )}
 
@@ -141,6 +198,36 @@ export default function Home({ user }) {
         <h2 className="text-2xl font-bold mb-4">💬 Chat de l'asso</h2>
         <Chat user={currentUser} readOnly={!currentUser} />
       </section>
+
+      {/* MODALE IMAGE */}
+      {zoomOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center animate-fadeIn"
+          onClick={() => setZoomOpen(false)}
+        >
+          {/* Conteneur image + bouton */}
+          <div
+            className="relative animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton fermer */}
+            <button
+              onClick={() => setZoomOpen(false)}
+              className="absolute -top-4 -right-4 bg-black bg-opacity-70 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold hover:bg-opacity-90 transition"
+              aria-label="Fermer"
+            >
+              ✖
+            </button>
+
+            {/* Image zoomée */}
+            <img
+              src={planningImageUrl}
+              alt="Planning zoomé"
+              className="max-w-[90vw] max-h-[90vh] object-contain rounded shadow-lg"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
