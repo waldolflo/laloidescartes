@@ -18,6 +18,7 @@ import Inscriptions from "./Inscriptions";
 import Statistiques from "./Statistiques";
 import Profils from "./Profils";
 import Auth from "./Auth";
+import Home from "./Home";
 import FooterBGG from "./FooterBGG"; // <-- importe ton FooterBGG
 import Chat from "./Chat";
 import { BookOpen, CalendarDays, Users, User, LogOut, MessageCircle } from "lucide-react";
@@ -121,6 +122,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
           <Route path="/" element={<Home user={currentUser} />} />
           {currentUser ? (
             <>
+              <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
               <Route path="/parties" element={<Parties user={currentUser} authUser={authUser} />} />
               <Route path="/archives" element={<Archives user={currentUser} authUser={authUser} />} />
               <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
