@@ -84,8 +84,8 @@ export default function Home({ user }) {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* LOGO + Titre */}
       <header className="text-center mb-12">
-        <img src="/logo.png" alt="Logo" className="mx-auto h-28" />
-        <h1 className="text-4xl font-bold mt-4">Bienvenue sur notre association !</h1>
+        <img src="/public/logo_loidc.png" alt="Logo" className="mx-auto h-28" />
+        <h1 className="text-4xl font-bold mt-4">La Loi des Cartes</h1>
         <p className="text-gray-700 mt-2">Découvrez nos jeux, nos rencontres et notre association.</p>
       </header>
 
@@ -138,7 +138,7 @@ export default function Home({ user }) {
 
       {/* CHAT */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold mb-4">Chat communautaire</h2>
+        <h2 className="text-2xl font-bold mb-4">💬 Chat de l'asso</h2>
         <Chat user={currentUser} readOnly={!currentUser} />
       </section>
     </div>

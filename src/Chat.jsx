@@ -256,7 +256,6 @@ export default function Chat({ user, readOnly = false }) {
   return (
     <div className="flex-1 flex flex-col h-[85vh] p-4 max-w-4xl mx-auto relative">
       <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-        💬 Chat du Club
         {unreadCount > 0 && (
           <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs">
             {unreadCount}

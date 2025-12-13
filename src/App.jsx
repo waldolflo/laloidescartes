@@ -36,7 +36,6 @@ function Navbar({ currentUser, authUser, onLogout }) {
     { to: "/parties", label: "Parties", icon: CalendarDays },
     { to: "/statistiques", label: "Statistiques", icon: Dices },
     { to: "/profils", label: "Profil", icon: User },
-    { to: "/chat", label: "Chat", icon: MessageCircle },
   ];
 
   const tabs = authUser ? [...publicTabs, ...privateTabs] : publicTabs;
