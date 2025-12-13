@@ -56,7 +56,9 @@ export default function Auth({ onLogin }) {
         ]);
       }
 
-      onLogin(data.user);
+      if (typeof onLogin === "function") {
+        onLogin(data.user);
+      }
       navigate("/profils", { replace: true });
     }
 
