@@ -5,6 +5,8 @@ import Chat from "./Chat";
 import CountUp from "react-countup"; // pour les stats animées
 
 export default function Home({ user }) {
+  const currentUser = user || null;
+
   const [stats, setStats] = useState({ jeux: 0, parties: 0, rencontres: 0, membres: 0 });
   const [messagePresident, setMessagePresident] = useState("");
   const [facebookPosts, setFacebookPosts] = useState([]);
@@ -20,18 +22,18 @@ export default function Home({ user }) {
   // ----------------------
   const fetchStats = async () => {
     try {
-      const [jeux, parties, rencontres, membres] = await Promise.all([
+      const [jeuxRes, partiesRes, rencontresRes, membresRes] = await Promise.all([
         supabase.from("jeux").select("id", { count: "exact" }),
         supabase.from("parties").select("id", { count: "exact" }),
-        supabase.from("parties").select("date_partie", { count: "exact", distinct: true }),
-        supabase.from("profils").select("id", { count: "exact" }).gte("role", "membre")
+        supabase.from("parties").select("date_partie", { distinct: true, count: "exact" }),
+        supabase.from("profils").select("id", { count: "exact" }).gte("role", "membre"),
       ]);
 
       setStats({
-        jeux: jeux.count || 0,
-        parties: parties.count || 0,
-        rencontres: rencontres.count || 0,
-        membres: membres.count || 0
+        jeux: jeuxRes?.count || 0,
+        parties: partiesRes?.count || 0,
+        rencontres: rencontresRes?.count || 0,
+        membres: membresRes?.count || 0,
       });
     } catch (error) {
       console.error("Erreur fetchStats:", error);
@@ -44,34 +46,38 @@ export default function Home({ user }) {
   const fetchPresidentMessage = async () => {
     try {
       const { data, error } = await supabase
-        .from("settings")
+        .from("settings") // si table absente ou colonne absente, ne doit pas planter
         .select("global_image_url")
         .eq("id", 2)
         .single();
-        
-      if (error) {
-        console.warn("Table president_message absente ou autre erreur", error.message);
+
+      if (error || !data) {
+        console.warn("Impossible de récupérer le mot du président:", error?.message || "Aucune donnée");
         setMessagePresident(""); // fallback
         return;
       }
 
-      setMessagePresident(data.global_image_url || "");
+      setMessagePresident(data?.global_image_url || "");
     } catch (err) {
-      console.error(err);
+      console.error("Erreur fetchPresidentMessage:", err);
       setMessagePresident("");
     }
   };
 
   // ----------------------
-  // Publications Facebook
+  // Publications Facebook (placeholder)
   // ----------------------
   const fetchFacebookPosts = async () => {
-    // Ici tu peux intégrer la récupération via l'API Graph Facebook
-    // Pour l'instant, on met des placeholders
-    setFacebookPosts([
-      { id: 1, message: "Publication 1", permalink: "https://facebook.com" },
-      { id: 2, message: "Publication 2", permalink: "https://facebook.com" },
-    ]);
+    try {
+      const posts = [
+        { id: 1, message: "Publication 1", permalink: "https://facebook.com" },
+        { id: 2, message: "Publication 2", permalink: "https://facebook.com" },
+      ];
+      setFacebookPosts(posts);
+    } catch (err) {
+      console.error("Erreur fetchFacebookPosts:", err);
+      setFacebookPosts([]);
+    }
   };
 
   return (
@@ -85,30 +91,19 @@ export default function Home({ user }) {
 
       {/* STATS */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-        <div className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
-          <h2 className="text-3xl font-bold text-blue-600">
-            <CountUp end={stats.jeux} duration={1.5} />
-          </h2>
-          <p className="text-gray-600 mt-1">Jeux</p>
-        </div>
-        <div className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
-          <h2 className="text-3xl font-bold text-green-600">
-            <CountUp end={stats.parties} duration={1.5} />
-          </h2>
-          <p className="text-gray-600 mt-1">Parties organisées</p>
-        </div>
-        <div className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
-          <h2 className="text-3xl font-bold text-purple-600">
-            <CountUp end={stats.rencontres} duration={1.5} />
-          </h2>
-          <p className="text-gray-600 mt-1">Rencontres</p>
-        </div>
-        <div className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
-          <h2 className="text-3xl font-bold text-rose-600">
-            <CountUp end={stats.membres} duration={1.5} />
-          </h2>
-          <p className="text-gray-600 mt-1">Adhérents</p>
-        </div>
+        {[
+          { label: "Jeux", value: stats.jeux, color: "text-blue-600" },
+          { label: "Parties organisées", value: stats.parties, color: "text-green-600" },
+          { label: "Rencontres", value: stats.rencontres, color: "text-purple-600" },
+          { label: "Adhérents", value: stats.membres, color: "text-rose-600" },
+        ].map((stat) => (
+          <div key={stat.label} className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
+            <h2 className={`text-3xl font-bold ${stat.color}`}>
+              <CountUp end={stat.value} duration={1.5} />
+            </h2>
+            <p className="text-gray-600 mt-1">{stat.label}</p>
+          </div>
+        ))}
       </section>
 
       {/* MOT DU PRESIDENT */}
@@ -124,7 +119,7 @@ export default function Home({ user }) {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Dernières publications</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {facebookPosts.map(post => (
+            {facebookPosts.map((post) => (
               <div key={post.id} className="p-4 bg-white rounded shadow hover:shadow-lg transition">
                 <p className="text-gray-700 mb-2">{post.message}</p>
                 <a
@@ -144,7 +139,7 @@ export default function Home({ user }) {
       {/* CHAT */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold mb-4">Chat communautaire</h2>
-        <Chat user={user} readOnly={!user} />
+        <Chat user={currentUser} readOnly={!currentUser} />
       </section>
     </div>
   );
