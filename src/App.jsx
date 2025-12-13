@@ -27,6 +27,12 @@ import { House, BookOpen, CalendarDays, Dices, User, LogOut, MessageCircle } fro
 // --- Navbar responsive ---
 function Navbar({ currentUser, authUser, onLogout }) {
   const location = useLocation();
+  const navigate = useNavigate(); // <-- ajouté ici
+
+  const handleLogout = async () => {
+    await onLogout();
+    navigate("/"); // redirection après logout
+  };
 
   const publicTabs = [
     { to: "/", label: "Accueil", icon: House },
@@ -72,7 +78,7 @@ function Navbar({ currentUser, authUser, onLogout }) {
                   Bonjour <strong>{currentUser?.nom || currentUser?.email}</strong>
                 </span>
                 <button
-                  onClick={onLogout}
+                  onClick={handleLogout}
                   className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
                 >
                   Déconnexion
@@ -110,7 +116,7 @@ function Navbar({ currentUser, authUser, onLogout }) {
 
         {authUser ? (
           <button
-            onClick={onLogout}
+            onClick={handleLogout}
             className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
           >
             <LogOut size={22} />
@@ -204,8 +210,6 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
 
-  const navigate = useNavigate(); // <-- ajouté ici
-
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
@@ -225,7 +229,6 @@ export default function App() {
     await supabase.auth.signOut();
     setAuthUser(null);
     setUser(null);
-    navigate("/"); // <-- redirection après déconnexion
   };
 
   const currentUser = user || authUser;
