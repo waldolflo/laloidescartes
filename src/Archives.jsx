@@ -34,42 +34,53 @@ export default function Archives({ user, authUser }) {
   }, []);
 
   const fetchPast = async () => {
-    const { data } = await supabase
-      .from("parties")
-      .select("*, jeux(*), organisateur:profils!parties_utilisateur_id_fkey(id, nom)")
-      .order("date_partie", { ascending: true });
+    try {
+      const { data: partiesData, error: errorParties } = await supabase
+        .from("parties")
+        .select("*, jeux(*), organisateur:profils!parties_utilisateur_id_fkey(id, nom)")
+        .order("date_partie", { ascending: true });
 
-    const now = new Date();
-    const past = [];
+      if (errorParties) throw errorParties;
 
-    for (let p of data || []) {
-      const dateFull = new Date(`${p.date_partie}T${p.heure_partie}`);
+      const now = new Date();
+      const pastParties = (partiesData || []).filter(p => new Date(`${p.date_partie}T${p.heure_partie}`) < now);
 
-      if (dateFull < now) {
-        const { data: insData } = await supabase
-          .from("inscriptions")
-          .select("utilisateur_id, rank, score")
-          .eq("partie_id", p.id);
+      // 1️⃣ récupérer toutes les inscriptions pour ces parties
+      const partieIds = pastParties.map(p => p.id);
+      const { data: insData } = await supabase
+        .from("inscriptions")
+        .select("utilisateur_id, partie_id, rank, score")
+        .in("partie_id", partieIds);
 
-        const userIds = (insData || []).map((i) => i.utilisateur_id);
+      // 2️⃣ récupérer tous les profils correspondants
+      const userIds = [...new Set(insData.map(i => i.utilisateur_id))];
+      const { data: profilsData } = await supabase
+        .from("profils")
+        .select("id, nom")
+        .in("id", userIds);
 
-        const { data: profilsData } = await supabase
-          .from("profils")
-          .select("id, nom")
-          .in("id", userIds);
+      // 3️⃣ assembler les inscriptions avec les profils
+      const inscritsMap = insData.reduce((acc, i) => {
+        const profil = profilsData.find(u => u.id === i.utilisateur_id);
+        const partieList = acc[i.partie_id] || [];
+        partieList.push({ ...i, profil });
+        acc[i.partie_id] = partieList;
+        return acc;
+      }, {});
 
-        const inscrits = (insData || []).map((i) => ({
-          ...i,
-          profil: profilsData?.find((u) => u.id === i.utilisateur_id),
-        }));
+      // 4️⃣ ajouter les inscriptions aux parties
+      const fullPast = pastParties.map(p => ({
+        ...p,
+        inscrits: inscritsMap[p.id] || []
+      }));
 
-        past.push({ ...p, inscrits });
-      }
+      // trier par date décroissante
+      fullPast.sort((a, b) => new Date(b.date_partie) - new Date(a.date_partie));
+
+      setArchives(fullPast);
+    } catch (err) {
+      console.error("Erreur fetchPast :", err);
     }
-
-    past.sort((a, b) => new Date(b.date_partie) - new Date(a.date_partie));
-
-    setArchives(past);
   };
 
   const formatDate = (d) =>
