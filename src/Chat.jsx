@@ -118,6 +118,7 @@ export default function Chat({ user, readOnly = false }) {
 
   // Real-time
   useEffect(() => {
+    if (!user?.id) return;
     loadMessages();
     loadUsers();
 
@@ -132,7 +133,7 @@ export default function Chat({ user, readOnly = false }) {
           setMessages((prev) => [...prev, newMessage]);
           scrollToBottom();
 
-          if (payload.new.user_id !== user.id) {
+          if (payload.new.user_id !== user?.id) {
             setUnreadCount((c) => c + 1);
             notifyBrowser("Nouveau message", payload.new.content);
           }
@@ -161,7 +162,7 @@ export default function Chat({ user, readOnly = false }) {
         { event: "typing" },
         ({ payload }) => {
           const { name } = payload;
-          if (name === user.nom) return;
+          if (name === user?.nom) return;
 
           setTypingUsers((prev) =>
             prev.includes(name) ? prev : [...prev, name]
@@ -180,6 +181,7 @@ export default function Chat({ user, readOnly = false }) {
 
   // Typing indicator
   const sendTyping = () => {
+    if (!user?.nom) return;
     supabase.channel("chat-room").send({
       type: "broadcast",
       event: "typing",
@@ -189,6 +191,8 @@ export default function Chat({ user, readOnly = false }) {
 
   // Envoyer un message
   const sendMessage = async () => {
+    if (!user?.id || readOnly) return;
+
     const text = input.trim();
     if (!text) return;
 
@@ -262,11 +266,11 @@ export default function Chat({ user, readOnly = false }) {
 
       {/* Zone messages */}
       <div className="flex-1 overflow-y-auto bg-white p-3 rounded-lg shadow-inner space-y-2 border relative">
-        {messages.map((m) => (
+        {Array.isArray(messages) && messages.map((m) => (
           <div
             key={m.id}
             className={`flex items-start gap-2 ${
-              m.user_id === user.id ? "justify-end" : "justify-start"
+              m.user_id === user?.id ? "justify-end" : "justify-start"
             }`}
           >
             <img
@@ -277,7 +281,7 @@ export default function Chat({ user, readOnly = false }) {
             <div className="flex flex-col max-w-[80%]">
               <div
                 className={`px-3 py-2 rounded-lg ${
-                  m.user_id === user.id
+                  m.user_id === user?.id
                     ? "bg-blue-500 text-white"
                     : "bg-gray-200 text-gray-900"
                 }`}
@@ -298,7 +302,7 @@ export default function Chat({ user, readOnly = false }) {
               </div>
 
               {/* Actions édition / suppression */}
-              {m.user_id === user.id && (
+              {m.user_id === user?.id && (
                 <div className="flex gap-2 mt-1 text-xs opacity-70">
                   {editingId === m.id ? (
                     <>
@@ -337,6 +341,7 @@ export default function Chat({ user, readOnly = false }) {
       {/* Input */}
       <div className="flex mt-3 gap-2 relative">
         <input
+          disabled={readOnly}
           value={input}
           onChange={handleInputChange}
           placeholder="Écrire un message... @pseudo"
@@ -344,6 +349,7 @@ export default function Chat({ user, readOnly = false }) {
         />
         <button
           onClick={sendMessage}
+           disabled={readOnly}
           className="bg-blue-600 text-white px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1"
         >
           <SendHorizonal size={18} />

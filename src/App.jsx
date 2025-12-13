@@ -24,19 +24,23 @@ import Chat from "./Chat";
 import { House, BookOpen, CalendarDays, Dices, User, LogOut, MessageCircle } from "lucide-react";
 
 // --- Navbar responsive ---
-function Navbar({ currentUser, onLogout }) {
+function Navbar({ currentUser, authUser, onLogout }) {
   if (!currentUser) return null; // 👈 AJOUT
   const location = useLocation();
 
-  const tabs = [
+  const publicTabs = [
     { to: "/", label: "Accueil", icon: House },
+  ];
+
+  const privateTabs = [
     { to: "/catalogue", label: "Ludothèque", icon: BookOpen },
     { to: "/parties", label: "Parties", icon: CalendarDays },
-    //{ to: "/inscriptions", label: "Inscriptions", icon: Users },
     { to: "/statistiques", label: "Statistiques", icon: Dices },
     { to: "/profils", label: "Profil", icon: User },
     { to: "/chat", label: "Chat", icon: MessageCircle },
   ];
+
+  const tabs = authUser ? [...publicTabs, ...privateTabs] : publicTabs;
 
   return (
     <>
@@ -63,15 +67,26 @@ function Navbar({ currentUser, onLogout }) {
             })}
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm">
-              Bonjour <strong>{currentUser?.nom || currentUser?.email}</strong>
-            </span>
-            <button
-              onClick={onLogout}
-              className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
-            >
-              Déconnexion
-            </button>
+            {authUser ? (
+              <>
+                <span className="text-sm">
+                  Bonjour <strong>{currentUser?.nom || currentUser?.email}</strong>
+                </span>
+                <button
+                  onClick={onLogout}
+                  className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
+                >
+                  Déconnexion
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/auth"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+              >
+                Connexion
+              </Link>
+            )}
           </div>
         </div>
       </nav>
@@ -122,6 +137,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser }) {
       >
         <Routes location={location}>
           <Route path="/" element={<Home user={currentUser} />} />
+          <Route path="/auth" element={<Auth />} />
           {currentUser ? (
             <>
               <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
@@ -213,7 +229,7 @@ export default function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
-        {authUser && <Navbar currentUser={currentUser} onLogout={handleLogout} />}
+        <Navbar currentUser={currentUser} authUser={authUser} onLogout={handleLogout} />
         <div className="p-4">
           <AnimatedRoutes
             authUser={authUser}
