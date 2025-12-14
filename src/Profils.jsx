@@ -295,41 +295,54 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       </div>
 
       {profil.role === "user" && (
-        <p><strong>N'hésitez pas à vous manifester sur notre communauté messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
+        <p><strong>N'hésitez pas à vous manifester dans le tchat de l'accueil ou sur messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
       )}
 
       {/* Jeux favoris */}
-      <h3 className="text-xl font-semibold mt-6 mb-2">🎲 Les jeux auxquels j'aimerais jouer</h3>
-      {[1, 2].map((n) => (
-        <div key={n} className="mb-4">
-          <label className="block font-medium mb-1">Jeu favori {n} :</label>
-          <select
-            value={profil[`jeufavoris${n}`] || ""}
-            onChange={(e) => updateFavoris(`jeufavoris${n}`, e.target.value)}
-            className="border p-2 rounded w-full"
-          >
-            <option value="">-- Choisir un jeu --</option>
-            {jeux.map((j) => (
-              <option key={j.id} value={j.id}>{j.nom}</option>
-            ))}
-          </select>
-        </div>
-      ))}
+      <h3 className="text-xl font-semibold mt-6 mb-2">
+        🎲 Les jeux auxquels j'aimerais jouer
+      </h3>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-        {[profil.jeufavoris1, profil.jeufavoris2].filter(Boolean).map((id) => {
-          const jeu = jeux.find((j) => j.id === id);
-          if (!jeu) return null;
-          return (
-            <div key={id} className="border rounded p-2 bg-white shadow">
-              <p className="font-semibold">{jeu.nom}</p>
-              {jeu.couverture_url && (
-                <img src={jeu.couverture_url} alt={jeu.nom} className="w-full h-32 object-contain mt-2" />
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {[1, 2].map((n) => {
+        const selectedId = profil[`jeufavoris${n}`];
+        const jeu = jeux.find((j) => j.id === selectedId);
+
+        return (
+          <div key={n} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <label className="block font-medium mb-1">
+              Jeu favori {n} :
+            </label>
+
+            <select
+              value={selectedId || ""}
+              onChange={(e) =>
+                updateFavoris(`jeufavoris${n}`, e.target.value)
+              }
+              className="border p-2 rounded w-full"
+            >
+              <option value="">-- Choisir un jeu --</option>
+              {jeux.map((j) => (
+                <option key={j.id} value={j.id}>
+                  {j.nom}
+                </option>
+              ))}
+            </select>
+
+            {jeu && (
+              <div className="border rounded p-2 bg-white shadow sm:col-span-2">
+                <p className="font-semibold">{jeu.nom}</p>
+                {jeu.couverture_url && (
+                  <img
+                    src={jeu.couverture_url}
+                    alt={jeu.nom}
+                    className="w-full h-32 object-contain mt-2"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       {/* Gestion des utilisateurs pour admin */}
       {profil.role === "admin" && (
