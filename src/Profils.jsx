@@ -11,6 +11,8 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [globalImageUrl, setGlobalImageUrl] = useState("");
   const [globalTexte, setGlobalTexte] = useState("");
   const [globalcountFollowersFB, setGlobalcountFollowersFB] = useState("");
+  const [globalcountAdherentTotal, setGlobalcountAdherentTotal] = useState("");
+  const [globalcountSeanceavantdouzeS, setGlobalcountSeanceavantdouzeS] = useState("");
   const [zoomOpen, setZoomOpen] = useState(false);
 
   // ✅ Hooks toujours au même niveau
@@ -106,11 +108,37 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       }
     };
 
+    const fetchGlobalcountAdherentTotal = async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 4)
+        .single();
+
+      if (!error && data) {
+        setGlobalcountAdherentTotal(data.global_image_url || "");
+      }
+    };
+
+    const fetchGlobalcountSeanceavantdouzeS = async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 5)
+        .single();
+
+      if (!error && data) {
+        setGlobalcountSeanceavantdouzeS(data.global_image_url || "");
+      }
+    };
+
     fetchProfil();
     fetchJeux();
     fetchGlobalImage();
     fetchGlobalTexte();
     fetchGlobalcountFollowersFB();
+    fetchGlobalcountAdherentTotal();
+    fetchGlobalcountSeanceavantdouzeS();
   }, [authUser, setProfilGlobal]);
 
   const updateNom = async () => {
@@ -472,6 +500,74 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                 .single();
               if (!error) {
                 alert("✅ Followers FB mis à jour !");
+              }
+            }}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Mettre à jour
+          </button>
+        </div>
+      )}
+
+      {profil.role === "admin" && (
+        <div className="mt-10 p-4 border rounded bg-gray-50">
+          <h3 className="text-xl font-semibold mb-2">✨ Nombre d'adhérent au total</h3>
+
+          <input
+            type="text"
+            className="border p-2 rounded w-full"
+            placeholder="Texte de la page d'accueil"
+            value={globalcountAdherentTotal}
+            onChange={(e) => setGlobalcountAdherentTotal(e.target.value)}
+          />
+
+          <button
+            onClick={async () => {
+              const { data, error } = await supabase
+                .from("settings")
+                .update({
+                  global_image_url: globalcountAdherentTotal,
+                  updated_at: new Date(),
+                })
+                .eq("id", 4)
+                .select()
+                .single();
+              if (!error) {
+                alert("✅ Nombre d'adhérent Total mis à jour !");
+              }
+            }}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Mettre à jour
+          </button>
+        </div>
+      )}
+
+      {profil.role === "admin" && (
+        <div className="mt-10 p-4 border rounded bg-gray-50">
+          <h3 className="text-xl font-semibold mb-2">✨ Séances avant le 12 septembre 2025</h3>
+
+          <input
+            type="text"
+            className="border p-2 rounded w-full"
+            placeholder="Texte de la page d'accueil"
+            value={globalcountSeanceavantdouzeS}
+            onChange={(e) => setGlobalcountSeanceavantdouzeS(e.target.value)}
+          />
+
+          <button
+            onClick={async () => {
+              const { data, error } = await supabase
+                .from("settings")
+                .update({
+                  global_image_url: globalcountSeanceavantdouzeS,
+                  updated_at: new Date(),
+                })
+                .eq("id", 5)
+                .select()
+                .single();
+              if (!error) {
+                alert("✅ Nombre d'adhérent Total mis à jour !");
               }
             }}
             className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

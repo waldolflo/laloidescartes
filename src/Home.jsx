@@ -14,6 +14,8 @@ export default function Home({ user }) {
   const [facebookPosts, setFacebookPosts] = useState([]);
   const [planningImageUrl, setPlanningImageUrl] = useState("");
   const [countFollowersFB, setCountFollowersFB] = useState(null);
+  const [countAdherentTotal, setCountAdherentTotal] = useState(null);
+  const [countSeanceavantdouzeS, setCountSeanceavantdouzeS] = useState(null);
   const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
@@ -22,6 +24,8 @@ export default function Home({ user }) {
     fetchPlanningImage();
     fetchFacebookPosts();
     fetchCountFollowersFB();
+    fetchCountAdherentTotal();
+    fetchCountSeanceavantdouzeS();
   }, []);
 
   useEffect(() => {
@@ -172,6 +176,41 @@ export default function Home({ user }) {
     }
   };
 
+  const fetchCountAdherentTotal = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 4)
+        .single();
+
+      if (!error && data?.global_image_url) {
+        setCountAdherentTotal(Number(data.global_image_url));
+      }
+    } catch (err) {
+      console.error("Erreur fetchCountAdherentTotal:", err);
+    }
+  };
+
+  const fetchCountSeanceavantdouzeS = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 5)
+        .single();
+
+      if (!error && data?.global_image_url) {
+        setCountSeanceavantdouzeS(Number(data.global_image_url));
+      }
+    } catch (err) {
+      console.error("Erreur fetchCountSeanceavantdouzeS:", err);
+    }
+  };
+
+  const countSeanceTotal =
+  (stats.rencontres || 0) + (countSeanceavantdouzeS || 0);
+
   // ----------------------
   // Publications Facebook (placeholder)
   // ----------------------
@@ -194,7 +233,7 @@ export default function Home({ user }) {
       <header className="text-center mb-12">
         <img src="/logo_loidc.png" alt="Logo" className="mx-auto h-28" />
         <h1 className="text-4xl font-bold mt-4">La Loi des Cartes</h1>
-        <p className="text-gray-700 mt-2">Découvrez nos jeux, nos rencontres et notre association.</p>
+        <p className="text-gray-700 mt-2">Découvrez nos jeux, rejoignez notre association pour des après-midi et soirées jeux.</p>
       </header>
 
       {/* STATS */}
@@ -204,8 +243,14 @@ export default function Home({ user }) {
           { label: "Jeux", value: stats.jeux, color: "text-yellow-600" },
           { label: "Parties organisées via l'App", value: stats.parties, color: "text-green-600" },
           { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
-          { label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-purple-600" },
+          ...(countSeanceTotal > 0
+          ? [{ label: "Après-midi et soirées jeux", value: countSeanceTotal, color: "text-purple-600" }]
+          : []),
+          //{ label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-teal-600" },
           { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
+          ...(countAdherentTotal > 0
+            ? [{ label: "Adhérents de l'asso de 7 à 73 ans", value: countAdherentTotal, color: "text-pink-600" }]
+            : []),
           ...(countFollowersFB > 0
             ? [{ label: "Followers Facebook", value: countFollowersFB, color: "text-blue-600" }]
             : [])
