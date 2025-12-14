@@ -202,6 +202,7 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const [homeKey, setHomeKey] = useState(0); // <-- pour forcer remount de Home
 
   useEffect(() => {
     const getUser = async () => {
@@ -233,6 +234,7 @@ export default function App() {
       } else {
         setAuthUser(null);
         setUser(null);
+        setHomeKey(prev => prev + 1); // <-- force remount Home après logout
       }
     });
 
@@ -243,7 +245,7 @@ export default function App() {
     await supabase.auth.signOut();
     setAuthUser(null);
     setUser(null);
-    // Pas besoin de Navigate, la logique AnimatedRoutes se charge
+    setHomeKey(prev => prev + 1); // <-- force remount Home
   };
 
   const currentUser = user || authUser;
@@ -262,6 +264,7 @@ export default function App() {
         <Navbar currentUser={currentUser} authUser={authUser} onLogout={handleLogout} />
         <div className="p-4">
           <AnimatedRoutes
+            key={homeKey} // <-- force remount complet de Home après logout
             authUser={authUser}
             user={user}
             setAuthUser={setAuthUser}
