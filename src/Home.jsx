@@ -13,6 +13,7 @@ export default function Home({ user }) {
   const [messagePresident, setMessagePresident] = useState("");
   const [facebookPosts, setFacebookPosts] = useState([]);
   const [planningImageUrl, setPlanningImageUrl] = useState("");
+  const [countFollowersFB, setCountFollowersFB] = useState("");
   const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export default function Home({ user }) {
     fetchPresidentMessage();
     fetchPlanningImage();
     fetchFacebookPosts();
+    fetchCountFollowersFB
   }, []);
 
   useEffect(() => {
@@ -154,6 +156,22 @@ export default function Home({ user }) {
     }
   };
 
+  const fetchCountFollowersFB = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 3)
+        .single();
+
+      if (!error && data?.global_image_url) {
+        setCountFollowersFB(data.global_image_url);
+      }
+    } catch (err) {
+      console.error("Erreur fetchPlanningImage:", err);
+    }
+  };
+
   // ----------------------
   // Publications Facebook (placeholder)
   // ----------------------
@@ -188,8 +206,11 @@ export default function Home({ user }) {
           { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
           { label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-purple-600" },
           { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
-          { label: "Followers Facebook", value: "791", color: "text-blue-600" },
-        ].map((stat) => (
+          { label: "Followers Facebook", value: countFollowersFB, color: "text-blue-600" },
+        ].filter(stat =>
+          stat.label !== "Followers Facebook" ||
+          (stat.value !== null && stat.value !== 0)
+        ).map((stat) => (
           <div key={stat.label} className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
             <h2 className={`text-3xl font-bold ${stat.color}`}>
               <CountUp end={stat.value} duration={1.5} separator="" />
@@ -199,23 +220,23 @@ export default function Home({ user }) {
         ))}
       </section>
 
-      {/* MOT DU PRESIDENT */}
-      {(messagePresident || planningImageUrl) && (
+      {/* MOT DU PRESIDENT + PLANNING + FACEBOOK */}
+      {(messagePresident || planningImageUrl ) && (
         <section className="mb-12 p-6 bg-blue-50 rounded shadow">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
             
-            {/* Texte président */}
+            {/* COLONNE GAUCHE — Président */}
             {messagePresident && (
-              <div className="flex-1">
+              <div className="flex flex-col">
                 <p className="text-gray-700">{messagePresident}</p>
-                {/* ------------------- */}
+
                 {/* Boutons d'action */}
                 <div className="mt-4 flex flex-wrap gap-3">
                   <a
                     href="https://www.facebook.com/LaLoidesCartes"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition"
+                    className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition text-center"
                   >
                     Nos actualités sur Facebook
                   </a>
@@ -224,7 +245,7 @@ export default function Home({ user }) {
                     href="https://www.helloasso.com/associations/la-loi-des-cartes/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition"
+                    className="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition text-center"
                   >
                     Adhérer en ligne sur HelloAsso
                   </a>
@@ -232,9 +253,9 @@ export default function Home({ user }) {
               </div>
             )}
 
-            {/* Image planning */}
+            {/* COLONNE CENTRALE — Planning */}
             {planningImageUrl && (
-              <div className="flex justify-center lg:justify-end">
+              <div className="flex justify-center">
                 <img
                   src={planningImageUrl}
                   alt="Planning des prochaines rencontres"
@@ -243,26 +264,29 @@ export default function Home({ user }) {
                 />
               </div>
             )}
+
+            {/* COLONNE DROITE — Facebook */}
+            <div className="w-full flex justify-center">
+              <FacebookWidget />
+            </div>
+
           </div>
         </section>
       )}
-
-      {/* FACEBOOK */}
-      <section className="mb-12">
-        {/*<h2 className="text-2xl font-bold mb-4">📘 Suivez-nous sur Facebook</h2>*/}
-        <FacebookWidget />
-      </section>
 
       {/* --- Section TARIFS --- */}
       <section className="mt-12 bg-white rounded-xl shadow-md p-6 md:p-10">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">
           TARIFS & ADHÉSION
         </h2>
-
+        <p className="text-center text-gray-600">
+          🎟️ Venez découvrir gratuitement, puis <strong>2€ / séance</strong> pour les non-adhérents.
+        </p>
         <div className="grid md:grid-cols-2 gap-8 items-center">
           {/* Texte */}
           <div className="space-y-4 text-gray-700">
             <h3 className="text-xl font-semibold">Adhésion à l’année</h3>
+
 
             <ul className="space-y-2">
               <li>🎲 <strong>Individuelle</strong> : 20€</li>
@@ -292,10 +316,6 @@ export default function Home({ user }) {
 
             <p className="mt-6">
               ✅ <strong>Accès illimité</strong> aux séances du club
-            </p>
-
-            <p className="text-sm text-gray-600">
-              🎟️ Venez découvrir gratuitement, puis <strong>2€ / séance</strong> pour les non-adhérents.
             </p>
           </div>
 

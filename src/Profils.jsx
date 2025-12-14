@@ -10,6 +10,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
   const [globalImageUrl, setGlobalImageUrl] = useState("");
   const [globalTexte, setGlobalTexte] = useState("");
+  const [globalcountFollowersFB, setGlobalcountFollowersFB] = useState("");
   const [zoomOpen, setZoomOpen] = useState(false);
 
   // ✅ Hooks toujours au même niveau
@@ -47,7 +48,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         }
 
         setProfil(updatedData);
-        setGlobalImageUrl(updatedData.global_image_url || "");
+        // setGlobalImageUrl(updatedData.global_image_url || "");
         setNom(updatedData.nom);
         setProfilGlobal?.(updatedData);
 
@@ -93,10 +94,23 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       }
     };
 
+    const fetchGlobalcountFollowersFB = async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 3)
+        .single();
+
+      if (!error && data) {
+        setGlobalcountFollowersFB(data.global_image_url || "");
+      }
+    };
+
     fetchProfil();
     fetchJeux();
     fetchGlobalImage();
     fetchGlobalTexte();
+    fetchGlobalcountFollowersFB();
   }, [authUser, setProfilGlobal]);
 
   const updateNom = async () => {
@@ -401,7 +415,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
       {profil.role === "admin" && (
         <div className="mt-10 p-4 border rounded bg-gray-50">
-          <h3 className="text-xl font-semibold mb-2">🖼️ Texte de la page d'accueil</h3>
+          <h3 className="text-xl font-semibold mb-2">🏛️ Texte de la page d'accueil</h3>
 
           <input
             type="text"
@@ -424,6 +438,40 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                 .single();
               if (!error) {
                 alert("✅ Texte mis à jour !");
+              }
+            }}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Mettre à jour
+          </button>
+        </div>
+      )}
+
+      {profil.role === "admin" && (
+        <div className="mt-10 p-4 border rounded bg-gray-50">
+          <h3 className="text-xl font-semibold mb-2">✨ Followers FB</h3>
+
+          <input
+            type="text"
+            className="border p-2 rounded w-full"
+            placeholder="Texte de la page d'accueil"
+            value={globalcountFollowersFB}
+            onChange={(e) => setGlobalcountFollowersFB(e.target.value)}
+          />
+
+          <button
+            onClick={async () => {
+              const { data, error } = await supabase
+                .from("settings")
+                .update({
+                  global_image_url: globalcountFollowersFB,
+                  updated_at: new Date(),
+                })
+                .eq("id", 3)
+                .select()
+                .single();
+              if (!error) {
+                alert("✅ Followers FB mis à jour !");
               }
             }}
             className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

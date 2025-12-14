@@ -21,7 +21,7 @@ import Auth from "./Auth";
 import Home from "./Home";
 import FooterBGG from "./FooterBGG";
 import Chat from "./Chat";
-import { House, BookOpen, CalendarDays, Dices, User, LogOut } from "lucide-react";
+import { House, ChartPie, CalendarDays, Dices, User, LogOut } from "lucide-react";
 
 // --- Navbar responsive ---
 function Navbar({ currentUser, authUser, onLogout }) {
@@ -29,9 +29,9 @@ function Navbar({ currentUser, authUser, onLogout }) {
 
   const publicTabs = [{ to: "/", label: "Accueil", icon: House }];
   const privateTabs = [
-    { to: "/catalogue", label: "Ludothèque", icon: BookOpen },
+    { to: "/catalogue", label: "Ludothèque", icon: Dices },
     { to: "/parties", label: "Parties", icon: CalendarDays },
-    { to: "/statistiques", label: "Statistiques", icon: Dices },
+    { to: "/statistiques", label: "Statistiques", icon: ChartPie },
     { to: "/profils", label: "Profil", icon: User },
   ];
 
