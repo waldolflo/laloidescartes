@@ -1,13 +1,11 @@
 // src/FacebookWidget.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 export default function FacebookWidget() {
   const containerRef = useRef(null);
-  const [sdkLoaded, setSdkLoaded] = useState(false);
-  const FB_APP_ID = "1273958468100855"; // <-- Remplace par ton App ID si besoin
+  const FB_APP_ID = "1273958468100855";
 
   useEffect(() => {
-    // Vérifie si le SDK est déjà présent
     if (!window.FB) {
       const script = document.createElement("script");
       script.async = true;
@@ -17,36 +15,35 @@ export default function FacebookWidget() {
       document.body.appendChild(script);
 
       script.onload = () => {
-        if (window.FB) {
-          window.FB.XFBML.parse(containerRef.current);
-          setSdkLoaded(true);
-        }
+        if (window.FB) window.FB.XFBML.parse(containerRef.current);
       };
     } else {
-      // Parse uniquement si le SDK est déjà chargé
       window.FB.XFBML.parse(containerRef.current);
-      setSdkLoaded(true);
     }
   }, []);
 
   return (
-    <div ref={containerRef} style={{ width: "100%", maxWidth: "500px", margin: "0 auto" }}>
-      {sdkLoaded ? (
-        <div
-          className="fb-page"
-          data-href="https://www.facebook.com/LaLoidesCartes"
-          data-tabs="timeline"
-          data-width="500"
-          data-height="600"
-          data-small-header="false"
-          data-adapt-container-width="true"
-          data-hide-cover="false"
-          data-show-facepile="true"
-          style={{ width: "100%" }}
-        />
-      ) : (
-        <p className="text-gray-500 text-center">Chargement du widget Facebook...</p>
-      )}
+    <div
+      ref={containerRef}
+      style={{
+        width: "100%",
+        maxWidth: "500px", // largeur max sur grand écran
+        margin: "0 auto",
+        overflow: "hidden", // empêche le dépassement
+      }}
+    >
+      <div
+        className="fb-page"
+        data-href="https://www.facebook.com/LaLoidesCartes"
+        data-tabs="timeline"
+        data-width="" // vide pour que Facebook adapte
+        data-height="600"
+        data-small-header="false"
+        data-adapt-container-width="true"
+        data-hide-cover="false"
+        data-show-facepile="true"
+        style={{ width: "100%" }}
+      />
     </div>
   );
 }
