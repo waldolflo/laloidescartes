@@ -249,7 +249,7 @@ export default function Home({ user }) {
 
       {/* FACEBOOK */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold mb-4">📘 Suivez-nous sur Facebook</h2>
+        {/*<h2 className="text-2xl font-bold mb-4">📘 Suivez-nous sur Facebook</h2>*/}
         <FacebookWidget />
       </section>
 
