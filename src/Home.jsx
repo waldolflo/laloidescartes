@@ -13,7 +13,7 @@ export default function Home({ user }) {
   const [messagePresident, setMessagePresident] = useState("");
   const [facebookPosts, setFacebookPosts] = useState([]);
   const [planningImageUrl, setPlanningImageUrl] = useState("");
-  const [countFollowersFB, setCountFollowersFB] = useState("");
+  const [countFollowersFB, setCountFollowersFB] = useState(null);
   const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function Home({ user }) {
     fetchPresidentMessage();
     fetchPlanningImage();
     fetchFacebookPosts();
-    fetchCountFollowersFB
+    fetchCountFollowersFB();
   }, []);
 
   useEffect(() => {
@@ -165,7 +165,7 @@ export default function Home({ user }) {
         .single();
 
       if (!error && data?.global_image_url) {
-        setCountFollowersFB(data.global_image_url);
+        setCountFollowersFB(Number(data.global_image_url));
       }
     } catch (err) {
       console.error("Erreur fetchCountFollowersFB:", err);
