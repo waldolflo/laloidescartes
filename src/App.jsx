@@ -143,6 +143,8 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
         <Routes location={location}>
           <Route path="/" element={<Home user={currentUser} />} />
           <Route path="/auth" element={<Auth onLogin={onLogin} />} />
+          
+          {/* Routes protégées */}
           {currentUser ? (
             <>
               <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
@@ -155,6 +157,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           ) : (
+            /* Redirection si pas connecté */
             <Route path="/*" element={<Navigate to="/" replace />} />
           )}
         </Routes>
@@ -201,8 +204,8 @@ export default function App() {
   const [loadingAuth, setLoadingAuth] = useState(true);
 
   useEffect(() => {
-    // --- Vérifie l'utilisateur initial ---
-    supabase.auth.getUser().then(async ({ data }) => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
       if (data?.user) {
         setAuthUser(data.user);
         const { data: profilData } = await supabase
@@ -213,32 +216,34 @@ export default function App() {
         setUser(profilData);
       }
       setLoadingAuth(false);
-    });
+    };
 
-    // --- Listener global Supabase ---
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          setAuthUser(session.user);
-          const { data: profilData } = await supabase
-            .from("profils")
-            .select("*")
-            .eq("id", session.user.id)
-            .maybeSingle();
-          setUser(profilData);
-        } else {
-          setAuthUser(null);
-          setUser(null);
-        }
+    getUser();
+
+    // Ecoute les changements d'auth
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setAuthUser(session.user);
+        supabase
+          .from("profils")
+          .select("*")
+          .eq("id", session.user.id)
+          .maybeSingle()
+          .then(({ data }) => setUser(data || { id: session.user.id, nom: "" }));
+      } else {
+        setAuthUser(null);
+        setUser(null);
       }
-    );
+    });
 
     return () => listener.subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // plus besoin de setRedirect, le listener fait tout
+    setAuthUser(null);
+    setUser(null);
+    // Pas besoin de Navigate, la logique AnimatedRoutes se charge
   };
 
   const currentUser = user || authUser;
@@ -261,14 +266,14 @@ export default function App() {
             user={user}
             setAuthUser={setAuthUser}
             setUser={setUser}
-            onLogin={async (newUser) => {
+            onLogin={(newUser) => {
               setAuthUser(newUser);
-              const { data } = await supabase
+              supabase
                 .from("profils")
                 .select("*")
                 .eq("id", newUser.id)
-                .maybeSingle();
-              setUser(data || { id: newUser.id, nom: "" });
+                .maybeSingle()
+                .then(({ data }) => setUser(data || { id: newUser.id, nom: "" }));
             }}
           />
         </div>
