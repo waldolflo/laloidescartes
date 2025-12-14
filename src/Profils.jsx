@@ -389,7 +389,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
           {globalImageUrl && (
             <div className="mt-4 lg:mt-0 lg:ml-6 flex justify-center lg:justify-end">
-              <p className="font-medium mb-1">Aperçu :</p>
               <img
                 src={globalImageUrl}
                 alt="Aperçu global"

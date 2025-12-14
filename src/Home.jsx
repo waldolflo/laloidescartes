@@ -207,8 +207,77 @@ export default function Home({ user }) {
             {/* Texte président */}
             {messagePresident && (
               <div className="flex-1">
-                <h2 className="text-2xl font-bold mb-3">Mot du président</h2>
                 <p className="text-gray-700">{messagePresident}</p>
+                {/* ------------------- */}
+                {/* Boutons d'action */}
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <a
+                    href="https://www.facebook.com/LaLoidesCartes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition"
+                  >
+                    Nos actualités sur Facebook
+                  </a>
+
+                  <a
+                    href="https://www.helloasso.com/associations/la-loi-des-cartes/adhesions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition"
+                  >
+                    Adhérer en ligne sur HelloAsso
+                  </a>
+
+                  <a
+                    href="/contact"
+                    className="px-4 py-2 bg-gray-600 text-white rounded shadow hover:bg-gray-700 transition"
+                  >
+                    Nous contacter
+                  </a>
+
+                  <a
+                    href="/evenements"
+                    className="px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition"
+                  >
+                    Voir nos événements
+                  </a>
+                  <a
+                    href="https://www.facebook.com/LaLoidesCartes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition"
+                  >
+                    <img src="/icons/facebook.svg" alt="Facebook" className="w-5 h-5" />
+                    Nos actualités sur Facebook
+                  </a>
+
+                  <a
+                    href="https://www.helloasso.com/associations/la-loi-des-cartes/adhesions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition"
+                  >
+                    <img src="/icons/helloasso.svg" alt="HelloAsso" className="w-5 h-5" />
+                    Adhérer en ligne sur HelloAsso
+                  </a>
+
+                  <a
+                    href="/contact"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded shadow hover:bg-gray-700 transition"
+                  >
+                    <img src="/icons/mail.svg" alt="Contact" className="w-5 h-5" />
+                    Nous contacter
+                  </a>
+
+                  <a
+                    href="/evenements"
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition"
+                  >
+                    <img src="/icons/calendar.svg" alt="Événements" className="w-5 h-5" />
+                    Voir nos événements
+                  </a>
+                </div>
               </div>
             )}
 
