@@ -16,12 +16,12 @@ export default function FacebookWidget() {
       document.body.appendChild(script);
 
       script.onload = () => {
-        if (window.FB) {
-          window.FB.XFBML.parse();
+        if (window.FB && containerRef.current) {
+          window.FB.XFBML.parse(containerRef.current);
         }
       };
-    } else {
-      window.FB.XFBML.parse();
+    } else if (containerRef.current) {
+      window.FB.XFBML.parse(containerRef.current);
     }
   }, []);
 
