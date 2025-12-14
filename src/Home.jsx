@@ -352,7 +352,12 @@ export default function Home({ user }) {
       {/* CHAT */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold mb-4">💬 Chat de l'asso</h2>
-        <Chat user={currentUser} readOnly={!currentUser} />
+        {/* ✅ Protection pour éviter le crash si user est null */}
+        {currentUser ? (
+          <Chat user={currentUser} readOnly={false} />
+        ) : (
+          <Chat user={null} readOnly={true} />
+        )}
       </section>
 
       {/* MODALE IMAGE */}
