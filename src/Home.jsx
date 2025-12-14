@@ -168,7 +168,7 @@ export default function Home({ user }) {
         setCountFollowersFB(data.global_image_url);
       }
     } catch (err) {
-      console.error("Erreur fetchPlanningImage:", err);
+      console.error("Erreur fetchCountFollowersFB:", err);
     }
   };
 
@@ -206,11 +206,10 @@ export default function Home({ user }) {
           { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
           { label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-purple-600" },
           { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
-          { label: "Followers Facebook", value: countFollowersFB, color: "text-blue-600" },
-        ].filter(stat =>
-          stat.label !== "Followers Facebook" ||
-          (stat.value !== null && stat.value !== 0)
-        ).map((stat) => (
+          ...(countFollowersFB > 0
+            ? [{ label: "Followers Facebook", value: countFollowersFB, color: "text-blue-600" }]
+            : [])
+        ].map((stat) => (
           <div key={stat.label} className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
             <h2 className={`text-3xl font-bold ${stat.color}`}>
               <CountUp end={stat.value} duration={1.5} separator="" />
