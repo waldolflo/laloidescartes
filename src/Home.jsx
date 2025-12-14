@@ -39,7 +39,7 @@ export default function Home({ user }) {
     try {
       const [jeuxRes, partiesRes, membresRes] = await Promise.all([
         supabase.from("jeux").select("id", { count: "exact" }),
-        supabase.from("parties").select("id", { count: "exact" }),
+        supabase.from("parties").select("id", { count: "exact" }).eq("lieu", "La loi des cartes"),
         supabase
           .from("profils")
           .select("id", { count: "exact" })
