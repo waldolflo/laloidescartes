@@ -9,6 +9,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [allUsers, setAllUsers] = useState([]);
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
   const [globalImageUrl, setGlobalImageUrl] = useState("");
+  const [globalTexte, setGlobalTexte] = useState("");
   const [zoomOpen, setZoomOpen] = useState(false);
 
   // ✅ Hooks toujours au même niveau
@@ -80,9 +81,22 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       }
     };
 
+    const fetchGlobalTexte = async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 2)
+        .single();
+
+      if (!error && data) {
+        setGlobalTexte(data.global_image_url || "");
+      }
+    };
+
     fetchProfil();
     fetchJeux();
     fetchGlobalImage();
+    fetchGlobalTexte();
   }, [authUser, setProfilGlobal]);
 
   const updateNom = async () => {
@@ -236,18 +250,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
           <p className="font-medium mt-1"><strong>Rôle :</strong> {profil.role}</p>
         </div>
-
-        {/* Image à droite en grand écran */}
-        {globalImageUrl && (
-          <div className="mt-4 lg:mt-0 lg:ml-6 flex justify-center lg:justify-end">
-            <img
-              src={globalImageUrl}
-              alt="Image globale"
-              onClick={() => setZoomOpen(true)}
-              className="w-40 h-40 lg:w-48 lg:h-48 object-contain border rounded shadow"
-            />
-          </div>
-        )}
       </div>
 
       {profil.role === "user" && (
@@ -352,39 +354,41 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       )}
 
       {profil.role === "admin" && (
-        <div className="mt-10 p-4 border rounded bg-gray-50">
-          <h3 className="text-xl font-semibold mb-2">🖼️ Planning des prochaines rencontres</h3>
+        <div className="mt-10 p-4 border rounded bg-gray-50 flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold mb-2">🖼️ Planning des prochaines rencontres</h3>
 
-          <input
-            type="text"
-            className="border p-2 rounded w-full"
-            placeholder="URL de l’image"
-            value={globalImageUrl}
-            onChange={(e) => setGlobalImageUrl(e.target.value)}
-          />
+            <input
+              type="text"
+              className="border p-2 rounded w-full"
+              placeholder="URL de l’image"
+              value={globalImageUrl}
+              onChange={(e) => setGlobalImageUrl(e.target.value)}
+            />
 
-          <button
-            onClick={async () => {
-              const { data, error } = await supabase
-                .from("settings")
-                .update({
-                  global_image_url: globalImageUrl,
-                  updated_at: new Date(),
-                })
-                .eq("id", 1)
-                .select()
-                .single();
-              if (!error) {
-                alert("✅ Planning mis à jour !");
-              }
-            }}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Mettre à jour
-          </button>
+            <button
+              onClick={async () => {
+                const { data, error } = await supabase
+                  .from("settings")
+                  .update({
+                    global_image_url: globalImageUrl,
+                    updated_at: new Date(),
+                  })
+                  .eq("id", 1)
+                  .select()
+                  .single();
+                if (!error) {
+                  alert("✅ Planning mis à jour !");
+                }
+              }}
+              className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Mettre à jour
+            </button>
+          </div>
 
           {globalImageUrl && (
-            <div className="mt-4">
+            <div className="mt-4 lg:mt-0 lg:ml-6 flex justify-center lg:justify-end">
               <p className="font-medium mb-1">Aperçu :</p>
               <img
                 src={globalImageUrl}
@@ -393,6 +397,40 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
               />
             </div>
           )}
+        </div>
+      )}
+
+      {profil.role === "admin" && (
+        <div className="mt-10 p-4 border rounded bg-gray-50">
+          <h3 className="text-xl font-semibold mb-2">🖼️ Texte de la page d'accueil</h3>
+
+          <input
+            type="text"
+            className="border p-2 rounded w-full"
+            placeholder="Texte de la page d'accueil"
+            value={globalTexte}
+            onChange={(e) => setGlobalTexte(e.target.value)}
+          />
+
+          <button
+            onClick={async () => {
+              const { data, error } = await supabase
+                .from("settings")
+                .update({
+                  global_image_url: globalTexte,
+                  updated_at: new Date(),
+                })
+                .eq("id", 2)
+                .select()
+                .single();
+              if (!error) {
+                alert("✅ Texte mis à jour !");
+              }
+            }}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Mettre à jour
+          </button>
         </div>
       )}
 
