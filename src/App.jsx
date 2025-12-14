@@ -199,9 +199,11 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [redirect, setRedirect] = useState(false); // <-- nouveau state pour redirection
+  const [redirect, setRedirect] = useState(false);
 
+  // --- Setup listener global Supabase ---
   useEffect(() => {
+    // Vérifie l'utilisateur initial
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
         setAuthUser(data.user);
@@ -214,13 +216,34 @@ export default function App() {
       }
       setLoadingAuth(false);
     });
+
+    // Listener des changements de session
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          // Login / refresh
+          setAuthUser(session.user);
+          const { data: profilData } = await supabase
+            .from("profils")
+            .select("*")
+            .eq("id", session.user.id)
+            .maybeSingle();
+          setUser(profilData);
+        } else {
+          // Déconnexion
+          setAuthUser(null);
+          setUser(null);
+          setRedirect(true);
+        }
+      }
+    );
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setAuthUser(null);
-    setUser(null);
-    setRedirect(true); // déclenche redirection
+    // pas besoin de setAuthUser(null)/setUser(null) ici, le listener le fait automatiquement
   };
 
   const currentUser = user || authUser;
@@ -244,14 +267,14 @@ export default function App() {
             user={user}
             setAuthUser={setAuthUser}
             setUser={setUser}
-            onLogin={(newUser) => {
+            onLogin={async (newUser) => {
               setAuthUser(newUser);
-              supabase
+              const { data } = await supabase
                 .from("profils")
                 .select("*")
                 .eq("id", newUser.id)
-                .maybeSingle()
-                .then(({ data }) => setUser(data || { id: newUser.id, nom: "" }));
+                .maybeSingle();
+              setUser(data || { id: newUser.id, nom: "" });
             }}
           />
         </div>
