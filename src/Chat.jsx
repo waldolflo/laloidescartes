@@ -19,7 +19,7 @@ export default function Chat({ user, readOnly = false }) {
   if (!user) {
     return (
       <div className="p-6 bg-gray-50 rounded-lg text-center text-gray-500 italic">
-        🔒 Connectez-vous pour participer au chat
+        🔒 Connectez-vous pour participer au tchat de l'association
       </div>
     );
   }
@@ -95,7 +95,7 @@ export default function Chat({ user, readOnly = false }) {
     });
 
     setMessages(messagesWithDetails);
-    // scrollToBottom();
+    // scrollToBottom(); // retiré pour éviter le scroll automatique à l'ouverture de la page accueil
   };
 
   // Charger les utilisateurs pour @mentions
@@ -254,9 +254,9 @@ export default function Chat({ user, readOnly = false }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[85vh] p-4 max-w-4xl mx-auto relative">
+    <div className="flex-1 flex flex-col h-[100vh] p-4 max-w-fit mx-auto relative">
       <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-        💬 Chat de l'association
+        💬 Tchat de l'association
         {unreadCount > 0 && (
           <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs">
             {unreadCount}
