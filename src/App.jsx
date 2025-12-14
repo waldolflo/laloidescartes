@@ -68,7 +68,7 @@ function Navbar({ currentUser, authUser, onLogout }) {
                   Bonjour <strong>{currentUser?.nom || currentUser?.email}</strong>
                 </span>
                 <button
-                  onClick={onLogout} // <-- plus de useNavigate ici
+                  onClick={onLogout}
                   className="bg-rose-700 text-white px-4 py-2 rounded hover:bg-rose-800 text-sm"
                 >
                   Déconnexion
@@ -106,7 +106,7 @@ function Navbar({ currentUser, authUser, onLogout }) {
 
         {authUser ? (
           <button
-            onClick={onLogout} // <-- idem, juste appel du callback
+            onClick={onLogout}
             className="flex flex-col items-center text-xs text-gray-300 hover:text-rose-500 transition-colors"
           >
             <LogOut size={22} />
@@ -201,9 +201,8 @@ export default function App() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [redirect, setRedirect] = useState(false);
 
-  // --- Setup listener global Supabase ---
   useEffect(() => {
-    // Vérifie l'utilisateur initial
+    // --- Vérifie l'utilisateur initial ---
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
         setAuthUser(data.user);
@@ -217,11 +216,11 @@ export default function App() {
       setLoadingAuth(false);
     });
 
-    // Listener des changements de session
+    // --- Listener global Supabase ---
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
-          // Login / refresh
+          // login ou refresh
           setAuthUser(session.user);
           const { data: profilData } = await supabase
             .from("profils")
@@ -230,7 +229,7 @@ export default function App() {
             .maybeSingle();
           setUser(profilData);
         } else {
-          // Déconnexion
+          // logout
           setAuthUser(null);
           setUser(null);
           setRedirect(true);
@@ -243,7 +242,7 @@ export default function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // pas besoin de setAuthUser(null)/setUser(null) ici, le listener le fait automatiquement
+    // le listener gère le reset des states et la redirection
   };
 
   const currentUser = user || authUser;
@@ -258,7 +257,7 @@ export default function App() {
 
   return (
     <Router>
-      {redirect && <Navigate to="/" replace />} {/* redirection après logout */}
+      {redirect && <Navigate to="/" replace />}
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
         <Navbar currentUser={currentUser} authUser={authUser} onLogout={handleLogout} />
         <div className="p-4">
