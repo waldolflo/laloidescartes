@@ -12,15 +12,16 @@ export default function FacebookWidget() {
       script.defer = true;
       script.crossOrigin = "anonymous";
       script.src = "https://connect.facebook.net/fr_FR/sdk.js#xfbml=1&version=v18.0";
-      document.body.appendChild(script);
-
       script.onload = () => {
-        if (window.FB && containerRef.current) {
-          window.FB.XFBML.parse(containerRef.current);
-        }
+        if (window.FB) window.FB.XFBML.parse();
       };
-    } else if (containerRef.current) {
-      window.FB.XFBML.parse(containerRef.current);
+      document.body.appendChild(script);
+    } else {
+      try {
+        window.FB.XFBML.parse();
+      } catch (e) {
+        console.warn("FB.XFBML.parse error", e);
+      }
     }
   }, []);
 
