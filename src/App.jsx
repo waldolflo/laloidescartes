@@ -199,7 +199,6 @@ export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [user, setUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [redirect, setRedirect] = useState(false);
 
   useEffect(() => {
     // --- Vérifie l'utilisateur initial ---
@@ -220,7 +219,6 @@ export default function App() {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
-          // login ou refresh
           setAuthUser(session.user);
           const { data: profilData } = await supabase
             .from("profils")
@@ -229,10 +227,8 @@ export default function App() {
             .maybeSingle();
           setUser(profilData);
         } else {
-          // logout
           setAuthUser(null);
           setUser(null);
-          setRedirect(true);
         }
       }
     );
@@ -242,7 +238,7 @@ export default function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // le listener gère le reset des states et la redirection
+    // plus besoin de setRedirect, le listener fait tout
   };
 
   const currentUser = user || authUser;
@@ -257,7 +253,6 @@ export default function App() {
 
   return (
     <Router>
-      {redirect && <Navigate to="/" replace />}
       <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
         <Navbar currentUser={currentUser} authUser={authUser} onLogout={handleLogout} />
         <div className="p-4">
