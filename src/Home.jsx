@@ -323,7 +323,7 @@ export default function Home({ user }) {
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">
           TARIFS & ADHÉSION
         </h2>
-        <p className="text-center text-gray-600">
+        <p className="text-center text-gray-600 mb-6">
           🎟️ Venez découvrir gratuitement, puis <strong>2€ / séance</strong> pour les non-adhérents.
         </p>
         <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -361,6 +361,13 @@ export default function Home({ user }) {
             <p className="mt-6">
               ✅ <strong>Accès illimité</strong> aux séances du club
             </p>
+            <div className="text-center mb-6">
+              <img
+              src="https://laloidescartes.my.canva.site/_assets/media/40f2fc69c9e39fdbb5063c9d0f32cab8.jpg"
+              alt="partenaires"
+              className="rounded-xl shadow-md max-h-80 object-contain"
+            />
+            </div>
           </div>
 
           {/* Illustration */}
