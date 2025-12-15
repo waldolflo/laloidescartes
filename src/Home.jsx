@@ -231,7 +231,7 @@ export default function Home({ user }) {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* LOGO + Titre */}
       <header className="text-center mb-12">
-        <img src="/logo_loidc.png" alt="Logo" className="mx-auto h-28" />
+        <img src="/logo_loidc_Noel_250.png" alt="Logo" className="mx-auto h-28" />
         <h1 className="text-4xl font-bold mt-4">La Loi des Cartes</h1>
         <p className="text-gray-700 mt-2">Découvrez nos jeux, rejoignez notre association pour des après-midi et soirées jeux.</p>
       </header>
@@ -241,16 +241,16 @@ export default function Home({ user }) {
         {[
           { label: "Création de l'asso", value: "2021", color: "text-black-600" },
           { label: "Jeux", value: stats.jeux, color: "text-yellow-600" },
-          { label: "Parties organisées via l'App", value: stats.parties, color: "text-green-600" },
-          { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
           ...(countSeanceTotal > 0
-          ? [{ label: "Après-midi et soirées jeux", value: countSeanceTotal, color: "text-purple-600" }]
-          : []),
-          //{ label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-teal-600" },
-          { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
+            ? [{ label: "Après-midi et soirées jeux", value: countSeanceTotal, color: "text-purple-600" }]
+            : []),
           ...(countAdherentTotal > 0
             ? [{ label: "Adhérents de l'asso de 7 à 73 ans", value: countAdherentTotal, color: "text-pink-600" }]
             : []),
+          //{ label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-teal-600" },
+          { label: "Parties organisées via l'App", value: stats.parties, color: "text-green-600" },
+          { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
+          { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
           ...(countFollowersFB > 0
             ? [{ label: "Followers Facebook", value: countFollowersFB, color: "text-blue-600" }]
             : [])
@@ -361,7 +361,7 @@ export default function Home({ user }) {
             <p className="mt-6">
               ✅ <strong>Accès illimité</strong> aux séances du club
             </p>
-            <div className="text-center mb-6">
+            <div className="text-center mt-6">
               <img
               src="https://laloidescartes.my.canva.site/_assets/media/40f2fc69c9e39fdbb5063c9d0f32cab8.jpg"
               alt="partenaires"
