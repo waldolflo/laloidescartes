@@ -408,10 +408,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         </div>
       )}
 
-      {profil.role === "admin" && (
+      {/* {profil.role === "admin" && (
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">Gestion images (alpha)</h1>
-          {/* Bouton simple vers le Diaporama */}
           <Link
             to="/diaporama"
             className="ml-4 bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300"
@@ -419,7 +418,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             Gérer le Diaporama
           </Link>
         </div>
-      )}
+      )} */}
 
       {profil.role === "admin" && (
         <div className="mt-10 p-4 border rounded bg-gray-50 flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
