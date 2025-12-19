@@ -272,10 +272,10 @@ export default function Home({ user }) {
             {/* COLONNE GAUCHE — Président */}
             {messagePresident && (
               <div className="flex flex-col">
-                <p className="text-gray-700">{messagePresident}</p>
+                <p className="text-gray-700 text-center">{messagePresident}</p>
 
                 {/* Boutons d'action */}
-                <div className="mt-4 flex flex-wrap gap-3">
+                <div className="mt-4 flex flex-wrap gap-3 justify-center">
                   <a
                     href="https://www.facebook.com/LaLoidesCartes"
                     target="_blank"
