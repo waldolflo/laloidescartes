@@ -14,7 +14,6 @@ import { supabase } from "./supabaseClient";
 import Catalogue from "./Catalogue";
 import Parties from "./Parties";
 import Archives from "./Archives";
-import Diaporama from "./Diaporama";
 import Inscriptions from "./Inscriptions";
 import Statistiques from "./Statistiques";
 import Profils from "./Profils";
