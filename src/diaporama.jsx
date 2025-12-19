@@ -4,7 +4,8 @@ import { supabase } from "./supabaseClient";
 const MAX_STORAGE = 1 * 1024 * 1024 * 1024; // 1 Go
 const MAX_BANDWIDTH = 2 * 1024 * 1024 * 1024; // 2 Go
 
-export default function Diaporama() {
+export default function Diaporama({ user, authUser }) {
+  const currentUser = user || authUser;
   const [images, setImages] = useState([]);
   const [storageUsed, setStorageUsed] = useState(0);
   const [bandwidthUsed, setBandwidthUsed] = useState(0);
