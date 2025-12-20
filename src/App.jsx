@@ -17,7 +17,7 @@ import Archives from "./Archives";
 import Inscriptions from "./Inscriptions";
 import Statistiques from "./Statistiques";
 import Profils from "./Profils";
-import Diaporama from "./Diaporama";
+import Images from "./Images";
 import Auth from "./Auth";
 import Home from "./Home";
 import FooterBGG from "./FooterBGG";
@@ -155,10 +155,10 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
               <Route path="/statistiques" element={<Statistiques user={currentUser} authUser={authUser} profil={currentUser} />} />
               <Route path="/profils" element={<Profils user={currentUser} setProfilGlobal={setUser} authUser={authUser} setAuthUser={setAuthUser} setUser={setUser} />} />
               <Route
-                path="/diaporama"
+                path="/images"
                 element={
                   user?.role === "admin" ? (
-                    <Diaporama user={user} authUser={authUser} />
+                    <Images user={user} authUser={authUser} />
                   ) : (
                     <Navigate to="/" replace />
                   )

@@ -412,7 +412,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">Gestion images (alpha)</h1>
           <Link
-            to="/diaporama"
+            to="/images"
             className="ml-4 bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300"
           >
             Gérer le Diaporama
