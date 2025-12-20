@@ -13,7 +13,7 @@ export default function Diaporama({ user, authUser }) {
 
   /* -----------------------------
      Chargement initial
-  ------------------------------ */
+  --------- */
   useEffect(() => {
     loadImages();
     loadStorageUsage();
