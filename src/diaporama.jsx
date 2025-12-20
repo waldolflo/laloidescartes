@@ -75,7 +75,7 @@ export default function Diaporama({ user, authUser }) {
       alert("❌ Stockage insuffisant");
       return;
     }
-
+    console.log("UPLOAD PATH =", filePath);
     setUploading(true);
 
     // ⚠️ PATH RELATIF AU BUCKET (PAS de "diaporama/")
