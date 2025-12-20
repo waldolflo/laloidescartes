@@ -75,7 +75,6 @@ export default function Images({ user, authUser }) {
     setUploading(true);
 
     const filePath = `diaporama/${Date.now()}-${file.name}`;
-    console.log("UPLOAD PATH =", filePath);
 
     const { error } = await supabase.storage
       .from("diaporama")
@@ -173,7 +172,7 @@ export default function Images({ user, authUser }) {
       {/* Galerie */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((img) => {
-          const path = img.name;
+          const path = `diaporama/${img.name}`;
           const { publicUrl } = supabase
             .storage
             .from("diaporama")
