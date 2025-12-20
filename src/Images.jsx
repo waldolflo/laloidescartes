@@ -173,7 +173,7 @@ export default function Images({ user, authUser }) {
       {/* Galerie */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((img) => {
-          const path = `diaporama/${img.name}`;
+          const path = img.name;
           const { publicUrl } = supabase
             .storage
             .from("diaporama")

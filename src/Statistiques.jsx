@@ -241,9 +241,6 @@ export default function Statistiques({ user }) {
         </div>
       </div>
 
-      <h2 className="text-2xl font-bold mt-10">🏆 Classement Général</h2>
-      {renderBars(generalRanking)}
-
       <h2 className="text-2xl font-bold mt-10">
         📅 Classement du Mois : {months[selectedMonth - 1]} {selectedYear}
       </h2>
@@ -253,6 +250,11 @@ export default function Statistiques({ user }) {
         📆 Classement Annuel : {selectedYear}
       </h2>
       {renderBars(yearlyStats)}
+
+      <h2 className="text-2xl font-bold mt-10">🏆 Classement Général</h2>
+      {renderBars(generalRanking)}
+
+      
       {/* 🎯 Filtres (admin uniquement) */}
       {userRole === "admin" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 items-end mb-8">
