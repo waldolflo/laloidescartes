@@ -22,7 +22,7 @@ export default function Diaporama({ user, authUser }) {
 
   /* -----------------------------
      Images
-  ------------------------------ */
+  -------------------------- */
   const loadImages = async () => {
     const { data, error } = await supabase
       .storage

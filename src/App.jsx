@@ -157,8 +157,8 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
               <Route
                 path="/diaporama"
                 element={
-                  currentUser?.role === "admin" ? (
-                    <Diaporama user={currentUser} authUser={authUser} />
+                  user?.role === "admin" ? (
+                    <Diaporama user={user} authUser={authUser} />
                   ) : (
                     <Navigate to="/" replace />
                   )
