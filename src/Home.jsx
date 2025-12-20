@@ -5,6 +5,7 @@ import Chat from "./Chat";
 import CountUp from "react-countup"; // pour les stats animées
 import { Phone, Mail } from "lucide-react";
 import FacebookWidget from "./FacebookWidget";
+import DiaporamaSwiper from "./DiaporamaSwiper";
 
 export default function Home({ user }) {
   const currentUser = user || null;
@@ -379,6 +380,11 @@ export default function Home({ user }) {
             />
           </div>
         </div>
+      </section>
+
+      {/* DiaporamaSwiper */}
+      <section className="mb-12">
+        <DiaporamaSwiper />
       </section>
 
       {/* --- Section ADRESSE & CARTE --- */}
