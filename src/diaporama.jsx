@@ -6,6 +6,7 @@ const MAX_BANDWIDTH = 2 * 1024 * 1024 * 1024; // 2 Go
 
 export default function Diaporama({ user, authUser }) {
   const currentUser = user || authUser;
+
   const [images, setImages] = useState([]);
   const [storageUsed, setStorageUsed] = useState(0);
   const [bandwidthUsed, setBandwidthUsed] = useState(0);
@@ -13,7 +14,7 @@ export default function Diaporama({ user, authUser }) {
 
   /* -----------------------------
      Chargement initial
-  --------- */
+  ------------------------------ */
   useEffect(() => {
     loadImages();
     loadStorageUsage();
@@ -22,12 +23,15 @@ export default function Diaporama({ user, authUser }) {
 
   /* -----------------------------
      Images
-  -------------------------- */
+  ------------------------------ */
   const loadImages = async () => {
     const { data, error } = await supabase
       .storage
       .from("diaporama")
-      .list("diaporama", { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+      .list("", {
+        limit: 100,
+        sortBy: { column: "created_at", order: "desc" },
+      });
 
     if (!error) setImages(data || []);
   };
@@ -41,7 +45,7 @@ export default function Diaporama({ user, authUser }) {
       .select("size");
 
     if (data) {
-      const total = data.reduce((s, f) => s + f.size, 0);
+      const total = data.reduce((s, f) => s + (f.size || 0), 0);
       setStorageUsed(total);
     }
   };
@@ -55,7 +59,7 @@ export default function Diaporama({ user, authUser }) {
       .select("bytes");
 
     if (data) {
-      const total = data.reduce((s, b) => s + b.bytes, 0);
+      const total = data.reduce((s, b) => s + (b.bytes || 0), 0);
       setBandwidthUsed(total);
     }
   };
@@ -74,7 +78,8 @@ export default function Diaporama({ user, authUser }) {
 
     setUploading(true);
 
-    const filePath = `diaporama/${Date.now()}-${file.name}`;
+    // ⚠️ PATH RELATIF AU BUCKET (PAS de "diaporama/")
+    const filePath = `${Date.now()}-${file.name}`;
 
     const { error } = await supabase.storage
       .from("diaporama")
@@ -92,6 +97,9 @@ export default function Diaporama({ user, authUser }) {
 
       await loadImages();
       await loadStorageUsage();
+    } else {
+      console.error("Erreur upload:", error.message);
+      alert("Erreur lors de l'upload");
     }
 
     setUploading(false);
@@ -114,6 +122,8 @@ export default function Diaporama({ user, authUser }) {
      Log bande passante
   ------------------------------ */
   const logBandwidth = async (path, size) => {
+    if (!size) return;
+
     await supabase.from("bandwidth_logs").insert({
       file_path: path,
       bytes: size,
@@ -131,12 +141,15 @@ export default function Diaporama({ user, authUser }) {
         <p className="font-semibold mb-1">{label}</p>
         <div className="w-full bg-gray-200 h-3 rounded">
           <div
-            className={`h-3 rounded ${percent > 90 ? "bg-red-500" : "bg-blue-600"}`}
+            className={`h-3 rounded ${
+              percent > 90 ? "bg-red-500" : "bg-blue-600"
+            }`}
             style={{ width: `${percent}%` }}
           />
         </div>
         <p className="text-xs mt-1">
-          {(used / 1024 / 1024).toFixed(1)} Mo / {(max / 1024 / 1024).toFixed(0)} Mo
+          {(used / 1024 / 1024).toFixed(1)} Mo /{" "}
+          {(max / 1024 / 1024).toFixed(0)} Mo
         </p>
       </div>
     );
@@ -151,7 +164,11 @@ export default function Diaporama({ user, authUser }) {
 
       {/* Quotas */}
       <Bar label="Stockage" used={storageUsed} max={MAX_STORAGE} />
-      <Bar label="Bande passante (estimée)" used={bandwidthUsed} max={MAX_BANDWIDTH} />
+      <Bar
+        label="Bande passante (estimée)"
+        used={bandwidthUsed}
+        max={MAX_BANDWIDTH}
+      />
 
       {bandwidthUsed > MAX_BANDWIDTH * 0.9 && (
         <p className="text-red-600 text-sm mb-4">
@@ -172,14 +189,18 @@ export default function Diaporama({ user, authUser }) {
       {/* Galerie */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((img) => {
-          const path = `diaporama/${img.name}`;
+          const path = img.name;
+
           const { publicUrl } = supabase
             .storage
             .from("diaporama")
             .getPublicUrl(path).data;
 
           return (
-            <div key={img.name} className="relative border rounded overflow-hidden">
+            <div
+              key={img.name}
+              className="relative border rounded overflow-hidden"
+            >
               <img
                 src={publicUrl}
                 alt=""
