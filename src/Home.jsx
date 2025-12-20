@@ -383,7 +383,7 @@ export default function Home({ user }) {
       </section>
 
       {/* DiaporamaSwiper */}
-      <section className="mt-12 bg-white rounded-xl shadow-md p-6 md:p-10">
+      <section className="mt-12 bg-white rounded-xl shadow-md">
         <DiaporamaSwiper />
       </section>
 

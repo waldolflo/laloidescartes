@@ -30,7 +30,7 @@ export default function DiaporamaSwiper() {
       effect="fade"
       autoplay={{ delay: 4000, disableOnInteraction: false }}
       loop
-      className="w-full max-w-5xl rounded-xl overflow-hidden"
+      className="w-full h-[400px] rounded-xl overflow-hidden"
     >
       {images.map((img) => {
         const path = `diaporama/${img.name}`;
@@ -43,7 +43,7 @@ export default function DiaporamaSwiper() {
           <SwiperSlide key={img.name}>
             <img
               src={publicUrl}
-              className="w-full object-cover"
+              className="w-full h-full object-cover"
             />
           </SwiperSlide>
         );
