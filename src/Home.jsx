@@ -374,7 +374,7 @@ export default function Home({ user }) {
           {/* Illustration */}
           <div className="flex justify-center">
             <img
-              src="https://laloidescartes.my.canva.site/_assets/media/aafb92db0bd70670b208b44a98d8ddcc.png"
+              src="https://laloidescartes.my.canva.site/_assets/media/5f69b9aa7a56910fe6138d919c8214ee.jpg"
               alt="Illustration jeux de société"
               className="rounded-xl shadow-md max-h-80 object-contain"
             />
