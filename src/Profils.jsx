@@ -412,7 +412,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       {profil.role === "admin" && (
         <div className="mt-10 p-4 border rounded bg-gray-50 flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold mb-2">Gestion images (alpha)</h3>
+            <h3 className="text-xl font-semibold mb-2">🖼️ Gestion des images du diaporama d'accueil</h3>
             <Link
               to="/images"
               className="ml-4 bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300"

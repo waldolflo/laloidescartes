@@ -305,7 +305,7 @@ export default function Home({ user }) {
                   src={planningImageUrl}
                   alt="Planning des prochaines rencontres"
                   onClick={() => setZoomOpen(true)}
-                  className="w-56 h-56 lg:w-64 lg:h-64 object-contain border rounded shadow cursor-pointer hover:scale-105 transition-transform"
+                  className="w-56 h-56 lg:w-64 lg:h-64 object-contain rounded cursor-pointer hover:scale-105 transition-transform"
                 />
               </div>
             )}
@@ -447,7 +447,7 @@ export default function Home({ user }) {
       </section>
 
       {/* CHAT */}
-      <section className="mb-12">
+      <section className="mb-12 mt-12">
         {/* ✅ Protection pour éviter le crash si user est null */}
         {currentUser ? (
           <Chat user={currentUser} readOnly={false} />

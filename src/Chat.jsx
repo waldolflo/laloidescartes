@@ -18,7 +18,7 @@ export default function Chat({ user, readOnly = false }) {
 
   if (!user) {
     return (
-      <div className="p-6 bg-gray-50 rounded-lg text-center text-gray-500 italic">
+      <div className="mb-12 mt-12 p-6 bg-gray-50 rounded-lg text-center text-gray-500 italic">
         🔒 Connectez-vous pour participer au tchat de l'association
       </div>
     );
