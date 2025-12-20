@@ -75,6 +75,7 @@ export default function Images({ user, authUser }) {
     setUploading(true);
 
     const filePath = `diaporama/${Date.now()}-${file.name}`;
+    console.log("UPLOAD PATH =", filePath);
 
     const { error } = await supabase.storage
       .from("diaporama")

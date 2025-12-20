@@ -75,11 +75,12 @@ export default function Diaporama({ user, authUser }) {
       alert("❌ Stockage insuffisant");
       return;
     }
-    console.log("UPLOAD PATH =", filePath);
+
     setUploading(true);
 
     // ⚠️ PATH RELATIF AU BUCKET (PAS de "diaporama/")
     const filePath = `${Date.now()}-${file.name}`;
+    console.log("UPLOAD PATH =", filePath);
 
     const { error } = await supabase.storage
       .from("diaporama")
