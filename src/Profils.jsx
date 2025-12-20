@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom"; 
 import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
 
