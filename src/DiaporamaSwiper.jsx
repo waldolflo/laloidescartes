@@ -17,7 +17,7 @@ export default function DiaporamaSwiper() {
     const { data } = await supabase
       .storage
       .from("diaporama")
-      .list("", { sortBy: { column: "created_at", order: "asc" } });
+      .list("diaporama", { sortBy: { column: "created_at", order: "asc" } });
 
     if (data) setImages(data.filter(f => f.name));
   };
@@ -33,10 +33,11 @@ export default function DiaporamaSwiper() {
       className="w-full max-w-5xl h-[400px] rounded-xl overflow-hidden"
     >
       {images.map((img) => {
+        const path = `diaporama/${img.name}`;
         const { publicUrl } = supabase
           .storage
           .from("diaporama")
-          .getPublicUrl(img.name).data;
+          .getPublicUrl(path).data;
 
         return (
           <SwiperSlide key={img.name}>
