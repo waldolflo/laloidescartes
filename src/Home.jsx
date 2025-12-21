@@ -312,7 +312,7 @@ export default function Home({ user }) {
                   src={planningImageUrl}
                   alt="Planning des prochaines rencontres"
                   onClick={() => setZoomOpen(true)}
-                  className="w-56 h-56 lg:w-64 lg:h-64 object-contain rounded cursor-pointer hover:scale-105 transition-transform"
+                  className="max-h-80 object-contain rounded cursor-pointer hover:scale-105 transition-transform"
                 />
               </div>
             )}
@@ -369,13 +369,6 @@ export default function Home({ user }) {
             <p className="mt-6">
               ✅ <strong>Accès illimité</strong> aux séances du club
             </p>
-            <div className="text-center mt-6">
-              <img
-              src="https://laloidescartes.my.canva.site/_assets/media/40f2fc69c9e39fdbb5063c9d0f32cab8.jpg"
-              alt="partenaires"
-              className="rounded-xl shadow-md max-h-80 object-contain"
-              />
-            </div>
           </div>
 
           {/* Illustration */}
