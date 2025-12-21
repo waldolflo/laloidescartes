@@ -295,11 +295,11 @@ export default function Home({ user }) {
                     Adhérer en ligne sur HelloAsso
                   </a>
                 </div>
-                <div className="flex justify-center">
+                <div className="text-center mt-6">
                   <img
-                    src="https://laloidescartes.my.canva.site/_assets/media/5f69b9aa7a56910fe6138d919c8214ee.jpg"
-                    alt="Illustration jeux de société"
-                    className="rounded-xl shadow-md max-h-80 object-contain"
+                  src="https://laloidescartes.my.canva.site/_assets/media/40f2fc69c9e39fdbb5063c9d0f32cab8.jpg"
+                  alt="partenaires"
+                  className="rounded-xl shadow-md max-h-80 object-contain"
                   />
                 </div>
               </div>
@@ -374,7 +374,7 @@ export default function Home({ user }) {
               src="https://laloidescartes.my.canva.site/_assets/media/40f2fc69c9e39fdbb5063c9d0f32cab8.jpg"
               alt="partenaires"
               className="rounded-xl shadow-md max-h-80 object-contain"
-            />
+              />
             </div>
           </div>
 
