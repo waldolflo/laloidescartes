@@ -9,7 +9,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").then(() => {
-    console.log("Service Worker registered");
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js");
   });
 }
