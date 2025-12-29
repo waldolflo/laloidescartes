@@ -44,16 +44,22 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
     else {
       onClose();
       onCreated && onCreated();
-      await fetch("/functions/v1/notify-game", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userIds: user.id,
-          title: "🎲 Nouvelle partie",
-          body: "Une nouvelle partie vient d’être créée",
-          url: "/parties",
-        }),
-      });
+      await fetch(
+        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            userIds,
+            title: "🎲 Nouvelle partie",
+            body: "Une nouvelle partie vient d’être créée",
+            url: "/parties",
+          }),
+        }
+      );
     }
   };
 

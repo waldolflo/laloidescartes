@@ -8,6 +8,9 @@ webpush.setVapidDetails(
 );
 
 serve(async (req) => {
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
   const { userIds, title, body, url } = await req.json();
 
   const { data: tokens } = await supabase

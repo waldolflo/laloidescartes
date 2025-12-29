@@ -2,6 +2,8 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { getPushToken } from "./push";
+
 
 async function savePushToken(userId) {
   if (!("Notification" in window)) return;
