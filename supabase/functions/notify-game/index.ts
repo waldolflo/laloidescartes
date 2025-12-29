@@ -55,8 +55,9 @@ serve(async (req) => {
 
     // --- Envoi des notifications ---
     let sent = 0;
-    for (const user of tokens) {
-      for (const t of user.push_tokens || []) {
+    for (const user of tokens || []) {
+      const pushTokens = Array.isArray(user.push_tokens) ? user.push_tokens : [];
+      for (const t of pushTokens) {
         try {
           await webpush.sendNotification(
             JSON.parse(t.token),
