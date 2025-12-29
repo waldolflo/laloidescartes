@@ -56,6 +56,8 @@ serve(async (req) => {
     // --- Envoi des notifications ---
     let sent = 0;
     for (const user of tokens || []) {
+      console.log("[notify-game] User récupéré:", user);
+      console.log("[notify-game] Token récupéré:", user.push_tokens);
       const pushTokens = Array.isArray(user.push_tokens) ? user.push_tokens : [];
       for (const t of pushTokens) {
         try {
