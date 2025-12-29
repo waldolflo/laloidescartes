@@ -13,15 +13,10 @@ export default function Auth({ onLogin }) {
   const captchaRef = useRef(null);
   const navigate = useNavigate();
 
-  const isLocal = import.meta.env.VITE_ENV === "local";
-
-  const buildOptions = () => {
-    const options = {};
-    if (!isLocal) {
-      options.captchaToken = captchaToken;
-    }
-    return options;
-  };
+  // ✅ Détection locale fiable sans .env
+  const isLocal =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -37,11 +32,17 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const payload = {
       email,
       password,
-      options: buildOptions(),
-    });
+    };
+
+    // ✅ captcha envoyé UNIQUEMENT en prod
+    if (!isLocal) {
+      payload.options = { captchaToken };
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword(payload);
 
     if (error) {
       setErrorMsg("Erreur de connexion : " + error.message);
@@ -49,7 +50,7 @@ export default function Auth({ onLogin }) {
       setErrorMsg("❌ Vous devez confirmer votre email avant de vous connecter.");
       await supabase.auth.signOut();
     } else {
-      const { data: profilData, error: fetchError } = await supabase
+      const { error: fetchError } = await supabase
         .from("profils")
         .select("*")
         .eq("id", data.user.id)
@@ -89,11 +90,16 @@ export default function Auth({ onLogin }) {
     setLoading(true);
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signUp({
+    const payload = {
       email,
       password,
-      options: buildOptions(),
-    });
+    };
+
+    if (!isLocal) {
+      payload.options = { captchaToken };
+    }
+
+    const { error } = await supabase.auth.signUp(payload);
 
     if (error) {
       setErrorMsg("Erreur d'inscription : " + error.message);
@@ -130,6 +136,7 @@ export default function Auth({ onLogin }) {
         className="w-full border p-2 rounded mb-2"
       />
 
+      {/* ✅ Captcha uniquement en prod */}
       {!isLocal && (
         <div className="mb-3">
           <HCaptcha
