@@ -18,7 +18,7 @@ export default function Auth({ onLogin }) {
   const buildOptions = () => {
     const options = {};
     if (!isLocal) {
-      options.captcha_token = captchaToken;
+      options.captchaToken = captchaToken;
     }
     return options;
   };
