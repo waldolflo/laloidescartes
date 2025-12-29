@@ -40,27 +40,46 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
       },
     ]);
 
-    if (error) setErrorMsg(error.message);
-    else {
-      onClose();
-      onCreated && onCreated();
-      await fetch(
-        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            userIds,
-            title: "🎲 Nouvelle partie",
-            body: "Une nouvelle partie vient d’être créée",
-            url: "/parties",
-          }),
-        }
-      );
+    if (error) {
+      setErrorMsg(error.message);
+      return;
     }
+
+    onClose();
+    onCreated && onCreated();
+
+    // ✅ Récupération du token Supabase pour l'autorisation
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // ✅ Récupération des utilisateurs à notifier
+    const { data: usersToNotify, error: fetchUsersError } = await supabase
+      .from("profils")
+      .select("id")
+      .eq("notif_parties", 1);
+
+    if (fetchUsersError) {
+      console.error("Erreur récupération utilisateurs à notifier :", fetchUsersError);
+      return;
+    }
+
+    const userIds = usersToNotify.map(u => u.id);
+
+    if (userIds.length === 0) return; // Aucun utilisateur à notifier
+
+    // ✅ Envoi notification via fonction serverless
+    await fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        userIds,
+        title: "🎲 Nouvelle partie",
+        body: "Une nouvelle partie vient d’être créée",
+        url: "/parties",
+      }),
+    });
   };
 
   return (
