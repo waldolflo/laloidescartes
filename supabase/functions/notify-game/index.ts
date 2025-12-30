@@ -24,58 +24,109 @@ serve(async (req) => {
 
   // --- Preflight CORS ---
   if (req.method === "OPTIONS") {
+    console.log("[notify-game] Preflight OPTIONS reçu");
     return new Response(null, { status: 200, headers });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
+    console.warn("[notify-game] Méthode refusée:", req.method);
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers,
+    });
   }
 
   try {
-    const { title, body, url } = await req.json();
+    console.log("[notify-game] Requête POST reçue");
+
+    const payload = await req.json();
+    console.log("[notify-game] Payload reçu:", payload);
+
+    const { title, body, url } = payload;
+
     if (!title || !body) {
-      return new Response(JSON.stringify({ error: "Missing title or body" }), { status: 400, headers });
+      console.warn("[notify-game] Payload incomplet");
+      return new Response(
+        JSON.stringify({ error: "Missing title or body" }),
+        { status: 400, headers }
+      );
     }
 
     // --- Récupération des tokens ---
-    let tokens: any[] = [];
-    try {
-      const { data, error } = await supabase
-        .from("profils")
-        .select("id, push_tokens:push_tokens(token)")
-        .eq("notif_parties", 1);
+    console.log("[notify-game] Récupération des profils notif_parties = 1");
 
-      if (error) throw error;
-      tokens = data || [];
-      console.log(`[notify-game] Utilisateurs à notifier: ${tokens.length}`);
-    } catch (err) {
-      console.error("[notify-game] Erreur récupération tokens:", err);
-      return new Response(JSON.stringify({ error: "Erreur récupération tokens" }), { status: 500, headers });
+    const { data, error } = await supabase
+      .from("profils")
+      .select("id, push_tokens:push_tokens(token)")
+      .eq("notif_parties", 1);
+
+    if (error) {
+      console.error("[notify-game] Erreur Supabase:", error);
+      return new Response(
+        JSON.stringify({ error: "Erreur récupération tokens" }),
+        { status: 500, headers }
+      );
     }
 
-    // --- Envoi des notifications ---
+    console.log("[notify-game] Utilisateurs récupérés:", data?.length);
+    console.log("[notify-game] Données brutes:", data);
+
     let sent = 0;
-    for (const user of tokens || []) {
-      console.log("[notify-game] User récupéré:", user);
-      console.log("[notify-game] Token récupéré:", user.push_tokens);
-      const pushTokens = Array.isArray(user.push_tokens) ? user.push_tokens : [];
+
+    // --- Envoi des notifications ---
+    for (const user of data || []) {
+      console.log("[notify-game] User traité:", user.id);
+      console.log("[notify-game] push_tokens brut:", user.push_tokens);
+
+      // ⚠️ push_tokens peut être un objet ou un tableau
+      const pushTokens = Array.isArray(user.push_tokens)
+        ? user.push_tokens
+        : user.push_tokens
+        ? [user.push_tokens]
+        : [];
+
+      console.log(
+        `[notify-game] ${pushTokens.length} token(s) pour user ${user.id}`
+      );
+
       for (const t of pushTokens) {
+        console.log("[notify-game] Token DB:", t);
+
         try {
+          const subscription = JSON.parse(t.token);
+          console.log(
+            "[notify-game] Subscription endpoint:",
+            subscription?.endpoint
+          );
+
           await webpush.sendNotification(
-            JSON.parse(t.token),
+            subscription,
             JSON.stringify({ title, body, url })
           );
+
           sent++;
+          console.log("[notify-game] ✅ Notification envoyée");
         } catch (err) {
-          console.error(`[notify-game] Erreur notification user ${user.id}:`, err);
+          console.error(
+            `[notify-game] ❌ Erreur webpush user ${user.id}:`,
+            err
+          );
         }
       }
     }
-    console.log(`[notify-game] Notifications envoyées: ${sent}`);
 
-    return new Response(JSON.stringify({ success: true, notified: sent }), { status: 200, headers });
+    console.log(`[notify-game] Notifications envoyées avec succès: ${sent}`);
+    console.log("[notify-game] VAPID PUBLIC:", Deno.env.get("VAPID_PUBLIC_KEY"));
+
+    return new Response(
+      JSON.stringify({ success: true, notified: sent }),
+      { status: 200, headers }
+    );
   } catch (err) {
-    console.error("[notify-game] Erreur générale:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
+    console.error("[notify-game] ❌ Erreur générale:", err);
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { status: 500, headers }
+    );
   }
 });
