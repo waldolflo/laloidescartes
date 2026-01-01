@@ -9,7 +9,7 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
     heure_partie: "",
     utilisateur_id: user.id,
     description: "",
-    lieu: "",
+    lieu: "La loi des cartes",
   });
   const [errorMsg, setErrorMsg] = useState("");
   const [jeux, setJeux] = useState([]);
@@ -23,8 +23,8 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
   }, []);
 
   const addPartie = async () => {
-    if (!newPartie.jeu_id || !newPartie.date_partie || !newPartie.heure_partie) {
-      setErrorMsg("Jeu, date et heure sont obligatoires");
+    if (!newPartie.jeu_id || !newPartie.date_partie || !newPartie.heure_partie || !newPartie.lieu) {
+      setErrorMsg("Jeu, date, heure et lieu sont obligatoires");
       return;
     }
 
@@ -47,6 +47,11 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
 
     onClose();
     onCreated && onCreated();
+
+    // ❌ Pas de notification si le lieu n'est pas "La loi des cartes"
+    if (newPartie.lieu !== "La loi des cartes") {
+      return;
+    }
 
     // ✅ Récupération du token Supabase pour l'autorisation
     const { data: { session } } = await supabase.auth.getSession();
