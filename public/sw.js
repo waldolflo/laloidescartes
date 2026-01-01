@@ -12,6 +12,7 @@ self.addEventListener("push", function (event) {
   event.waitUntil(
     self.registration.showNotification(title, options)
   );
+  console.log("[SW] Notification affichée avec options:", options);
 });
 
 self.addEventListener("notificationclick", function (event) {
