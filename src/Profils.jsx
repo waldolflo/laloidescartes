@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom"; 
 import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
+import {
+  enablePushForUser,
+  disablePushForUser,
+} from "./push";
 
 export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
   const [profil, setProfil] = useState(null);
@@ -15,6 +19,22 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [globalcountAdherentTotal, setGlobalcountAdherentTotal] = useState("");
   const [globalcountSeanceavantdouzeS, setGlobalcountSeanceavantdouzeS] = useState("");
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [notifParties, setNotifParties] = useState(false);
+  const [pushDevicesCount, setPushDevicesCount] = useState(0);
+  const [testingNotif, setTestingNotif] = useState(false);
+
+  const fetchPushDevicesCount = async () => {
+    if (!authUser) return;
+
+    const { count, error } = await supabase
+      .from("push_tokens")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", authUser.id);
+
+    if (!error) {
+      setPushDevicesCount(count || 0);
+    }
+  };
 
   // ✅ Hooks toujours au même niveau
   useEffect(() => {
@@ -23,7 +43,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     const fetchProfil = async () => {
       const { data, error } = await supabase
         .from("profils")
-        .select("id, nom, role, jeufavoris1, jeufavoris2")
+        .select("id, nom, role, jeufavoris1, jeufavoris2, notif_parties")
         .eq("id", authUser.id)
         .single();
 
@@ -54,6 +74,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         // setGlobalImageUrl(updatedData.global_image_url || "");
         setNom(updatedData.nom);
         setProfilGlobal?.(updatedData);
+        setNotifParties(!!updatedData.notif_parties);
 
         if (updatedData.role === "admin") {
           const { data: usersData } = await supabase
@@ -140,7 +161,50 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     fetchGlobalcountFollowersFB();
     fetchGlobalcountAdherentTotal();
     fetchGlobalcountSeanceavantdouzeS();
+    fetchPushDevicesCount();
   }, [authUser, setProfilGlobal]);
+
+  const testNotification = async () => {
+    try {
+      setTestingNotif(true);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        alert("Session invalide");
+        return;
+      }
+
+      const res = await fetch(
+        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            title: "🔔 Test notification",
+            body: "Les notifications fonctionnent correctement 🎉",
+            url: "/",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Erreur lors de l’envoi");
+      }
+
+      alert("✅ Notification envoyée !");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Impossible d’envoyer la notification");
+    } finally {
+      setTestingNotif(false);
+    }
+  };
 
   const updateNom = async () => {
     if (!nom || !profil) return;
@@ -293,6 +357,54 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
           <p className="font-medium mt-1"><strong>Rôle :</strong> {profil.role}</p>
         </div>
+      </div>
+
+      <div className="mt-6 p-4 border rounded bg-gray-50">
+        <h3 className="text-lg font-semibold mb-2">🔔 Notifications</h3>
+
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={notifParties}
+            onChange={async (e) => {
+              if (e.target.checked) {
+                const ok = await enablePushForUser(authUser.id);
+                if (ok) {
+                  setNotifParties(true);
+                  fetchPushDevicesCount();
+                }
+              } else {
+                const ok = await disablePushForUser(authUser.id);
+                if (ok) {
+                  setNotifParties(false);
+                  fetchPushDevicesCount();
+                }
+              }
+            }}
+            className="w-5 h-5"
+          />
+          <span>Recevoir les notifications des nouvelles parties</span>
+        </label>
+        <p className="text-sm text-gray-600 mb-3">
+          Il vous reste <strong>{pushDevicesCount}</strong> device
+          {pushDevicesCount > 1 ? "s" : ""} actif
+          {pushDevicesCount > 1 ? "s" : ""}.  
+          <br />
+          Activez ou désactivez les notifications sur chaque device pour gérer
+          individuellement ceux qui reçoivent les alertes.
+        </p>
+
+        <button
+          onClick={testNotification}
+          disabled={!notifParties || testingNotif}
+          className={`px-4 py-2 rounded text-white ${
+            testingNotif || !notifParties
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+        >
+          {testingNotif ? "Envoi en cours..." : "Tester la notification"}
+        </button>
       </div>
 
       {profil.role === "user" && (

@@ -2,24 +2,6 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
-import { getPushToken } from "./push";
-
-
-async function savePushToken(userId) {
-  if (!("Notification" in window)) return;
-
-  const permission = await Notification.requestPermission();
-  if (permission !== "granted") return;
-
-  const token = await getPushToken(); // FCM ou web push
-  if (!token) return;
-
-  await supabase.from("push_tokens").upsert({
-    user_id: userId,
-    token,
-    platform: "web",
-  });
-}
 
 export default function Auth({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -86,7 +68,6 @@ export default function Auth({ onLogin }) {
       }
 
       onLogin?.(data.user);
-      savePushToken(data.user.id);
       navigate("/profils", { replace: true });
     }
 
