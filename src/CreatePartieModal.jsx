@@ -55,7 +55,7 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
     const { data: usersToNotify, error: fetchUsersError } = await supabase
       .from("profils")
       .select("id")
-      .eq("notif_parties", 1);
+      .eq("notif_parties", true);
 
     if (fetchUsersError) {
       console.error("Erreur récupération utilisateurs à notifier :", fetchUsersError);
@@ -75,8 +75,8 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
       },
       body: JSON.stringify({
         userIds,
-        title: "🎲 Nouvelle partie",
-        body: "Une nouvelle partie vient d’être créée",
+        title: `🎲 Nouvelle partie de ${jeuData.nom}`,
+        body: `Une nouvelle partie de ${jeuData.nom} vient d’être créée pour le ${new Date(newPartie.date_partie).toLocaleDateString("fr-FR")} à ${newPartie.heure_partie}. Inscris toi vite !`,
         url: "/parties",
       }),
     });

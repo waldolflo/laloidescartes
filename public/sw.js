@@ -4,8 +4,8 @@ self.addEventListener("push", function (event) {
   const title = data.title || "Nouvelle notification";
   const options = {
     body: data.body,
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "/logo_loidc.png",
+    badge: "/logo_loidc_complet.png",
     data: data.url || "/",
   };
 
