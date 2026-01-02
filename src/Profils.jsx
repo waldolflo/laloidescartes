@@ -58,7 +58,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       .from("push_tokens")
       .select("notif_parties, notif_chat, notif_annonces, notif_jeux")
       .eq("user_id", authUser.id)
-      .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
