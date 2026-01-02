@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom"; 
 import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
+import {
+  enablePushForDevice,
+  disablePushForDevice,
+} from "./push";
 
 export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
   const [profil, setProfil] = useState(null);
@@ -38,17 +42,19 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   };
 
   const toggleNotif = async (key, value) => {
-    const { error } = await supabase
-      .from("push_tokens")
-      .update({ [key]: value })
-      .eq("user_id", authUser.id);
+    if (!authUser) return;
 
-    if (!error) {
-      setNotifSettings((prev) => ({
-        ...prev,
-        [key]: value,
-      }));
+    if (value === true) {
+      // ✅ Création du token si nécessaire
+      await enablePushForDevice(authUser.id, key);
+    } else {
+      // 🔥 Désactivation + suppression si tout est off
+      await disablePushForDevice(key);
     }
+
+    // 🔄 Rafraîchit l’état UI
+    fetchNotifSettings();
+    fetchPushDevicesCount();
   };
 
   const fetchNotifSettings = async () => {
