@@ -81,7 +81,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       .from("push_tokens")
       .select("notif_parties, notif_chat, notif_annonces, notif_jeux")
       .eq("token", token)
-      .single();
+      .maybeSingle(); // <--- use maybeSingle() pour éviter l'erreur si ligne absente
 
     if (error || !data) {
       // 🧼 token inconnu → device non encore enregistré
@@ -461,9 +461,19 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
         <button
           onClick={testNotification}
-          disabled={!notifSettings.notif_parties || testingNotif}
+          disabled={
+            testingNotif || 
+            !notifSettings.notif_parties &&
+            !notifSettings.notif_chat &&
+            !notifSettings.notif_annonces &&
+            !notifSettings.notif_jeux
+          }
           className={`mt-3 px-4 py-2 rounded text-white ${
-            testingNotif || !notifSettings.notif_parties
+            testingNotif ||
+            (!notifSettings.notif_parties &&
+            !notifSettings.notif_chat &&
+            !notifSettings.notif_annonces &&
+            !notifSettings.notif_jeux)
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700"
           }`}
