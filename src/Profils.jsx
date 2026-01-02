@@ -474,26 +474,21 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             <input
               type="checkbox"
               checked={notifSettings[key]}
-              disabled={key === "notif_ping" && notifSettings.notif_chat}
-              onClick={(e) => e.stopPropagation()}
+              disabled={key === "notif_ping" && notifSettings.notif_chat} // interdit si notif_chat est coché
               onChange={(e) => {
                 const checked = e.target.checked;
 
-                setNotifSettings((prev) => {
-                  const next = { ...prev, [key]: checked };
-
-                  if (key === "notif_chat" && checked) {
-                    next.notif_ping = false;
-                  }
-
-                  return next;
-                });
+                // Si on coche notif_chat, on décoche notif_ping automatiquement
+                if (key === "notif_chat" && checked) {
+                  toggleNotif("notif_chat", true);
+                  toggleNotif("notif_ping", false);
+                } 
+                // Sinon comportement normal
+                else {
+                  toggleNotif(key, checked);
+                }
               }}
-              className={`w-5 h-5 ${
-                key === "notif_ping" && notifSettings.notif_chat
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-              }`}
+              className="w-5 h-5"
             />
           </label>
         ))}
