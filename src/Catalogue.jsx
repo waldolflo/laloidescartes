@@ -228,6 +228,24 @@ export default function Catalogue({ user }) {
     setJeux(prev => [newJeu, ...prev]);
     setAddingJeu(false);
     setNom(""); setProprietaire(""); setDuree(""); setRegleYoutube(""); setMinJoueurs(""); setMaxJoueurs(""); setType(""); setBggId("");
+
+    // ✅ Récupération du token Supabase pour l'autorisation
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // ✅ Envoi notification via fonction serverless
+    await fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        type: "notif_jeux", // 👈 le serveur filtrera tous les devices avec notif_jeux = true
+        title: `🎲 Nouveau jeu : ${newJeu.nom}`,
+        body: `${newJeu.nom} à été ajouté à la ludothèque c'est un jeu ${newJeu.type} pour ${newJeu.min_joueurs} à ${newJeu.max_joueurs} joueurs d'une durée de ${newJeu.duree}. Cliquez pour plus de détails !`,
+        url: "/catalogue",
+      }),
+    });
   };
 
   // Filtre et tri dynamique

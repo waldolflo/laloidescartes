@@ -56,21 +56,6 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
     // ✅ Récupération du token Supabase pour l'autorisation
     const { data: { session } } = await supabase.auth.getSession();
 
-    // ✅ Récupération des utilisateurs à notifier
-    const { data: usersToNotify, error: fetchUsersError } = await supabase
-      .from("profils")
-      .select("id")
-      .eq("notif_parties", true);
-
-    if (fetchUsersError) {
-      console.error("Erreur récupération utilisateurs à notifier :", fetchUsersError);
-      return;
-    }
-
-    const userIds = usersToNotify.map(u => u.id);
-
-    if (userIds.length === 0) return; // Aucun utilisateur à notifier
-
     // ✅ Envoi notification via fonction serverless
     await fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game", {
       method: "POST",
@@ -81,7 +66,7 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
       body: JSON.stringify({
         type: "notif_parties", // 👈 clé de filtrage
         title: `🎲 Nouvelle partie de ${jeuData.nom}`,
-        body: `Inscris toi à une partie de ${jeuData.nom} le ${new Date(newPartie.date_partie).toLocaleDateString("fr-FR")} à ${newPartie.heure_partie}.`,
+        body: `Inscris toi à une partie de ${jeuData.nom} le ${new Date(newPartie.date_partie).toLocaleDateString("fr-FR")} à ${newPartie.heure_partie} en cliquant ici !`,
         url: "/parties",
       }),
     });
