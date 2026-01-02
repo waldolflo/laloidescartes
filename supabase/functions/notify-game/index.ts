@@ -40,12 +40,12 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("[notify-game] Payload:", payload);
 
-    const { title, body, url, type } = payload;
+    const { title, body, url, type, tokens } = payload;
 
-    if (!title || !body || !type) {
+    if (!title || !body || (!type && (!tokens || tokens.length === 0))) {
       console.warn("[notify-game] Payload incomplet");
       return new Response(
-        JSON.stringify({ error: "Missing title, body or type" }),
+        JSON.stringify({ error: "Missing title/body/type or tokens" }),
         { status: 400, headers }
       );
     }
@@ -58,7 +58,7 @@ serve(async (req) => {
       "notif_jeux",
     ];
 
-    if (!allowedTypes.includes(type)) {
+    if (type && !allowedTypes.includes(type)) {
       console.warn("[notify-game] Type non autorisé:", type);
       return new Response(
         JSON.stringify({ error: "Invalid notification type" }),
@@ -66,37 +66,39 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[notify-game] Filtrage sur ${type} = true`);
+    // --- Récupération des devices ---
+    let devices = [];
 
-    // --- Récupération des devices éligibles ---
-    const { data: devices, error } = await supabase
-      .from("push_tokens")
-      .select("token")
-      .eq(type, true);
+    if (tokens && Array.isArray(tokens) && tokens.length > 0) {
+      // ✅ Test sur device(s) spécifiques
+      devices = tokens.map((t) => ({ token: t }));
+      console.log(`[notify-game] Envoi ciblé sur ${tokens.length} token(s)`);
+    } else if (type) {
+      // ✅ Envoi sur tous les devices activés pour ce type
+      const { data, error } = await supabase
+        .from("push_tokens")
+        .select("token")
+        .eq(type, true);
 
-    if (error) {
-      console.error("[notify-game] Erreur Supabase:", error);
-      return new Response(
-        JSON.stringify({ error: "Erreur récupération push_tokens" }),
-        { status: 500, headers }
-      );
+      if (error) {
+        console.error("[notify-game] Erreur Supabase:", error);
+        return new Response(
+          JSON.stringify({ error: "Erreur récupération push_tokens" }),
+          { status: 500, headers }
+        );
+      }
+
+      devices = data || [];
+      console.log(`[notify-game] ${devices.length} device(s) à notifier pour ${type}`);
     }
 
-    console.log(
-      `[notify-game] ${devices?.length || 0} device(s) à notifier`
-    );
-
-    let sent = 0;
-
     // --- Envoi des notifications ---
-    for (const device of devices || []) {
+    let sent = 0;
+    for (const device of devices) {
       try {
         const subscription = JSON.parse(device.token);
 
-        console.log(
-          "[notify-game] ➜ Envoi vers:",
-          subscription?.endpoint
-        );
+        console.log("[notify-game] ➜ Envoi vers:", subscription?.endpoint);
 
         await webpush.sendNotification(
           subscription,
@@ -105,16 +107,15 @@ serve(async (req) => {
 
         sent++;
       } catch (err) {
-        console.error(
-          "[notify-game] ❌ Erreur webpush, token supprimé",
-          err
-        );
+        console.error("[notify-game] ❌ Erreur webpush, token supprimé", err);
 
         // 🧹 Nettoyage automatique des tokens invalides
-        await supabase
-          .from("push_tokens")
-          .delete()
-          .eq("token", device.token);
+        if (device.token) {
+          await supabase
+            .from("push_tokens")
+            .delete()
+            .eq("token", device.token);
+        }
       }
     }
 
