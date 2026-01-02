@@ -16,6 +16,7 @@ export const NOTIFICATION_TYPES = {
   chat: "notif_chat",
   annonces: "notif_annonces",
   jeux: "notif_jeux",
+  ping: "notif_ping",
 };
 
 /**

@@ -24,14 +24,13 @@ export default function Chat({ user, readOnly = false }) {
     );
   }
 
-  // Scroll automatique
   const scrollToBottom = () => {
     setTimeout(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 50);
   };
 
-  // --- UTILITAIRE : récupérer message complet avec profil et couverture ---
+  // --- Enrichir message avec profil + couverture ---
   const enrichMessage = async (message) => {
     const { data: profil } = await supabase
       .from("profils")
@@ -56,9 +55,8 @@ export default function Chat({ user, readOnly = false }) {
     };
   };
 
-  // Charger les messages initiaux
+  // Charger messages initiaux
   const loadMessages = async () => {
-    // 1. Charger les messages
     const { data: chatData } = await supabase
       .from("chat")
       .select("*")
@@ -67,14 +65,12 @@ export default function Chat({ user, readOnly = false }) {
 
     if (!chatData) return;
 
-    // 2. Récupérer tous les profils en une seule requête
     const userIds = [...new Set(chatData.map((m) => m.user_id))];
     const { data: profilsData } = await supabase
       .from("profils")
       .select("id, nom, jeufavoris1")
       .in("id", userIds);
 
-    // 3. Récupérer tous les jeux en une seule requête
     const jeuxIds = [
       ...new Set(profilsData.filter((p) => p.jeufavoris1).map((p) => p.jeufavoris1))
     ];
@@ -83,7 +79,6 @@ export default function Chat({ user, readOnly = false }) {
       .select("id, couverture_url")
       .in("id", jeuxIds);
 
-    // 4. Fusionner tout en mémoire
     const messagesWithDetails = chatData.map((m) => {
       const profil = profilsData.find((p) => p.id === m.user_id);
       const jeu = jeuxData.find((j) => j.id === profil?.jeufavoris1);
@@ -95,7 +90,6 @@ export default function Chat({ user, readOnly = false }) {
     });
 
     setMessages(messagesWithDetails);
-    // scrollToBottom(); // retiré pour éviter le scroll automatique à l'ouverture de la page accueil
   };
 
   // Charger les utilisateurs pour @mentions
@@ -129,7 +123,6 @@ export default function Chat({ user, readOnly = false }) {
         { event: "INSERT", schema: "public", table: "chat" },
         async (payload) => {
           const newMessage = await enrichMessage(payload.new);
-
           setMessages((prev) => [...prev, newMessage]);
           scrollToBottom();
 
@@ -144,7 +137,6 @@ export default function Chat({ user, readOnly = false }) {
         { event: "UPDATE", schema: "public", table: "chat" },
         async (payload) => {
           const updatedMessage = await enrichMessage(payload.new);
-
           setMessages((prev) =>
             prev.map((m) => (m.id === payload.new.id ? updatedMessage : m))
           );
@@ -179,7 +171,6 @@ export default function Chat({ user, readOnly = false }) {
     return () => supabase.removeChannel(sub);
   }, []);
 
-  // Typing indicator
   const sendTyping = () => {
     if (!user?.nom) return;
     supabase.channel("chat-room").send({
@@ -189,53 +180,86 @@ export default function Chat({ user, readOnly = false }) {
     });
   };
 
-  // Envoyer un message
+  // --- Envoyer un message avec notifications push ---
   const sendMessage = async () => {
     if (!user?.id || readOnly) return;
-
     const text = input.trim();
     if (!text) return;
 
-    await supabase.from("chat").insert({
-      user_id: user.id,
-      user_name: user.nom,
-      content: text,
-    });
+    // 1️⃣ Insérer le message
+    const { data: newMessage } = await supabase
+      .from("chat")
+      .insert({ user_id: user.id, user_name: user.nom, content: text })
+      .select()
+      .single();
 
     setInput("");
     setMentionSuggestions([]);
+
+    // 2️⃣ Détecter mentions @pseudo
+    const mentionRegex = /@(\w+)/g;
+    const mentions = [];
+    let match;
+    while ((match = mentionRegex.exec(text)) !== null) {
+      mentions.push(match[1]);
+    }
+
+    // 3️⃣ Notifications via fonction serverless
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    // a) notif_chat → tous les devices sauf l'envoyeur
+    fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        type: "notif_chat",
+        title: `💬 Nouveau message de ${user.nom}`,
+        body: text,
+        url: "/chat",
+      }),
+    });
+
+    // b) notif_ping → pour chaque pseudo mentionné
+    for (const pseudo of mentions) {
+      fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          type: "notif_ping",
+          title: `🔔 Mention de ${user.nom}`,
+          body: text,
+          url: "/chat",
+        }),
+      });
+    }
   };
 
-  // Édition
   const startEdit = (msg) => {
     setEditingId(msg.id);
     setEditText(msg.content);
   };
-
   const saveEdit = async () => {
     await supabase.from("chat").update({ content: editText }).eq("id", editingId);
     setEditingId(null);
     setEditText("");
   };
-
   const cancelEdit = () => {
     setEditingId(null);
     setEditText("");
   };
-
-  // Supprimer un message
   const deleteMessage = async (id) => {
     await supabase.from("chat").delete().eq("id", id);
   };
-
-  // Format date
   const formatDate = (ts) =>
-    new Date(ts).toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-  // Gestion @mention
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInput(val);
@@ -244,10 +268,7 @@ export default function Chat({ user, readOnly = false }) {
     const match = val.match(/@(\w*)$/);
     if (match) {
       const search = match[1].toLowerCase();
-      setMentionSuggestions(
-        usersList
-          .filter((u) => u.nom?.toLowerCase().startsWith(search))
-      );
+      setMentionSuggestions(usersList.filter((u) => u.nom?.toLowerCase().startsWith(search)));
     } else {
       setMentionSuggestions([]);
     }
@@ -264,63 +285,32 @@ export default function Chat({ user, readOnly = false }) {
         )}
       </h1>
 
-      {/* Zone messages */}
       <div className="flex-1 overflow-y-auto bg-white p-3 rounded-lg shadow-inner space-y-2 border relative">
         {Array.isArray(messages) && messages.map((m) => (
-          <div
-            key={m.id}
-            className={`flex items-start gap-2 ${
-              m.user_id === user?.id ? "justify-end" : "justify-start"
-            }`}
-          >
-            <img
-              src={m.coverage_url || "/default_avatar.png"}
-              alt="Avatar"
-              className="w-8 h-8 rounded-full object-cover"
-            />
+          <div key={m.id} className={`flex items-start gap-2 ${m.user_id === user?.id ? "justify-end" : "justify-start"}`}>
+            <img src={m.coverage_url || "/default_avatar.png"} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
             <div className="flex flex-col max-w-[80%]">
-              <div
-                className={`px-3 py-2 rounded-lg ${
-                  m.user_id === user?.id
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-900"
-                }`}
-              >
+              <div className={`px-3 py-2 rounded-lg ${m.user_id === user?.id ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"}`}>
                 <div className="text-xs opacity-70 mb-1">{m.user_name}</div>
                 {editingId === m.id ? (
-                  <input
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    className="w-full px-2 py-1 text-black rounded"
-                  />
+                  <input value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full px-2 py-1 text-black rounded" />
                 ) : (
                   <div>{m.content}</div>
                 )}
-                <div className="text-[10px] text-right opacity-70 mt-1">
-                  {formatDate(m.created_at)}
-                </div>
+                <div className="text-[10px] text-right opacity-70 mt-1">{formatDate(m.created_at)}</div>
               </div>
 
-              {/* Actions édition / suppression */}
               {m.user_id === user?.id && (
                 <div className="flex gap-2 mt-1 text-xs opacity-70">
                   {editingId === m.id ? (
                     <>
-                      <button onClick={saveEdit} className="text-green-600">
-                        <Check size={14} />
-                      </button>
-                      <button onClick={cancelEdit} className="text-red-600">
-                        <X size={14} />
-                      </button>
+                      <button onClick={saveEdit} className="text-green-600"><Check size={14} /></button>
+                      <button onClick={cancelEdit} className="text-red-600"><X size={14} /></button>
                     </>
                   ) : (
                     <>
-                      <button onClick={() => startEdit(m)}>
-                        <Edit3 size={14} />
-                      </button>
-                      <button onClick={() => deleteMessage(m.id)}>
-                        <Trash2 size={14} />
-                      </button>
+                      <button onClick={() => startEdit(m)}><Edit3 size={14} /></button>
+                      <button onClick={() => deleteMessage(m.id)}><Trash2 size={14} /></button>
                     </>
                   )}
                 </div>
@@ -331,14 +321,10 @@ export default function Chat({ user, readOnly = false }) {
         <div ref={endRef}></div>
       </div>
 
-      {/* Typing */}
       {typingUsers.length > 0 && (
-        <div className="text-sm text-gray-600 mt-2">
-          ✍️ {typingUsers.join(", ")} écrit...
-        </div>
+        <div className="text-sm text-gray-600 mt-2">✍️ {typingUsers.join(", ")} écrit...</div>
       )}
 
-      {/* Input */}
       <div className="flex mt-3 gap-2 relative">
         <input
           disabled={readOnly}
@@ -349,13 +335,12 @@ export default function Chat({ user, readOnly = false }) {
         />
         <button
           onClick={sendMessage}
-           disabled={readOnly}
+          disabled={readOnly}
           className="bg-blue-600 text-white px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1"
         >
           <SendHorizonal size={18} />
         </button>
 
-        {/* Mention suggestions */}
         {mentionSuggestions.length > 0 && (
           <div className="absolute bottom-12 left-0 bg-white border rounded shadow max-h-40 overflow-y-auto z-50 w-full">
             {mentionSuggestions.map((u) => (

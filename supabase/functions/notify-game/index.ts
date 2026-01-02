@@ -56,6 +56,7 @@ serve(async (req) => {
       "notif_chat",
       "notif_annonces",
       "notif_jeux",
+      "notif_ping",
     ];
 
     if (type && !allowedTypes.includes(type)) {

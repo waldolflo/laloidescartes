@@ -24,6 +24,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     notif_chat: false,
     notif_annonces: false,
     notif_jeux: false,
+    notif_ping: false,
   });
   const [pushDevicesCount, setPushDevicesCount] = useState(0);
   const [testingNotif, setTestingNotif] = useState(false);
@@ -71,6 +72,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         notif_chat: false,
         notif_annonces: false,
         notif_jeux: false,
+        notif_ping: false,
       });
       return;
     }
@@ -79,7 +81,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
     const { data, error } = await supabase
       .from("push_tokens")
-      .select("notif_parties, notif_chat, notif_annonces, notif_jeux")
+      .select("notif_parties, notif_chat, notif_annonces, notif_jeux, notif_ping")
       .eq("token", token)
       .maybeSingle(); // <--- use maybeSingle() pour éviter l'erreur si ligne absente
 
@@ -90,6 +92,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         notif_chat: false,
         notif_annonces: false,
         notif_jeux: false,
+        notif_ping: false,
       });
       return;
     }
@@ -100,6 +103,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       notif_chat: !!data.notif_chat,
       notif_annonces: !!data.notif_annonces,
       notif_jeux: !!data.notif_jeux,
+      notif_ping: !!data.notif_ping,
     });
   };
 
@@ -433,9 +437,10 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
         {[
           { key: "notif_parties", label: "🎲 Nouvelles parties" },
-          { key: "notif_chat", label: "💬 Messages du chat" },
-          { key: "notif_annonces", label: "📢 Annonces importantes" },
           { key: "notif_jeux", label: "🆕 Nouveaux jeux ajoutés à la ludothèque" },
+          { key: "notif_annonces", label: "📢 Annonces importantes (du président)" },
+          { key: "notif_ping", label: "🔔 Ping (Message du tchat @votrepseudo)" },
+          { key: "notif_chat", label: "💬 Tous les Messages du tchat" },
         ].map(({ key, label }) => (
           <label
             key={key}
@@ -466,14 +471,16 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             !notifSettings.notif_parties &&
             !notifSettings.notif_chat &&
             !notifSettings.notif_annonces &&
-            !notifSettings.notif_jeux
+            !notifSettings.notif_jeux &&
+            !notifSettings.notif_ping
           }
           className={`mt-3 px-4 py-2 rounded text-white ${
             testingNotif ||
             (!notifSettings.notif_parties &&
             !notifSettings.notif_chat &&
             !notifSettings.notif_annonces &&
-            !notifSettings.notif_jeux)
+            !notifSettings.notif_jeux &&
+            !notifSettings.notif_ping)
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700"
           }`}

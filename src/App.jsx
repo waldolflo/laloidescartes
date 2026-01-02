@@ -196,7 +196,7 @@ function GDPRBanner() {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 flex flex-col md:flex-row justify-between items-center gap-2 z-50 shadow-lg">
       <span className="text-sm">
-        Ce site utilise des données personnelles (votre email et le prénom/surnom de votre choix) pour gérer votre compte et améliorer votre expérience.
+        Ce site utilise des données personnelles (votre email et le prénom/surnom de votre choix) pour gérer votre compte, vous envoyer les notifications de votre choix et améliorer votre expérience.
       </span>
       <button
         onClick={accept}
