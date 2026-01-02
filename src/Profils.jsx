@@ -2,10 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom"; 
 import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
-import {
-  enablePushForUser,
-  disablePushForUser,
-} from "./push";
 
 export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
   const [profil, setProfil] = useState(null);
@@ -19,7 +15,12 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [globalcountAdherentTotal, setGlobalcountAdherentTotal] = useState("");
   const [globalcountSeanceavantdouzeS, setGlobalcountSeanceavantdouzeS] = useState("");
   const [zoomOpen, setZoomOpen] = useState(false);
-  const [notifParties, setNotifParties] = useState(false);
+  const [notifSettings, setNotifSettings] = useState({
+    notif_parties: false,
+    notif_chat: false,
+    notif_annonces: false,
+    notif_jeux: false,
+  });
   const [pushDevicesCount, setPushDevicesCount] = useState(0);
   const [testingNotif, setTestingNotif] = useState(false);
 
@@ -36,6 +37,41 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     }
   };
 
+  const toggleNotif = async (key, value) => {
+    const { error } = await supabase
+      .from("push_tokens")
+      .update({ [key]: value })
+      .eq("user_id", authUser.id);
+
+    if (!error) {
+      setNotifSettings((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    }
+  };
+
+  const fetchNotifSettings = async () => {
+    if (!authUser) return;
+
+    const { data, error } = await supabase
+      .from("push_tokens")
+      .select("notif_parties, notif_chat, notif_annonces, notif_jeux")
+      .eq("user_id", authUser.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!error && data) {
+      setNotifSettings({
+        notif_parties: !!data.notif_parties,
+        notif_chat: !!data.notif_chat,
+        notif_annonces: !!data.notif_annonces,
+        notif_jeux: !!data.notif_jeux,
+      });
+    }
+  };
+
   // ✅ Hooks toujours au même niveau
   useEffect(() => {
     if (!authUser) return;
@@ -43,7 +79,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     const fetchProfil = async () => {
       const { data, error } = await supabase
         .from("profils")
-        .select("id, nom, role, jeufavoris1, jeufavoris2, notif_parties")
+        .select("id, nom, role, jeufavoris1, jeufavoris2")
         .eq("id", authUser.id)
         .single();
 
@@ -74,7 +110,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         // setGlobalImageUrl(updatedData.global_image_url || "");
         setNom(updatedData.nom);
         setProfilGlobal?.(updatedData);
-        setNotifParties(!!updatedData.notif_parties);
 
         if (updatedData.role === "admin") {
           const { data: usersData } = await supabase
@@ -162,6 +197,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     fetchGlobalcountAdherentTotal();
     fetchGlobalcountSeanceavantdouzeS();
     fetchPushDevicesCount();
+    fetchNotifSettings();
   }, [authUser, setProfilGlobal]);
 
   const testNotification = async () => {
@@ -186,6 +222,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
+            type: "notif_parties",
             title: "🔔 Test notification",
             body: "Les notifications fonctionnent correctement 🎉",
             url: "/",
@@ -360,45 +397,41 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       </div>
 
       <div className="mt-6 p-4 border rounded bg-gray-50">
-        <h3 className="text-lg font-semibold mb-2">🔔 Notifications</h3>
+        <h3 className="text-lg font-semibold mb-3">🔔 Notifications</h3>
 
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={notifParties}
-            onChange={async (e) => {
-              if (e.target.checked) {
-                const ok = await enablePushForUser(authUser.id);
-                if (ok) {
-                  setNotifParties(true);
-                  fetchPushDevicesCount();
-                }
-              } else {
-                const ok = await disablePushForUser(authUser.id);
-                if (ok) {
-                  setNotifParties(false);
-                  fetchPushDevicesCount();
-                }
-              }
-            }}
-            className="w-5 h-5"
-          />
-          <span>Recevoir les notifications des nouvelles parties</span>
-        </label>
-        <p className="text-sm text-gray-600 mb-3">
-          Il vous reste <strong>{pushDevicesCount}</strong> device
+        {[
+          { key: "notif_parties", label: "🎲 Nouvelles parties" },
+          { key: "notif_chat", label: "💬 Messages du chat" },
+          { key: "notif_annonces", label: "📢 Annonces importantes" },
+          { key: "notif_jeux", label: "🆕 Nouveaux jeux ajoutés à la ludothèque" },
+        ].map(({ key, label }) => (
+          <label
+            key={key}
+            className="flex items-center justify-between py-2 cursor-pointer"
+          >
+            <span>{label}</span>
+            <input
+              type="checkbox"
+              checked={notifSettings[key]}
+              onChange={(e) => toggleNotif(key, e.target.checked)}
+              className="w-5 h-5"
+            />
+          </label>
+        ))}
+
+        <p className="text-sm text-gray-600 mt-3">
+          {pushDevicesCount} device
           {pushDevicesCount > 1 ? "s" : ""} actif
           {pushDevicesCount > 1 ? "s" : ""}.  
           <br />
-          Activez ou désactivez les notifications sur chaque device pour gérer
-          individuellement ceux qui reçoivent les alertes.
+          Chaque appareil peut avoir ses propres préférences.
         </p>
 
         <button
           onClick={testNotification}
-          disabled={!notifParties || testingNotif}
-          className={`px-4 py-2 rounded text-white ${
-            testingNotif || !notifParties
+          disabled={!notifSettings.notif_parties || testingNotif}
+          className={`mt-3 px-4 py-2 rounded text-white ${
+            testingNotif || !notifSettings.notif_parties
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700"
           }`}

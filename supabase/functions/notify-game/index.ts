@@ -16,107 +16,109 @@ webpush.setVapidDetails(
 
 serve(async (req) => {
   const headers = {
-    "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app", // '*' possible en dev
+    "Access-Control-Allow-Origin": "https://laloidescartes.vercel.app",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Content-Type": "application/json",
   };
 
-  // --- Preflight CORS ---
+  // --- CORS ---
   if (req.method === "OPTIONS") {
-    console.log("[notify-game] Preflight OPTIONS reçu");
     return new Response(null, { status: 200, headers });
   }
 
   if (req.method !== "POST") {
-    console.warn("[notify-game] Méthode refusée:", req.method);
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers,
-    });
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers }
+    );
   }
 
   try {
-    console.log("[notify-game] Requête POST reçue");
+    console.log("[notify-game] 🔔 Requête reçue");
 
     const payload = await req.json();
-    console.log("[notify-game] Payload reçu:", payload);
+    console.log("[notify-game] Payload:", payload);
 
-    const { title, body, url } = payload;
+    const { title, body, url, type } = payload;
 
-    if (!title || !body) {
+    if (!title || !body || !type) {
       console.warn("[notify-game] Payload incomplet");
       return new Response(
-        JSON.stringify({ error: "Missing title or body" }),
+        JSON.stringify({ error: "Missing title, body or type" }),
         { status: 400, headers }
       );
     }
 
-    // --- Récupération des tokens ---
-    console.log("[notify-game] Récupération des profils notif_parties = 1");
+    // 🔎 Sécurité : whitelist des types autorisés
+    const allowedTypes = [
+      "notif_parties",
+      "notif_chat",
+      "notif_annonces",
+      "notif_jeux",
+    ];
 
-    const { data, error } = await supabase
-      .from("profils")
-      .select("id, push_tokens:push_tokens(token)")
-      .eq("notif_parties", 1);
+    if (!allowedTypes.includes(type)) {
+      console.warn("[notify-game] Type non autorisé:", type);
+      return new Response(
+        JSON.stringify({ error: "Invalid notification type" }),
+        { status: 400, headers }
+      );
+    }
+
+    console.log(`[notify-game] Filtrage sur ${type} = true`);
+
+    // --- Récupération des devices éligibles ---
+    const { data: devices, error } = await supabase
+      .from("push_tokens")
+      .select("token")
+      .eq(type, true);
 
     if (error) {
       console.error("[notify-game] Erreur Supabase:", error);
       return new Response(
-        JSON.stringify({ error: "Erreur récupération tokens" }),
+        JSON.stringify({ error: "Erreur récupération push_tokens" }),
         { status: 500, headers }
       );
     }
 
-    console.log("[notify-game] Utilisateurs récupérés:", data?.length);
-    console.log("[notify-game] Données brutes:", data);
+    console.log(
+      `[notify-game] ${devices?.length || 0} device(s) à notifier`
+    );
 
     let sent = 0;
 
     // --- Envoi des notifications ---
-    for (const user of data || []) {
-      console.log("[notify-game] User traité:", user.id);
-      console.log("[notify-game] push_tokens brut:", user.push_tokens);
+    for (const device of devices || []) {
+      try {
+        const subscription = JSON.parse(device.token);
 
-      // ⚠️ push_tokens peut être un objet ou un tableau
-      const pushTokens = Array.isArray(user.push_tokens)
-        ? user.push_tokens
-        : user.push_tokens
-        ? [user.push_tokens]
-        : [];
+        console.log(
+          "[notify-game] ➜ Envoi vers:",
+          subscription?.endpoint
+        );
 
-      console.log(
-        `[notify-game] ${pushTokens.length} token(s) pour user ${user.id}`
-      );
+        await webpush.sendNotification(
+          subscription,
+          JSON.stringify({ title, body, url })
+        );
 
-      for (const t of pushTokens) {
-        console.log("[notify-game] Token DB:", t);
+        sent++;
+      } catch (err) {
+        console.error(
+          "[notify-game] ❌ Erreur webpush, token supprimé",
+          err
+        );
 
-        try {
-          const subscription = JSON.parse(t.token);
-          console.log(
-            "[notify-game] Subscription endpoint:",
-            subscription?.endpoint
-          );
-
-          await webpush.sendNotification(
-            subscription,
-            JSON.stringify({ title, body, url })
-          );
-
-          sent++;
-          console.log("[notify-game] ✅ Notification envoyée");
-        } catch (err) {
-          console.error(
-            `[notify-game] ❌ Erreur webpush user ${user.id}:`,
-            err
-          );
-        }
+        // 🧹 Nettoyage automatique des tokens invalides
+        await supabase
+          .from("push_tokens")
+          .delete()
+          .eq("token", device.token);
       }
     }
 
-    console.log(`[notify-game] Notifications envoyées avec succès: ${sent}`);
-    console.log("[notify-game] VAPID PUBLIC:", Deno.env.get("VAPID_PUBLIC_KEY"));
+    console.log(`[notify-game] ✅ Notifications envoyées: ${sent}`);
 
     return new Response(
       JSON.stringify({ success: true, notified: sent }),

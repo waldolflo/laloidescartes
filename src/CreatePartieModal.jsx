@@ -79,9 +79,9 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
         Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({
-        userIds,
+        type: "notif_parties", // 👈 clé de filtrage
         title: `🎲 Nouvelle partie de ${jeuData.nom}`,
-        body: `Une nouvelle partie de ${jeuData.nom} vient d’être créée pour le ${new Date(newPartie.date_partie).toLocaleDateString("fr-FR")} à ${newPartie.heure_partie}. Inscris toi vite !`,
+        body: `Inscris toi à une partie de ${jeuData.nom} le ${new Date(newPartie.date_partie).toLocaleDateString("fr-FR")} à ${newPartie.heure_partie}.`,
         url: "/parties",
       }),
     });
