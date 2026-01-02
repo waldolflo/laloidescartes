@@ -58,15 +58,25 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       .from("push_tokens")
       .select("notif_parties, notif_chat, notif_annonces, notif_jeux")
       .eq("user_id", authUser.id)
-      .limit(1)
-      .single();
+      .order("created_at", { ascending: false })
+      .limit(1);
 
-    if (!error && data) {
+    // ✅ Aucune ligne = aucun device encore enregistré
+    if (!error && data && data.length > 0) {
+      const d = data[0];
       setNotifSettings({
-        notif_parties: !!data.notif_parties,
-        notif_chat: !!data.notif_chat,
-        notif_annonces: !!data.notif_annonces,
-        notif_jeux: !!data.notif_jeux,
+        notif_parties: !!d.notif_parties,
+        notif_chat: !!d.notif_chat,
+        notif_annonces: !!d.notif_annonces,
+        notif_jeux: !!d.notif_jeux,
+      });
+    } else {
+      // 🔄 état par défaut
+      setNotifSettings({
+        notif_parties: false,
+        notif_chat: false,
+        notif_annonces: false,
+        notif_jeux: false,
       });
     }
   };
