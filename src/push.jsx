@@ -19,6 +19,12 @@ export const NOTIFICATION_TYPES = {
 };
 
 /**
+ * Liste des colonnes de notification
+ * ➜ évite le code en dur
+ */
+const NOTIF_COLUMNS = Object.values(NOTIFICATION_TYPES);
+
+/**
  * Récupère ou crée la subscription du device courant
  */
 export async function getOrCreatePushSubscription() {
@@ -78,32 +84,24 @@ export async function disablePushForDevice(type) {
 
   const token = JSON.stringify(subscription);
 
-  // Récupération de l’état actuel du device
+  // 1️⃣ Récupération de l’état actuel du device
   const { data: device, error } = await supabase
     .from("push_tokens")
-    .select(
-      "notif_parties, notif_chat, notif_annonces, notif_jeux"
-    )
+    .select(NOTIF_COLUMNS.join(","))
     .eq("token", token)
     .single();
 
   if (error || !device) return true;
 
-  const updatedState = {
-    notif_parties: device.notif_parties,
-    notif_chat: device.notif_chat,
-    notif_annonces: device.notif_annonces,
-    notif_jeux: device.notif_jeux,
-    [type]: false,
-  };
+  // 2️⃣ Mise à jour locale de l’état
+  const updatedState = { ...device, [type]: false };
 
-  const allDisabled =
-    !updatedState.notif_parties &&
-    !updatedState.notif_chat &&
-    !updatedState.notif_annonces &&
-    !updatedState.notif_jeux;
+  // 3️⃣ Vérifie s’il reste AU MOINS une notif active
+  const hasAnyEnabled = NOTIF_COLUMNS.some(
+    (col) => updatedState[col] === true
+  );
 
-  if (allDisabled) {
+  if (!hasAnyEnabled) {
     // 🔥 plus aucune notification active → suppression du device
     await supabase
       .from("push_tokens")
@@ -113,7 +111,7 @@ export async function disablePushForDevice(type) {
     // ✅ on garde le device avec les autres notifications
     await supabase
       .from("push_tokens")
-      .update(updatedState)
+      .update({ [type]: false })
       .eq("token", token);
   }
 
