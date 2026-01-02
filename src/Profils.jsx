@@ -60,31 +60,47 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const fetchNotifSettings = async () => {
     if (!authUser) return;
 
-    const { data, error } = await supabase
-      .from("push_tokens")
-      .select("notif_parties, notif_chat, notif_annonces, notif_jeux")
-      .eq("user_id", authUser.id)
-      .order("created_at", { ascending: false })
-      .limit(1);
+    // 🔑 récupérer la subscription du device courant
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
 
-    // ✅ Aucune ligne = aucun device encore enregistré
-    if (!error && data && data.length > 0) {
-      const d = data[0];
-      setNotifSettings({
-        notif_parties: !!d.notif_parties,
-        notif_chat: !!d.notif_chat,
-        notif_annonces: !!d.notif_annonces,
-        notif_jeux: !!d.notif_jeux,
-      });
-    } else {
-      // 🔄 état par défaut
+    // 🧼 Aucun token pour ce device → tout à false
+    if (!subscription) {
       setNotifSettings({
         notif_parties: false,
         notif_chat: false,
         notif_annonces: false,
         notif_jeux: false,
       });
+      return;
     }
+
+    const token = JSON.stringify(subscription);
+
+    const { data, error } = await supabase
+      .from("push_tokens")
+      .select("notif_parties, notif_chat, notif_annonces, notif_jeux")
+      .eq("token", token)
+      .single();
+
+    if (error || !data) {
+      // 🧼 token inconnu → device non encore enregistré
+      setNotifSettings({
+        notif_parties: false,
+        notif_chat: false,
+        notif_annonces: false,
+        notif_jeux: false,
+      });
+      return;
+    }
+
+    // ✅ préférences DU DEVICE
+    setNotifSettings({
+      notif_parties: !!data.notif_parties,
+      notif_chat: !!data.notif_chat,
+      notif_annonces: !!data.notif_annonces,
+      notif_jeux: !!data.notif_jeux,
+    });
   };
 
   // ✅ Hooks toujours au même niveau
@@ -219,16 +235,21 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     try {
       setTestingNotif(true);
 
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        alert("❌ Les notifications ne sont pas activées sur cet appareil");
+        return;
+      }
+
+      const token = JSON.stringify(subscription);
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.access_token) {
-        alert("Session invalide");
-        return;
-      }
-
-      const res = await fetch(
+      await fetch(
         "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game",
         {
           method: "POST",
@@ -237,22 +258,18 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            type: "notif_parties",
+            tokens: [token], // 👈 device courant uniquement
             title: "🔔 Test notification",
-            body: "Les notifications fonctionnent correctement 🎉",
+            body: "Notification envoyée sur CET appareil uniquement",
             url: "/",
           }),
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Erreur lors de l’envoi");
-      }
-
-      alert("✅ Notification envoyée !");
+      alert("✅ Notification envoyée sur ce device !");
     } catch (err) {
       console.error(err);
-      alert("❌ Impossible d’envoyer la notification");
+      alert("❌ Erreur lors du test");
     } finally {
       setTestingNotif(false);
     }
