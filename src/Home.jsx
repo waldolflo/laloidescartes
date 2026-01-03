@@ -12,6 +12,7 @@ export default function Home({ user }) {
 
   const [stats, setStats] = useState({ jeux: 0, parties: 0, rencontres: 0, membres: 0 });
   const [messagePresident, setMessagePresident] = useState("");
+  const [annoncePresident, setAnnoncePresident] = useState("");
   const [facebookPosts, setFacebookPosts] = useState([]);
   const [planningImageUrl, setPlanningImageUrl] = useState("");
   const [countFollowersFB, setCountFollowersFB] = useState(null);
@@ -22,6 +23,7 @@ export default function Home({ user }) {
   useEffect(() => {
     fetchStats();
     fetchPresidentMessage();
+    fetchPresidentAnnonce();
     fetchPlanningImage();
     fetchFacebookPosts();
     fetchCountFollowersFB();
@@ -142,6 +144,30 @@ export default function Home({ user }) {
     } catch (err) {
       console.error("Erreur fetchPresidentMessage:", err);
       setMessagePresident("");
+    }
+  };
+
+  // ----------------------
+  // Annonce du président
+  // ----------------------
+  const fetchPresidentAnnonce = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings") // si table absente ou colonne absente, ne doit pas planter
+        .select("global_image_url")
+        .eq("id", 6)
+        .single();
+
+      if (error || !data) {
+        console.warn("Impossible de récupérer l'annonce du président:", error?.message || "Aucune donnée");
+        setAnnoncePresident(""); // fallback
+        return;
+      }
+
+      setAnnoncePresident(data?.global_image_url || "");
+    } catch (err) {
+      console.error("Erreur fetchPresidentAnnonce:", err);
+      setAnnoncePresident("");
     }
   };
 
@@ -443,6 +469,19 @@ export default function Home({ user }) {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* Visible uniquement si connecté */}
+      {/* --- Annonce du président --- */}
+      {(currentUser || annoncePresident) && (
+        <section className="mt-16 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden">
+          <div className="p-6 md:p-10">
+            <h2 className="text-2xl font-bold text-center mb-8">📢 Annonce du président</h2>
+              <div className="flex flex-col">
+                <p className="text-gray-700 text-center">{annoncePresident}</p>
+              </div>
           </div>
         </section>
       )}
