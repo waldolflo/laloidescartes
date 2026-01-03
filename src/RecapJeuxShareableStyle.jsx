@@ -142,29 +142,31 @@ export default function RecapJeuxShareableStyle({ userId }) {
         ) : gamesData.length === 0 ? (
           <p className="text-center text-purple-900 relative z-10">Aucune partie sur cette période</p>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 relative z-10">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4 relative z-10">
             {gamesData.map((jeu) => (
               <div key={jeu.id} className="relative rounded-xl overflow-hidden shadow-lg">
-                <img
-                  src={jeu.couverture_url || "/default_game.png"}
-                  alt={jeu.nom}
-                  className="w-full h-24 sm:h-32 md:h-36 object-cover rounded-xl transform hover:scale-105 transition-transform"
-                />
-                <div className="absolute inset-0 bg-black/20 rounded-xl"></div>
+                <div className="aspect-[3/4] w-full relative">
+                  <img
+                    src={jeu.couverture_url || "/default_game.png"}
+                    alt={jeu.nom}
+                    className="absolute inset-0 w-full h-full object-cover rounded-xl transform hover:scale-105 transition-transform"
+                  />
+                  <div className="absolute inset-0 bg-black/20 rounded-xl"></div>
 
-                {/* Médaille avec animation “pop” */}
-                {jeu.medal && (
-                  <div className="absolute top-1 left-1 sm:top-2 sm:left-2 text-lg sm:text-xl animate-[pop_0.5s_ease-out]">
-                    {jeu.medal}
-                  </div>
-                )}
+                  {/* Médaille avec animation “pop” */}
+                  {jeu.medal && (
+                    <div className="absolute top-1 left-1 sm:top-2 sm:left-2 text-lg sm:text-xl animate-[pop_0.5s_ease-out]">
+                      {jeu.medal}
+                    </div>
+                  )}
 
-                {/* Badge nombre de parties avec animation “pop” */}
-                {jeu.partiesCount > 0 && (
-                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-purple-700 rounded-full w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shadow-md animate-[pop_0.5s_ease-out]">
-                    {jeu.partiesCount}
-                  </div>
-                )}
+                  {/* Badge nombre de parties avec animation “pop” */}
+                  {jeu.partiesCount > 0 && (
+                    <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-purple-700 rounded-full w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shadow-md animate-[pop_0.5s_ease-out]">
+                      {jeu.partiesCount}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
