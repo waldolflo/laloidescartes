@@ -6,6 +6,9 @@ import {
   enablePushForDevice,
   disablePushForDevice,
 } from "./push";
+import RecapJeux from "./RecapJeux";
+import RecapJeuxShareable from "./RecapJeuxShareable";
+import RecapJeuxShareableStyle from "./RecapJeuxShareableStyle";
 
 export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
   const [profil, setProfil] = useState(null);
@@ -603,6 +606,10 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           </div>
         );
       })}
+
+      <RecapJeux userId={profil.id} />
+      <RecapJeuxShareable userId={profil.id} />
+      <RecapJeuxShareableStyle userId={profil.id} />
 
       {/* Gestion des utilisateurs pour admin */}
       {profil.role === "admin" && (
