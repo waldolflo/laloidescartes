@@ -116,7 +116,7 @@ export default function RecapJeuxShareableStyle({ userId }) {
             </p>
           </div>
           <div>
-            <img src="/qrcode.png" alt="QR code app" className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+            <img src="/qrcode.png" alt="QR code app" className="w-16 sm:w-20 md:w-24" />
           </div>
         </div>
 
