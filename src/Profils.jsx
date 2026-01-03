@@ -137,30 +137,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     });
   };
 
-  // Quand l'utilisateur change une case à cocher
-  const handleCheckboxChange = (field) => (e) => {
-    const checked = e.target.checked;
-
-    // Si l'utilisateur coche notif_chat, on décoche notif_ping automatiquement
-    if (field === "notif_chat" && checked) {
-      setNotifSettings(prev => ({
-        ...prev,
-        notif_chat: true,
-        notif_ping: false,
-      }));
-    }
-    // Si l'utilisateur coche notif_ping, on refuse si notif_chat est déjà coché
-    else if (field === "notif_ping" && checked && notifSettings.notif_chat) {
-      return; // ignore le clic
-    }
-    else {
-      setNotifSettings(prev => ({
-        ...prev,
-        [field]: checked,
-      }));
-    }
-  };
-
   // ✅ Hooks toujours au même niveau
   useEffect(() => {
     if (!authUser) return;
