@@ -6,6 +6,7 @@ import CountUp from "react-countup"; // pour les stats animées
 import { Phone, Mail } from "lucide-react";
 import FacebookWidget from "./FacebookWidget";
 import DiaporamaSwiper from "./DiaporamaSwiper";
+import HomePublicContent from "./HomePublicContent";
 
 export default function Home({ user }) {
   const currentUser = user || null;
