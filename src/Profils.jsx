@@ -42,6 +42,36 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     }
   };
 
+  // Détecte si on est sur iOS
+  const isIOS = () => {
+    if (typeof window === "undefined") return false;
+
+    const iOSDevice =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    return iOSDevice;
+  };
+
+  // Détecte si on est en PWA (installé depuis l'écran d'accueil)
+  const isPWA = () => {
+    if (typeof window === "undefined") return false;
+
+    // iOS Safari
+    if (window.navigator.standalone) return true;
+
+    // Autres navigateurs modernes
+    if (window.matchMedia("(display-mode: standalone)").matches) return true;
+
+    return false;
+  };
+
+  // Détecte si notifications disponibles sur iOS
+  const canUsePushNotifications = () => {
+    if (!isIOS()) return true; // Android et PC → ok
+    return isPWA(); // iOS → seulement si PWA installée
+  };
+
   const toggleNotif = async (key, value) => {
     if (!authUser) return;
 
@@ -456,74 +486,96 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         </div>
       </div>
 
+      {/* Notifications */}
       <div className="mt-6 p-4 border rounded bg-gray-50">
         <h3 className="text-lg font-semibold mb-3">🔔 Notifications</h3>
 
-        {[
-          { key: "notif_parties", label: "🎲 Nouvelles parties" },
-          { key: "notif_jeux", label: "🆕 Nouveaux jeux ajoutés à la ludothèque" },
-          { key: "notif_annonces", label: "📢 Annonces importantes (du président)" },
-          { key: "notif_ping", label: "🔔 Ping (Message du tchat @votrepseudo)" },
-          { key: "notif_chat", label: "💬 Tous les Messages du tchat" },
-        ].map(({ key, label }) => (
-          <label
-            key={key}
-            className="flex items-center justify-between py-2 cursor-pointer"
-          >
-            <span>{label}</span>
-            <input
-              type="checkbox"
-              checked={notifSettings[key]}
-              disabled={key === "notif_ping" && notifSettings.notif_chat} // interdit si notif_chat est coché
-              onChange={(e) => {
-                const checked = e.target.checked;
+        {!canUsePushNotifications() ? (
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+            🚫 <strong>Notifications indisponibles sur iOS</strong>
+            <br />
+            Apple ne permet pas les notifications web sur iPhone.
+            <br />
+            <p>Pour recevoir des notifications sur iPhone à partir d’iOS 16.4+ :</p>
+              <ul><li>1. Ouvrez Safari sur votre iPhone.</li>
+              <li>2. Allez sur notre site.</li>
+              <li>3. Cliquez sur “Partager” → “Ajouter à l’écran d’accueil”.</li>
+              <li>4. Autorisez les notifications à l’ouverture de l’app installée.</li></ul>
+            <span className="italic">
+              (Android et ordinateur uniquement)
+            </span>
+          </div>
+        ) : (
+          <>
+            {[
+              { key: "notif_parties", label: "🎲 Nouvelles parties" },
+              { key: "notif_jeux", label: "🆕 Nouveaux jeux ajoutés à la ludothèque" },
+              { key: "notif_annonces", label: "📢 Annonces importantes (du président)" },
+              { key: "notif_ping", label: "🔔 Ping (Message du tchat @votrepseudo)" },
+              { key: "notif_chat", label: "💬 Tous les Messages du tchat" },
+            ].map(({ key, label }) => (
+              <label
+                key={key}
+                className="flex items-center justify-between py-2 cursor-pointer"
+              >
+                <span>{label}</span>
+                <input
+                  type="checkbox"
+                  checked={!!notifSettings[key]}
+                  disabled={key === "notif_ping" && notifSettings.notif_chat}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
 
-                // Si on coche notif_chat, on décoche notif_ping automatiquement
-                if (key === "notif_chat" && checked) {
-                  toggleNotif("notif_chat", true);
-                  toggleNotif("notif_ping", false);
-                } 
-                // Sinon comportement normal
-                else {
-                  toggleNotif(key, checked);
-                }
-              }}
-              className="w-5 h-5"
-            />
-          </label>
-        ))}
+                    // Si on coche notif_chat → on force notif_ping à false
+                    if (key === "notif_chat" && checked) {
+                      toggleNotif("notif_chat", true);
+                      toggleNotif("notif_ping", false);
+                    } else {
+                      toggleNotif(key, checked);
+                    }
+                  }}
+                  className="w-5 h-5"
+                />
+              </label>
+            ))}
 
-        <p className="text-sm text-gray-600 mt-3">
-          {pushDevicesCount} device
-          {pushDevicesCount > 1 ? "s" : ""} actif
-          {pushDevicesCount > 1 ? "s" : ""}.  
-          <br />
-          Chaque appareil peut avoir ses propres préférences.
-        </p>
+            <p className="text-sm text-gray-600 mt-3">
+              {pushDevicesCount} device
+              {pushDevicesCount > 1 ? "s" : ""} actif
+              {pushDevicesCount > 1 ? "s" : ""}.  
+              <br />
+              Chaque appareil peut avoir ses propres préférences.
+            </p>
 
-        <button
-          onClick={testNotification}
-          disabled={
-            testingNotif || 
-            !notifSettings.notif_parties &&
-            !notifSettings.notif_chat &&
-            !notifSettings.notif_annonces &&
-            !notifSettings.notif_jeux &&
-            !notifSettings.notif_ping
-          }
-          className={`mt-3 px-4 py-2 rounded text-white ${
-            testingNotif ||
-            (!notifSettings.notif_parties &&
-            !notifSettings.notif_chat &&
-            !notifSettings.notif_annonces &&
-            !notifSettings.notif_jeux &&
-            !notifSettings.notif_ping)
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
-        >
-          {testingNotif ? "Envoi en cours..." : "Tester la notification"}
-        </button>
+            <button
+              onClick={testNotification}
+              disabled={
+                testingNotif ||
+                (
+                  !notifSettings.notif_parties &&
+                  !notifSettings.notif_chat &&
+                  !notifSettings.notif_annonces &&
+                  !notifSettings.notif_jeux &&
+                  !notifSettings.notif_ping
+                )
+              }
+              className={`mt-3 px-4 py-2 rounded text-white ${
+                testingNotif ||
+                (
+                  !notifSettings.notif_parties &&
+                  !notifSettings.notif_chat &&
+                  !notifSettings.notif_annonces &&
+                  !notifSettings.notif_jeux &&
+                  !notifSettings.notif_ping
+                )
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              {testingNotif ? "Envoi en cours..." : "Tester la notification"}
+            </button>
+          </>
+        )}
       </div>
 
       {profil.role === "user" && (
