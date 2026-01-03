@@ -1,11 +1,14 @@
 // src/RecapJeuxShareableStyle.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient";
+import html2canvas from "html2canvas";
 
 export default function RecapJeuxShareableStyle({ userId }) {
   const [gamesData, setGamesData] = useState([]);
   const [filter, setFilter] = useState("mois_courant");
   const [loading, setLoading] = useState(true);
+
+  const exportRef = useRef(null);
 
   const now = new Date();
 
@@ -23,6 +26,24 @@ export default function RecapJeuxShareableStyle({ userId }) {
     annee_courante: now,
     annee_passee: new Date(now.getFullYear() - 1, 11, 31),
     tous: null, // pas de date de fin pour "tous"
+  };
+
+  const exportAsImage = async () => {
+    if (!exportRef.current) return;
+
+    const canvas = await html2canvas(exportRef.current, {
+      backgroundColor: "#ffffff",
+      scale: 2, // 👈 qualité retina
+      useCORS: true,
+    });
+
+    const image = canvas.toDataURL("image/png");
+
+    // Téléchargement auto
+    const link = document.createElement("a");
+    link.href = image;
+    link.download = "recap-jeux-laloidescartes.png";
+    link.click();
   };
 
   useEffect(() => {
@@ -103,7 +124,7 @@ export default function RecapJeuxShareableStyle({ userId }) {
 
   return (
     <div className="mt-4 max-w-5xl mx-auto">
-      <div className="relative bg-gradient-to-br from-purple-200 via-pink-200 to-yellow-200 rounded-3xl p-6 shadow-2xl overflow-hidden">
+      <div ref={exportRef} className="relative bg-gradient-to-br from-purple-200 via-pink-200 to-yellow-200 rounded-3xl p-4 sm:p-6 shadow-2xl w-[320px] h-[320px] sm:w-[400px] sm:h-[400px] mx-auto overflow-hidden">
         <div className="absolute inset-0 bg-white/10 pointer-events-none rounded-3xl"></div>
 
         {/* Entête : Logo + texte à gauche, QR à droite */}
@@ -170,6 +191,15 @@ export default function RecapJeuxShareableStyle({ userId }) {
           </div>
         )}
       </div>
+
+      <button
+        onClick={exportAsImage}
+        className="mt-4 mx-auto block px-4 py-2 rounded-full
+                  bg-purple-700 text-white font-semibold
+                  hover:bg-purple-800 transition"
+      >
+        📸 Générer l’image à partager
+      </button>
 
       {/* Définition animation pop */}
       <style>
