@@ -16,6 +16,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
   const [globalImageUrl, setGlobalImageUrl] = useState("");
   const [globalTexte, setGlobalTexte] = useState("");
+  const [globalAnnonce, setGlobalAnnonce] = useState("");
   const [globalcountFollowersFB, setGlobalcountFollowersFB] = useState("");
   const [globalcountAdherentTotal, setGlobalcountAdherentTotal] = useState("");
   const [globalcountSeanceavantdouzeS, setGlobalcountSeanceavantdouzeS] = useState("");
@@ -219,6 +220,18 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       }
     };
 
+    const fetchGlobalAnnonce = async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("global_image_url")
+        .eq("id", 6)
+        .single();
+
+      if (!error && data) {
+        setGlobalAnnonce(data.global_image_url || "");
+      }
+    };
+
     const fetchGlobalcountFollowersFB = async () => {
       const { data, error } = await supabase
         .from("settings")
@@ -259,6 +272,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     fetchJeux();
     fetchGlobalImage();
     fetchGlobalTexte();
+    fetchGlobalAnnonce();
     fetchGlobalcountFollowersFB();
     fetchGlobalcountAdherentTotal();
     fetchGlobalcountSeanceavantdouzeS();
@@ -559,6 +573,12 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         <p><strong>N'hésitez pas à vous manifester dans le tchat de l'accueil ou sur messenger si vous souhaitez obtenir des droits supplémentaire sur l'application comme ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque</strong></p>
       )}
 
+      {/* Récapitulatif des jeux joués */}
+      <h3 className="text-xl font-semibold mt-6 mb-2">
+        🎲 Le récap' partageable de mes parties
+      </h3>
+      <RecapJeuxShareableStyle userId={profil.id} />
+
       {/* Jeux favoris */}
       <h3 className="text-xl font-semibold mt-6 mb-2">
         🎲 Les jeux auxquels j'aimerais jouer
@@ -590,7 +610,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
               </select>
 
               {jeu && (
-                <div className="border rounded p-2 bg-white shadow sm:col-span-2">
+                <div className="mt-2 border rounded p-2 bg-white shadow sm:col-span-2">
                   <p className="font-semibold">{jeu.nom}</p>
                   {jeu.couverture_url && (
                     <img
@@ -605,12 +625,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           );
         })}
       </div>
-
-      {/* Récapitulatif des jeux joués */}
-      <h3 className="text-xl font-semibold mt-6 mb-2">
-        🎲 Le récap' partageable de mes parties
-      </h3>
-      <RecapJeuxShareableStyle userId={profil.id} />
 
       {/* Gestion des utilisateurs pour admin */}
       {profil.role === "admin" && (
@@ -862,12 +876,63 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                 .select()
                 .single();
               if (!error) {
-                alert("✅ Nombre d'adhérent Total mis à jour !");
+                alert("✅ Nombre de séances totales mis à jour !");
               }
             }}
             className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Mettre à jour
+          </button>
+        </div>
+      )}
+
+      {profil.role === "admin" && (
+        <div className="mt-10 p-4 border rounded bg-gray-50">
+          <h3 className="text-xl font-semibold mb-2">📢 Envoyer une notification d'annonce importante (du président)</h3>
+
+          <input
+            type="text"
+            className="border p-2 rounded w-full"
+            placeholder="Annonce importante"
+            value={globalAnnonce}
+            onChange={(e) => setGlobalAnnonce(e.target.value)}
+          />
+
+          <button
+            onClick={async () => {
+              const { data, error } = await supabase
+                .from("settings")
+                .update({
+                  global_image_url: globalAnnonce,
+                  updated_at: new Date(),
+                })
+                .eq("id", 6)
+                .select()
+                .single();
+              if (!error) {
+                alert("✅ Annonce envoyée !");
+              }
+              // ✅ Récupération du token Supabase pour l'autorisation
+              const { data: { session } } = await supabase.auth.getSession();
+          
+              // ✅ Envoi notification via fonction serverless
+              await fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                  type: "notif_annonces", // 👈 clé de filtrage
+                  title: `📢 Nouvelle annonce du Président`,
+                  body: `${globalAnnonce}`,
+                  url: "/parties",
+                }),
+              });
+            }}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Envoyer la notification
           </button>
         </div>
       )}
