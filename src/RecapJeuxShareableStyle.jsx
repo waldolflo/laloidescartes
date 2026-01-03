@@ -102,7 +102,7 @@ export default function RecapJeuxShareableStyle({ userId }) {
   };
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="mt-4 max-w-5xl mx-auto">
       <div className="relative bg-gradient-to-br from-purple-200 via-pink-200 to-yellow-200 rounded-3xl p-6 shadow-2xl overflow-hidden">
         <div className="absolute inset-0 bg-white/10 pointer-events-none rounded-3xl"></div>
 
