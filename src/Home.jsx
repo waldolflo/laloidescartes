@@ -300,7 +300,7 @@ export default function Home({ user }) {
                   <p className="text-center">{annoncePresident}</p>
                 </div>
               )}
-              <div className="mb-12 mt-12">
+              <div className="mb-8 mt-8">
                 <Chat user={currentUser} readOnly={false} />
               </div>
             </section>

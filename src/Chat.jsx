@@ -275,7 +275,7 @@ export default function Chat({ user, readOnly = false }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[100vh] p-4 max-w-fit mx-auto relative">
+    <div className="flex-1 flex flex-col h-[100vh] max-w-fit mx-auto relative">
       <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
         💬 Tchat de l'association
         {unreadCount > 0 && (
