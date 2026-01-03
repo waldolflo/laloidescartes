@@ -420,7 +420,7 @@ export default function Home({ user }) {
       {/* Visible uniquement si PAS connecté */}
       {/* --- Section ADRESSE & CARTE --- */}
       {!currentUser && (
-        <section className="mt-16 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden">
+        <section className="mt-12 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden">
           <div className="p-6 md:p-10">
             <h2 className="text-2xl font-bold text-center mb-8">Nous trouver</h2>
 
@@ -441,7 +441,6 @@ export default function Home({ user }) {
                 />
               </div>
               <div className="space-y-6">
-                <p className="text-lg font-semibold">📞 Contactez-nous</p>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Phone size={20} className="text-rose-400" />
@@ -473,14 +472,14 @@ export default function Home({ user }) {
         </section>
       )}
 
-      {/* Visible uniquement si connecté */}
+      {/* Visible uniquement si connecté et annonce président existe*/}
       {/* --- Annonce du président --- */}
-      {(currentUser || annoncePresident) && (
-        <section className="mt-16 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden">
+      {currentUser && annoncePresident?.trim() && (
+        <section className="mt-12 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden animate-fadeInBounce">
           <div className="p-6 md:p-10">
             <h2 className="text-2xl font-bold text-center mb-8">📢 Annonce du président</h2>
               <div className="flex flex-col">
-                <p className="text-gray-700 text-center">{annoncePresident}</p>
+                <p className="text-white text-center">{annoncePresident}</p>
               </div>
           </div>
         </section>

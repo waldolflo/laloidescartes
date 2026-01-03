@@ -35,3 +35,24 @@
 .animate-scaleIn {
   animation: scaleIn 0.25s ease-out;
 }
+
+@keyframes fadeInBounce {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+  80% {
+    transform: translateY(5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInBounce {
+  animation: fadeInBounce 0.8s ease-out forwards;
+}
