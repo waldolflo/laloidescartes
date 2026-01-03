@@ -318,7 +318,7 @@ export default function Home({ user }) {
           )}
         </>
       ) : (
-        <HomeContent
+        <HomePublicContent
           stats={stats}
           countSeanceTotal={countSeanceTotal}
           countAdherentTotal={countAdherentTotal}
