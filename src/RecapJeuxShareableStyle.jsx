@@ -95,7 +95,7 @@ export default function RecapJeuxShareableStyle({ userId }) {
         {/* Entête : Logo + texte à gauche, QR à droite */}
         <div className="flex justify-between items-start relative z-10 mb-6">
           <div className="text-left">
-            <img src="/logo.png" alt="Logo" className="w-20 mb-2" />
+            <img src="/logo_loidc.png" alt="Logo" className="w-20 mb-2" />
             <p className="text-2xl font-bold text-purple-800 mb-1">La loi des cartes</p>
             <p className="text-sm text-purple-700 italic">
               Rejoignez-nous lors de nos séances de jeux !
