@@ -6,8 +6,6 @@ import {
   enablePushForDevice,
   disablePushForDevice,
 } from "./push";
-import RecapJeux from "./RecapJeux";
-import RecapJeuxShareable from "./RecapJeuxShareable";
 import RecapJeuxShareableStyle from "./RecapJeuxShareableStyle";
 
 export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
@@ -607,8 +605,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         );
       })}
 
-      <RecapJeux userId={profil.id} />
-      <RecapJeuxShareable userId={profil.id} />
+      {/* Récapitulatif des jeux joués */}
       <RecapJeuxShareableStyle userId={profil.id} />
 
       {/* Gestion des utilisateurs pour admin */}
