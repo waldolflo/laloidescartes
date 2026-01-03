@@ -569,43 +569,48 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         const jeu = jeux.find((j) => j.id === selectedId);
 
         return (
-          <div key={n} className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            <label className="block font-medium mb-1">
-              Jeu favori {n} :
-            </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div key={n}>
+              <label className="block font-medium mb-1">
+                Jeu favori {n} :
+              </label>
 
-            <select
-              value={selectedId || ""}
-              onChange={(e) =>
-                updateFavoris(`jeufavoris${n}`, e.target.value)
-              }
-              className="border p-2 rounded w-full"
-            >
-              <option value="">-- Choisir un jeu --</option>
-              {jeux.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.nom}
-                </option>
-              ))}
-            </select>
+              <select
+                value={selectedId || ""}
+                onChange={(e) =>
+                  updateFavoris(`jeufavoris${n}`, e.target.value)
+                }
+                className="border p-2 rounded w-full"
+              >
+                <option value="">-- Choisir un jeu --</option>
+                {jeux.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.nom}
+                  </option>
+                ))}
+              </select>
 
-            {jeu && (
-              <div className="border rounded p-2 bg-white shadow sm:col-span-2">
-                <p className="font-semibold">{jeu.nom}</p>
-                {jeu.couverture_url && (
-                  <img
-                    src={jeu.couverture_url}
-                    alt={jeu.nom}
-                    className="w-full h-32 object-contain mt-2"
-                  />
-                )}
-              </div>
-            )}
+              {jeu && (
+                <div className="border rounded p-2 bg-white shadow sm:col-span-2">
+                  <p className="font-semibold">{jeu.nom}</p>
+                  {jeu.couverture_url && (
+                    <img
+                      src={jeu.couverture_url}
+                      alt={jeu.nom}
+                      className="w-full h-32 object-contain mt-2"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         );
       })}
 
       {/* Récapitulatif des jeux joués */}
+      <h3 className="text-xl font-semibold mt-6 mb-2">
+        🎲 Le récap' partageable de mes parties
+      </h3>
       <RecapJeuxShareableStyle userId={profil.id} />
 
       {/* Gestion des utilisateurs pour admin */}
