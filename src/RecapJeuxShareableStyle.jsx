@@ -124,15 +124,15 @@ export default function RecapJeuxShareableStyle({ userId }) {
 
   return (
     <div className="mt-4 max-w-5xl mx-auto">
-      <div ref={exportRef} className="relative bg-gradient-to-br from-purple-200 via-pink-200 to-yellow-200 rounded-3xl p-4 sm:p-6 shadow-2xl w-[320px] h-[320px] sm:w-[400px] sm:h-[400px] mx-auto overflow-hidden">
-        <div className="absolute inset-0 bg-white/10 pointer-events-none rounded-3xl"></div>
+      <div ref={exportRef} style={{background: "linear-gradient(135deg, #e9d5ff, #fbcfe8, #fef3c7)",}} className="relative rounded-3xl p-4 sm:p-6 shadow-2xl w-[320px] h-[320px] sm:w-[400px] sm:h-[400px] mx-auto overflow-hidden">
+        <div style={{ backgroundColor: "rgba(255,255,255,0.1)" }} className="absolute inset-0 pointer-events-none rounded-3xl"></div>
 
         {/* Entête : Logo + texte à gauche, QR à droite */}
         <div className="flex justify-between items-start relative z-10 mb-6">
           <div className="text-left">
             <img src="/logo_loidc.png" alt="Logo" className="w-14 sm:w-16 md:w-20 mb-1 sm:mb-2" />
-            <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-800 mb-0.5">La loi des cartes</p>
-            <p className="text-xs sm:text-sm text-purple-700 italic leading-tight">
+            <p style={{color: "#553c9a",}} className="text-lg sm:text-xl md:text-2xl font-bold mb-0.5">La loi des cartes</p>
+            <p style={{color: "#6b46c1",}} className="text-xs sm:text-sm italic leading-tight">
               Rejoignez-nous lors de nos séances de jeux !
             </p>
           </div>
@@ -147,11 +147,12 @@ export default function RecapJeuxShareableStyle({ userId }) {
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`px-3 py-1 rounded-full border font-semibold text-sm ${
-                filter === key
-                  ? "bg-purple-700 text-white border-purple-800"
-                  : "bg-white text-purple-800 border-purple-300"
-              }`}
+              className="px-3 py-1 rounded-full font-semibold text-sm"
+              style={{
+                backgroundColor: filter === key ? "#6b21a8" : "#ffffff",
+                color: filter === key ? "#ffffff" : "#4c1d95",
+                border: "1px solid #c4b5fd",
+              }}
             >
               {filtersMap[key].label}
             </button>
@@ -159,9 +160,9 @@ export default function RecapJeuxShareableStyle({ userId }) {
         </div>
 
         {loading ? (
-          <p className="text-center text-purple-900 relative z-10">Chargement...</p>
+          <p style={{color: "#44337a",}} className="text-center relative z-10">Chargement...</p>
         ) : gamesData.length === 0 ? (
-          <p className="text-center text-purple-900 relative z-10">Aucune partie sur cette période</p>
+          <p style={{color: "#44337a",}} className="text-center relative z-10">Aucune partie sur cette période</p>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 relative z-10">
             {gamesData.map((jeu) => (
@@ -171,7 +172,7 @@ export default function RecapJeuxShareableStyle({ userId }) {
                   alt={jeu.nom}
                   className="w-full h-24 sm:h-32 md:h-36 object-cover rounded-xl transform hover:scale-105 transition-transform"
                 />
-                <div className="absolute inset-0 bg-black/20 rounded-xl"></div>
+                <div style={{ backgroundColor: "rgba(0,0,0,0.2)" }} className="absolute inset-0 rounded-xl"></div>
 
                 {/* Médaille avec animation “pop” */}
                 {jeu.medal && (
@@ -182,7 +183,7 @@ export default function RecapJeuxShareableStyle({ userId }) {
 
                 {/* Badge nombre de parties avec animation “pop” */}
                 {jeu.partiesCount > 0 && (
-                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-purple-700 rounded-full w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shadow-md animate-[pop_0.5s_ease-out]">
+                  <div style={{backgroundColor: "#7e22ce", color: "#ffffffff",}} className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 rounded-full w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 flex items-center justify-center text-[10px] sm:text-xs font-bold shadow-md animate-[pop_0.5s_ease-out]">
                     {jeu.partiesCount}
                   </div>
                 )}
