@@ -80,7 +80,7 @@ export default function RecapJeuxShareableStyle({ userId }) {
 
         {/* Logo et titre */}
         <div className="relative text-center z-10">
-          <img src="/logo.png" alt="Logo" className="w-20 mx-auto mb-2" />
+          <img src="/logo_loidc.png" alt="Logo" className="w-20 mx-auto mb-2" />
           <p className="text-2xl font-bold text-purple-800 mb-4">
             La loi des cartes
           </p>
