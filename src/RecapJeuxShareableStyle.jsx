@@ -31,26 +31,34 @@ export default function RecapJeuxShareableStyle({ userId }) {
     const startDate = filtersMap[filter].start.toISOString();
     const endDate = endDateMap[filter].toISOString();
 
-    const { data, error } = await supabase
-      .from("parties")
-      .select("jeu_id, score, created_at")
-      .eq("user_id", userId)
-      .gte("created_at", startDate)
-      .lte("created_at", endDate);
+    const { data: inscriptions, error } = await supabase
+      .from("inscriptions")
+      .select(`id, partie_id, score, rank, parties(date_partie, jeu_id)`)
+      .eq("utilisateur_id", userId)
+      .gte("parties.date_partie", startDate)
+      .lte("parties.date_partie", endDate);
 
     if (error) {
-      console.error("Erreur fetch parties :", error);
+      console.error("Erreur fetch inscriptions :", error);
       setLoading(false);
       return;
     }
 
     const grouped = {};
-    data.forEach((p) => {
-      if (!grouped[p.jeu_id]) grouped[p.jeu_id] = [];
-      grouped[p.jeu_id].push(p);
+    inscriptions.forEach((ins) => {
+      const jeuId = ins.parties?.jeu_id;
+      if (!jeuId) return;
+      if (!grouped[jeuId]) grouped[jeuId] = [];
+      grouped[jeuId].push(ins);
     });
 
     const jeuIds = Object.keys(grouped);
+    if (jeuIds.length === 0) {
+      setGamesData([]);
+      setLoading(false);
+      return;
+    }
+
     const { data: jeuxData } = await supabase
       .from("jeux")
       .select("id, nom, couverture_url")
@@ -58,13 +66,22 @@ export default function RecapJeuxShareableStyle({ userId }) {
 
     const merged = jeuxData.map((jeu) => {
       const parties = grouped[jeu.id] || [];
-      const maxScore = Math.max(...parties.map((p) => p.score), 0);
+      const bestRank = Math.min(...parties.map((p) => p.rank || Infinity));
+
+      let medal = null;
+      if (bestRank === 1) medal = "🥇";
+      else if (bestRank === 2) medal = "🥈";
+      else if (bestRank === 3) medal = "🥉";
+
       return {
         ...jeu,
         partiesCount: parties.length,
-        bestScore: maxScore,
+        bestRank,
+        medal,
       };
     });
+
+    merged.sort((a, b) => b.partiesCount - a.partiesCount);
 
     setGamesData(merged);
     setLoading(false);
@@ -72,24 +89,24 @@ export default function RecapJeuxShareableStyle({ userId }) {
 
   return (
     <div className="p-4 max-w-5xl mx-auto">
-      {/* Carte principale */}
       <div className="relative bg-gradient-to-br from-purple-200 via-pink-200 to-yellow-200 rounded-3xl p-6 shadow-2xl overflow-hidden">
-        
-        {/* Overlay léger */}
         <div className="absolute inset-0 bg-white/10 pointer-events-none rounded-3xl"></div>
 
-        {/* Logo et titre */}
-        <div className="relative text-center z-10">
-          <img src="/logo_loidc.png" alt="Logo" className="w-20 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-purple-800 mb-4">
-            La loi des cartes
-          </p>
-          <p className="text-sm text-purple-700 italic mb-6">
-            Rejoignez-nous lors de nos séances de jeux !
-          </p>
+        {/* Entête : Logo + texte à gauche, QR à droite */}
+        <div className="flex justify-between items-start relative z-10 mb-6">
+          <div className="text-left">
+            <img src="/logo.png" alt="Logo" className="w-20 mb-2" />
+            <p className="text-2xl font-bold text-purple-800 mb-1">La loi des cartes</p>
+            <p className="text-sm text-purple-700 italic">
+              Rejoignez-nous lors de nos séances de jeux !
+            </p>
+          </div>
+          <div>
+            <img src="/qrcode.png" alt="QR code app" className="w-24 h-24" />
+          </div>
         </div>
 
-        {/* Sélecteur filtre */}
+        {/* Filtre période */}
         <div className="flex justify-center gap-2 mb-6 flex-wrap relative z-10">
           {Object.keys(filtersMap).map((key) => (
             <button
@@ -106,7 +123,6 @@ export default function RecapJeuxShareableStyle({ userId }) {
           ))}
         </div>
 
-        {/* Grille jeux */}
         {loading ? (
           <p className="text-center text-purple-900 relative z-10">Chargement...</p>
         ) : gamesData.length === 0 ? (
@@ -120,19 +136,18 @@ export default function RecapJeuxShareableStyle({ userId }) {
                   alt={jeu.nom}
                   className="w-full h-36 object-cover rounded-xl transform hover:scale-105 transition-transform"
                 />
-                {/* Overlay foncé léger */}
                 <div className="absolute inset-0 bg-black/20 rounded-xl"></div>
 
-                {/* Médaille meilleure place */}
-                {jeu.bestScore > 0 && (
-                  <div className="absolute top-2 left-2 bg-yellow-400 rounded-full w-10 h-10 flex items-center justify-center text-lg font-bold text-white shadow-md animate-pulse">
-                    🏆{jeu.bestScore}
+                {/* Médaille avec animation “pop” */}
+                {jeu.medal && (
+                  <div className="absolute top-2 left-2 text-xl animate-[pop_0.5s_ease-out]">
+                    {jeu.medal}
                   </div>
                 )}
 
-                {/* Badge nombre de parties */}
+                {/* Badge nombre de parties avec animation “pop” */}
                 {jeu.partiesCount > 0 && (
-                  <div className="absolute bottom-2 right-2 bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold text-white shadow-md">
+                  <div className="absolute bottom-2 right-2 bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold text-white shadow-md animate-[pop_0.5s_ease-out]">
                     {jeu.partiesCount}
                   </div>
                 )}
@@ -140,8 +155,18 @@ export default function RecapJeuxShareableStyle({ userId }) {
             ))}
           </div>
         )}
-
       </div>
+
+      {/* Définition animation pop */}
+      <style>
+        {`
+          @keyframes pop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); }
+          }
+        `}
+      </style>
     </div>
   );
 }

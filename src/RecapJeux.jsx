@@ -109,7 +109,7 @@ export default function RecapJeux({ userId }) {
         <div className="absolute inset-0 bg-white/10 pointer-events-none rounded-3xl"></div>
 
         <div className="relative text-center z-10">
-          <img src="/logo.png" alt="Logo" className="w-20 mx-auto mb-2" />
+          <img src="/logo_loidc.png" alt="Logo" className="w-20 mx-auto mb-2" />
           <p className="text-2xl font-bold text-purple-800 mb-2">La loi des cartes</p>
           <p className="text-sm text-purple-700 italic mb-6">
             Rejoignez-nous lors de nos séances de jeux !
