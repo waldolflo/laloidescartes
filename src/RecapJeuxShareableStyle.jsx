@@ -7,18 +7,22 @@ export default function RecapJeuxShareableStyle({ userId }) {
   const [filter, setFilter] = useState("mois_courant");
   const [loading, setLoading] = useState(true);
 
+  const now = new Date();
+
   const filtersMap = {
-    mois_courant: { label: "Mois courant", start: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
-    mois_passe: { label: "Mois passé", start: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1) },
-    annee_courante: { label: "Année en cours", start: new Date(new Date().getFullYear(), 0, 1) },
-    annee_passee: { label: "Année passée", start: new Date(new Date().getFullYear() - 1, 0, 1) },
+    mois_courant: { label: "Mois courant", start: new Date(now.getFullYear(), now.getMonth(), 1) },
+    mois_passe: { label: "Mois passé", start: new Date(now.getFullYear(), now.getMonth() - 1, 1) },
+    annee_courante: { label: "Année en cours", start: new Date(now.getFullYear(), 0, 1) },
+    annee_passee: { label: "Année passée", start: new Date(now.getFullYear() - 1, 0, 1) },
+    tous: { label: "Tous", start: null }, // pas de date de début pour "tous"
   };
 
   const endDateMap = {
-    mois_courant: new Date(),
-    mois_passe: new Date(new Date().getFullYear(), new Date().getMonth(), 0),
-    annee_courante: new Date(),
-    annee_passee: new Date(new Date().getFullYear() - 1, 11, 31),
+    mois_courant: now,
+    mois_passe: new Date(now.getFullYear(), now.getMonth(), 0),
+    annee_courante: now,
+    annee_passee: new Date(now.getFullYear() - 1, 11, 31),
+    tous: null, // pas de date de fin pour "tous"
   };
 
   useEffect(() => {
@@ -28,15 +32,19 @@ export default function RecapJeuxShareableStyle({ userId }) {
 
   const fetchGames = async () => {
     setLoading(true);
-    const startDate = filtersMap[filter].start.toISOString();
-    const endDate = endDateMap[filter].toISOString();
 
-    const { data: inscriptions, error } = await supabase
+    let query = supabase
       .from("inscriptions")
       .select(`id, partie_id, score, rank, parties(date_partie, jeu_id)`)
-      .eq("utilisateur_id", userId)
-      .gte("parties.date_partie", startDate)
-      .lte("parties.date_partie", endDate);
+      .eq("utilisateur_id", userId);
+
+    if (filter !== "tous") {
+      const startDate = filtersMap[filter].start.toISOString();
+      const endDate = endDateMap[filter].toISOString();
+      query = query.gte("parties.date_partie", startDate).lte("parties.date_partie", endDate);
+    }
+
+    const { data: inscriptions, error } = await query;
 
     if (error) {
       console.error("Erreur fetch inscriptions :", error);
@@ -64,7 +72,7 @@ export default function RecapJeuxShareableStyle({ userId }) {
       .select("id, nom, couverture_url")
       .in("id", jeuIds);
 
-    const merged = jeuxData.map((jeu) => {
+    let merged = jeuxData.map((jeu) => {
       const parties = grouped[jeu.id] || [];
       const bestRank = Math.min(...parties.map((p) => p.rank || Infinity));
 
@@ -81,7 +89,13 @@ export default function RecapJeuxShareableStyle({ userId }) {
       };
     });
 
+    // Trier du plus joué au moins joué
     merged.sort((a, b) => b.partiesCount - a.partiesCount);
+
+    // Limiter à 12 jeux pour "tous"
+    if (filter === "tous") {
+      merged = merged.slice(0, 12);
+    }
 
     setGamesData(merged);
     setLoading(false);
