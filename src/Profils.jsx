@@ -563,13 +563,12 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       <h3 className="text-xl font-semibold mt-6 mb-2">
         🎲 Les jeux auxquels j'aimerais jouer
       </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        {[1, 2].map((n) => {
+          const selectedId = profil[`jeufavoris${n}`];
+          const jeu = jeux.find((j) => j.id === selectedId);
 
-      {[1, 2].map((n) => {
-        const selectedId = profil[`jeufavoris${n}`];
-        const jeu = jeux.find((j) => j.id === selectedId);
-
-        return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          return (
             <div key={n}>
               <label className="block font-medium mb-1">
                 Jeu favori {n} :
@@ -603,9 +602,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                 </div>
               )}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {/* Récapitulatif des jeux joués */}
       <h3 className="text-xl font-semibold mt-6 mb-2">
