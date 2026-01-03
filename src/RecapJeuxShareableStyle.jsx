@@ -109,14 +109,14 @@ export default function RecapJeuxShareableStyle({ userId }) {
         {/* Entête : Logo + texte à gauche, QR à droite */}
         <div className="flex justify-between items-start relative z-10 mb-6">
           <div className="text-left">
-            <img src="/logo_loidc.png" alt="Logo" className="w-20 mb-2" />
-            <p className="text-2xl font-bold text-purple-800 mb-1">La loi des cartes</p>
-            <p className="text-sm text-purple-700 italic">
+            <img src="/logo_loidc.png" alt="Logo" className="w-14 sm:w-16 md:w-20 mb-1 sm:mb-2" />
+            <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-800 mb-0.5">La loi des cartes</p>
+            <p className="text-xs sm:text-sm text-purple-700 italic leading-tight">
               Rejoignez-nous lors de nos séances de jeux !
             </p>
           </div>
           <div>
-            <img src="/qrcode.png" alt="QR code app" className="w-24 h-24" />
+            <img src="/qrcode.png" alt="QR code app" className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
           </div>
         </div>
 
@@ -142,26 +142,26 @@ export default function RecapJeuxShareableStyle({ userId }) {
         ) : gamesData.length === 0 ? (
           <p className="text-center text-purple-900 relative z-10">Aucune partie sur cette période</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 relative z-10">
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 relative z-10">
             {gamesData.map((jeu) => (
               <div key={jeu.id} className="relative rounded-xl overflow-hidden shadow-lg">
                 <img
                   src={jeu.couverture_url || "/default_game.png"}
                   alt={jeu.nom}
-                  className="w-full h-36 object-cover rounded-xl transform hover:scale-105 transition-transform"
+                  className="w-full h-24 sm:h-32 md:h-36 object-cover rounded-xl transform hover:scale-105 transition-transform"
                 />
                 <div className="absolute inset-0 bg-black/20 rounded-xl"></div>
 
                 {/* Médaille avec animation “pop” */}
                 {jeu.medal && (
-                  <div className="absolute top-2 left-2 text-xl animate-[pop_0.5s_ease-out]">
+                  <div className="absolute top-1 left-1 sm:top-2 sm:left-2 text-lg sm:text-xl animate-[pop_0.5s_ease-out]">
                     {jeu.medal}
                   </div>
                 )}
 
                 {/* Badge nombre de parties avec animation “pop” */}
                 {jeu.partiesCount > 0 && (
-                  <div className="absolute bottom-2 right-2 bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold text-white shadow-md animate-[pop_0.5s_ease-out]">
+                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-purple-700 rounded-full w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shadow-md animate-[pop_0.5s_ease-out]">
                     {jeu.partiesCount}
                   </div>
                 )}
