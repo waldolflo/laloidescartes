@@ -485,6 +485,29 @@ export default function Home({ user }) {
         </section>
       )}
 
+      <style jsx>{`
+        @keyframes fadeInBounce {
+          0% {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          60% {
+            opacity: 1;
+            transform: translateY(-10px);
+          }
+          80% {
+            transform: translateY(5px);
+          }
+          100% {
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fadeInBounce {
+          animation: fadeInBounce 0.8s ease-out forwards;
+        }
+      `}</style>
+      
       {/* CHAT */}
       <section className="mb-12 mt-12">
         {/* ✅ Protection pour éviter le crash si user est null */}
