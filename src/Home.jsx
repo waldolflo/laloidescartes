@@ -326,125 +326,126 @@ export default function Home({ user }) {
         </section>
       )}
 
+      {/* Visible uniquement si PAS connecté */}
       {/* --- Section TARIFS --- */}
-      <section className="mt-12 bg-white rounded-xl shadow-md p-6 md:p-10">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">
-          TARIFS & ADHÉSION
-        </h2>
-        <p className="text-center text-gray-600 mb-6">
-          🎟️ Venez découvrir gratuitement, puis <strong>2€ / séance</strong> pour les non-adhérents.
-        </p>
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          {/* Texte */}
-          <div className="space-y-4 text-gray-700">
-            <h3 className="text-xl font-semibold">Adhésion à l’année</h3>
+      {!currentUser && (
+        <section className="mt-12 bg-white rounded-xl shadow-md p-6 md:p-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">
+            TARIFS & ADHÉSION
+          </h2>
+          <p className="text-center text-gray-600 mb-6">
+            🎟️ Venez découvrir gratuitement, puis <strong>2€ / séance</strong> pour les non-adhérents.
+          </p>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* Texte */}
+            <div className="space-y-4 text-gray-700">
+              <h3 className="text-xl font-semibold">Adhésion à l’année</h3>
 
 
-            <ul className="space-y-2">
-              <li>🎲 <strong>Individuelle</strong> : 20€</li>
-              <li>🎲 <strong>Duo</strong> : 35€</li>
-              <li>🎲 <strong>Famille</strong> (min. 4) : 60€</li>
-            </ul>
+              <ul className="space-y-2">
+                <li>🎲 <strong>Individuelle</strong> : 20€</li>
+                <li>🎲 <strong>Duo</strong> : 35€</li>
+                <li>🎲 <strong>Famille</strong> (min. 4) : 60€</li>
+              </ul>
 
-            <p className="mt-4">
-              💸 <strong>10% de remise</strong> sur les jeux de société dans les boutiques partenaires.
-            </p>
+              <p className="mt-4">
+                💸 <strong>10% de remise</strong> sur les jeux de société dans les boutiques partenaires.
+              </p>
 
-            <div className="mt-4">
-              <a
-                href="https://www.lantre.eu"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 hover:opacity-80 transition"
-              >
-                <img
-                  src="https://www.lantre.eu/wp-content/uploads/2017/06/logo-lantre-07-1.png"
-                  alt="L’Antre du Jouet"
-                  className="h-12 object-contain"
-                />
-                <span className="text-sm text-gray-600">Boutique partenaire</span>
-              </a>
-            </div>
-
-            <p className="mt-6">
-              ✅ <strong>Accès illimité</strong> aux séances du club
-            </p>
-          </div>
-
-          {/* Illustration */}
-          <div className="flex justify-center">
-            <img
-              src="https://laloidescartes.my.canva.site/_assets/media/5f69b9aa7a56910fe6138d919c8214ee.jpg"
-              alt="Illustration jeux de société"
-              className="rounded-xl shadow-md max-h-80 object-contain"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* DiaporamaSwiper */}
-      <section className="mt-12 bg-white rounded-xl shadow-md">
-        <DiaporamaSwiper />
-      </section>
-
-      {/* --- Section ADRESSE & CARTE --- */}
-      <section className="mt-16 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-6 md:p-10">
-          <h2 className="text-2xl font-bold text-center mb-8">Nous trouver</h2>
-
-          <div className="grid md:grid-cols-2 gap-10 items-start">
-            
-            {/* GAUCHE : adresse + image */}
-            <div className="space-y-6">
-              <div>
-                <p className="text-lg font-semibold">📍 Adresse</p>
-                <p className="text-gray-300 mt-1">
-                  2 Rue Albert Leroy<br />
-                  62170 Neuville-sous-Montreuil
-                </p>
+              <div className="mt-4">
+                <a
+                  href="https://www.lantre.eu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 hover:opacity-80 transition"
+                >
+                  <img
+                    src="https://www.lantre.eu/wp-content/uploads/2017/06/logo-lantre-07-1.png"
+                    alt="L’Antre du Jouet"
+                    className="h-12 object-contain"
+                  />
+                  <span className="text-sm text-gray-600">Boutique partenaire</span>
+                </a>
               </div>
 
+              <p className="mt-6">
+                ✅ <strong>Accès illimité</strong> aux séances du club
+              </p>
+            </div>
+
+            {/* Illustration */}
+            <div className="flex justify-center">
               <img
-                src="https://laloidescartes.my.canva.site/_assets/media/e330db1ce4e0a769721d6668a95d40f4.png"
-                alt="Lieu de l'association"
-                className="rounded-lg shadow-md max-h-64 object-contain"
+                src="https://laloidescartes.my.canva.site/_assets/media/5f69b9aa7a56910fe6138d919c8214ee.jpg"
+                alt="Illustration jeux de société"
+                className="rounded-xl shadow-md max-h-80 object-contain"
               />
             </div>
+          </div>
+        </section>
+      )}
+      {/* Visible uniquement si PAS connecté */}
+      {/* DiaporamaSwiper */}
+      {!currentUser && (
+        <section className="mt-12 bg-white rounded-xl shadow-md">
+          <DiaporamaSwiper />
+        </section>
+      )}
+      {/* Visible uniquement si PAS connecté */}
+      {/* --- Section ADRESSE & CARTE --- */}
+      {!currentUser && (
+        <section className="mt-16 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden">
+          <div className="p-6 md:p-10">
+            <h2 className="text-2xl font-bold text-center mb-8">Nous trouver</h2>
 
-            {/* DROITE : contact + carte */}
-            <div className="space-y-6">
-              
-              {/* Contact */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Phone size={20} className="text-rose-400" />
-                  <span className="text-lg">06 44 17 10 82</span>
+            <div className="grid md:grid-cols-2 gap-10 items-start">
+              <div className="space-y-6">
+                <div>
+                  <p className="text-lg font-semibold">📍 Adresse</p>
+                  <p className="text-gray-300 mt-1">
+                    2 Rue Albert Leroy<br />
+                    62170 Neuville-sous-Montreuil
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Mail size={20} className="text-rose-400" />
-                  <a
-                    href="mailto:laloidescartes@gmail.com"
-                    className="text-lg hover:underline"
-                  >
-                    laloidescartes@gmail.com
-                  </a>
-                </div>
-                {/* Carte */}
-                <div className="w-full h-[300px] rounded-lg overflow-hidden">
-                  <iframe
-                    title="Carte Google Maps"
-                    src="https://www.google.com/maps?q=2%20Rue%20Albert%20Leroy%2062170%20Neuville-sous-Montreuil&output=embed"
-                    className="w-full h-full border-0"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+                <img
+                  src="https://laloidescartes.my.canva.site/_assets/media/e330db1ce4e0a769721d6668a95d40f4.png"
+                  alt="Lieu de l'association"
+                  className="rounded-lg shadow-md max-h-64 object-contain"
+                />
+              </div>
+              <div className="space-y-6">
+                <p className="text-lg font-semibold">📞 Contactez-nous</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Phone size={20} className="text-rose-400" />
+                    <span className="text-lg">06 44 17 10 82</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Mail size={20} className="text-rose-400" />
+                    <a
+                      href="mailto:laloidescartes@gmail.com"
+                      className="text-lg hover:underline"
+                    >
+                      laloidescartes@gmail.com
+                    </a>
+                  </div>
+                  <div className="w-full h-[300px] rounded-lg overflow-hidden">
+                    <iframe
+                      title="Carte Google Maps"
+                      src="https://www.google.com/maps?q=2%20Rue%20Albert%20Leroy%2062170%20Neuville-sous-Montreuil&output=embed"
+                      className="w-full h-full border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CHAT */}
       <section className="mb-12 mt-12">

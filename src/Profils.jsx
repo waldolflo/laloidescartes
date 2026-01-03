@@ -743,6 +743,12 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
               <img
                 src={globalImageUrl}
                 alt="Aperçu global"
+                onError={(e) => {
+                  if (!e.currentTarget.dataset.fallback) {
+                    e.currentTarget.dataset.fallback = "true";
+                    e.currentTarget.src = "/qrcode.png";
+                  }
+                }}
                 className="w-32 h-32 object-contain border rounded shadow"
               />
             </div>
