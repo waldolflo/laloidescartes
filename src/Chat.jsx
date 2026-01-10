@@ -17,14 +17,6 @@ export default function Chat({ user, readOnly = false }) {
   const endRef = useRef(null);
   const channelRef = useRef(null);
 
-  if (!user?.profilsid) {
-    return (
-      <div className="mb-12 mt-12 p-6 bg-gray-50 rounded-lg text-center text-gray-500 italic">
-        🔒 Connectez-vous pour participer au tchat de l'association
-      </div>
-    );
-  }
-
   const scrollToBottom = () => {
     setTimeout(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth" });
