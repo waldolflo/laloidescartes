@@ -245,9 +245,9 @@ export default function Chat({ user, readOnly = false }) {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-3xl mx-auto">
+    <div className="flex flex-col h-screen mx-auto">
       <h1 className="text-2xl font-bold mb-4">
-        💬 Tchat
+        💬 Tchat de l'association
         {unreadCount > 0 && (
           <span className="ml-2 bg-red-500 text-white px-2 rounded-full text-xs">
             {unreadCount}
@@ -270,7 +270,9 @@ export default function Chat({ user, readOnly = false }) {
             <div className="max-w-[80%]">
               <div className="text-xs opacity-70">{m.user_name}</div>
 
-              <div className="bg-gray-200 rounded px-3 py-2">
+              <div className={`rounded px-3 py-2 ${
+              m.user_id === user.profilsid ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
+            }`}>
                 {editingId === m.id ? (
                   <input
                     value={editText}
@@ -289,8 +291,8 @@ export default function Chat({ user, readOnly = false }) {
                 <div className="flex gap-2 mt-1 text-xs">
                   {editingId === m.id ? (
                     <>
-                      <button onClick={saveEdit}><Check size={14} /></button>
-                      <button onClick={() => setEditingId(null)}><X size={14} /></button>
+                      <button onClick={saveEdit} className="text-green-600"><Check size={14} /></button>
+                      <button onClick={() => setEditingId(null)} className="text-red-600"><X size={14} /></button>
                     </>
                   ) : (
                     <>
