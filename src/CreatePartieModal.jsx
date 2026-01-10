@@ -53,6 +53,14 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
       return;
     }
 
+    // ❌ Pas de notification si la partie est dans le passé
+    const partieDateTime = new Date(`${newPartie.date_partie}T${newPartie.heure_partie}`);
+    const now = new Date();
+
+    if (partieDateTime < now) {
+      return;
+    }
+
     // ✅ Récupération du token Supabase pour l'autorisation
     const { data: { session } } = await supabase.auth.getSession();
 
