@@ -13,10 +13,11 @@ export default function Chat({ user, readOnly = false }) {
   const [editText, setEditText] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const typingRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
   const endRef = useRef(null);
+  const channelRef = useRef(null);
 
-  if (!user) {
+  if (!user?.profilsid) {
     return (
       <div className="mb-12 mt-12 p-6 bg-gray-50 rounded-lg text-center text-gray-500 italic">
         🔒 Connectez-vous pour participer au tchat de l'association
@@ -30,7 +31,7 @@ export default function Chat({ user, readOnly = false }) {
     }, 50);
   };
 
-  // --- Enrichir message avec profil + couverture ---
+  // --- Enrichir message ---
   const enrichMessage = async (message) => {
     const { data: profil } = await supabase
       .from("profils")
@@ -39,12 +40,14 @@ export default function Chat({ user, readOnly = false }) {
       .single();
 
     let coverage_url = "/default_avatar.png";
+
     if (profil?.jeufavoris1) {
       const { data: jeu } = await supabase
         .from("jeux")
         .select("couverture_url")
         .eq("id", profil.jeufavoris1)
         .single();
+
       coverage_url = jeu?.couverture_url || coverage_url;
     }
 
@@ -55,33 +58,36 @@ export default function Chat({ user, readOnly = false }) {
     };
   };
 
-  // Charger messages initiaux
+  // --- Charger messages ---
   const loadMessages = async () => {
-    const { data: chatData } = await supabase
+    const { data } = await supabase
       .from("chat")
       .select("*")
       .order("created_at", { ascending: true })
       .limit(100);
 
-    if (!chatData) return;
+    if (!data) return;
 
-    const userIds = [...new Set(chatData.map((m) => m.user_id))];
-    const { data: profilsData } = await supabase
+    const userIds = [...new Set(data.map((m) => m.user_id))];
+
+    const { data: profils } = await supabase
       .from("profils")
       .select("profilsid, nom, jeufavoris1")
       .in("profilsid", userIds);
 
     const jeuxIds = [
-      ...new Set(profilsData.filter((p) => p.jeufavoris1).map((p) => p.jeufavoris1))
+      ...new Set(profils.filter((p) => p.jeufavoris1).map((p) => p.jeufavoris1)),
     ];
-    const { data: jeuxData } = await supabase
+
+    const { data: jeux } = await supabase
       .from("jeux")
       .select("id, couverture_url")
       .in("id", jeuxIds);
 
-    const messagesWithDetails = chatData.map((m) => {
-      const profil = profilsData.find((p) => p.profilsid === m.user_id);
-      const jeu = jeuxData.find((j) => j.id === profil?.jeufavoris1);
+    const enriched = data.map((m) => {
+      const profil = profils.find((p) => p.profilsid === m.user_id);
+      const jeu = jeux.find((j) => j.id === profil?.jeufavoris1);
+
       return {
         ...m,
         user_name: profil?.nom || m.user_name,
@@ -89,176 +95,136 @@ export default function Chat({ user, readOnly = false }) {
       };
     });
 
-    setMessages(messagesWithDetails);
+    setMessages(enriched);
+    scrollToBottom();
   };
 
-  // Charger les utilisateurs pour @mentions
+  // --- Utilisateurs pour mentions ---
   const loadUsers = async () => {
     const { data } = await supabase.from("profils").select("profilsid, nom");
     if (data) setUsersList(data);
   };
 
-  // Notifications navigateur
+  // --- Notifications navigateur ---
   const notifyBrowser = (title, body) => {
     if (!("Notification" in window)) return;
+
     if (Notification.permission === "granted") {
       new Notification(title, { body });
     } else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then((perm) => {
-        if (perm === "granted") new Notification(title, { body });
-      });
+      Notification.requestPermission();
     }
   };
 
-  // Real-time
+  // --- Realtime ---
   useEffect(() => {
-    if (!user?.id) return;
     loadMessages();
     loadUsers();
 
-    const sub = supabase
-      .channel("chat-room")
+    const channel = supabase.channel("chat-room");
+
+    channel
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat" },
-        async (payload) => {
-          const newMessage = await enrichMessage(payload.new);
-          setMessages((prev) => [...prev, newMessage]);
+        async ({ new: msg }) => {
+          const enriched = await enrichMessage(msg);
+          setMessages((prev) => [...prev, enriched]);
           scrollToBottom();
 
-          if (payload.new.user_id !== user?.id) {
+          if (msg.user_id !== user.profilsid) {
             setUnreadCount((c) => c + 1);
-            notifyBrowser("Nouveau message", payload.new.content);
+            notifyBrowser("Nouveau message", msg.content);
           }
         }
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "chat" },
-        async (payload) => {
-          const updatedMessage = await enrichMessage(payload.new);
+        async ({ new: msg }) => {
+          const enriched = await enrichMessage(msg);
           setMessages((prev) =>
-            prev.map((m) => (m.id === payload.new.id ? updatedMessage : m))
+            prev.map((m) => (m.id === msg.id ? enriched : m))
           );
         }
       )
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "chat" },
-        (payload) => {
-          setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+        ({ old }) => {
+          setMessages((prev) => prev.filter((m) => m.id !== old.id));
         }
       )
-      .on(
-        "broadcast",
-        { event: "typing" },
-        ({ payload }) => {
-          const { name } = payload;
-          if (name === user?.nom) return;
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload.name === user.nom) return;
 
-          setTypingUsers((prev) =>
-            prev.includes(name) ? prev : [...prev, name]
-          );
+        setTypingUsers((prev) =>
+          prev.includes(payload.name) ? prev : [...prev, payload.name]
+        );
 
-          clearTimeout(typingRef.current);
-          typingRef.current = setTimeout(() => {
-            setTypingUsers([]);
-          }, 1500);
-        }
-      )
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => {
+          setTypingUsers([]);
+        }, 1500);
+      })
       .subscribe();
 
-    return () => supabase.removeChannel(sub);
-  }, []);
+    channelRef.current = channel;
 
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user.profilsid]);
+
+  // --- Typing ---
   const sendTyping = () => {
-    if (!user?.nom) return;
-    supabase.channel("chat-room").send({
+    if (!channelRef.current) return;
+
+    channelRef.current.send({
       type: "broadcast",
       event: "typing",
       payload: { name: user.nom },
     });
   };
 
-  // --- Envoyer un message avec notifications push ---
+  // --- Envoyer message ---
   const sendMessage = async () => {
-    if (!user?.id || readOnly) return;
+    if (readOnly) return;
+
     const text = input.trim();
     if (!text) return;
 
-    // 1️⃣ Insérer le message
-    const { data: newMessage } = await supabase
-      .from("chat")
-      .insert({ user_id: user.id, user_name: user.nom, content: text })
-      .select()
-      .single();
+    await supabase.from("chat").insert({
+      user_id: user.profilsid,
+      user_name: user.nom,
+      content: text,
+    });
 
     setInput("");
     setMentionSuggestions([]);
-
-    // 2️⃣ Détecter mentions @pseudo
-    const mentionRegex = /@(\w+)/g;
-    const mentions = [];
-    let match;
-    while ((match = mentionRegex.exec(text)) !== null) {
-      mentions.push(match[1]);
-    }
-
-    // 3️⃣ Notifications via fonction serverless
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
-
-    // a) notif_chat → tous les devices sauf l'envoyeur
-    fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        type: "notif_chat",
-        title: `💬 Nouveau message de ${user.nom}`,
-        body: text,
-        url: "/chat",
-      }),
-    });
-
-    // b) notif_ping → pour chaque pseudo mentionné
-    for (const pseudo of mentions) {
-      fetch("https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          type: "notif_ping",
-          title: `🔔 Mention de ${user.nom}`,
-          body: text,
-          url: "/chat",
-        }),
-      });
-    }
   };
 
-  const startEdit = (msg) => {
-    setEditingId(msg.id);
-    setEditText(msg.content);
+  // --- Edition ---
+  const startEdit = (m) => {
+    setEditingId(m.id);
+    setEditText(m.content);
   };
+
   const saveEdit = async () => {
     await supabase.from("chat").update({ content: editText }).eq("id", editingId);
     setEditingId(null);
     setEditText("");
   };
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditText("");
-  };
+
   const deleteMessage = async (id) => {
     await supabase.from("chat").delete().eq("id", id);
   };
+
   const formatDate = (ts) =>
-    new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    new Date(ts).toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const handleInputChange = (e) => {
     const val = e.target.value;
@@ -268,44 +234,63 @@ export default function Chat({ user, readOnly = false }) {
     const match = val.match(/@(\w*)$/);
     if (match) {
       const search = match[1].toLowerCase();
-      setMentionSuggestions(usersList.filter((u) => u.nom?.toLowerCase().startsWith(search)));
+      setMentionSuggestions(
+        usersList.filter((u) =>
+          u.nom?.toLowerCase().startsWith(search)
+        )
+      );
     } else {
       setMentionSuggestions([]);
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[100vh] max-w-fit mx-auto relative">
-      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-        💬 Tchat de l'association
+    <div className="flex flex-col h-screen max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">
+        💬 Tchat
         {unreadCount > 0 && (
-          <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs">
+          <span className="ml-2 bg-red-500 text-white px-2 rounded-full text-xs">
             {unreadCount}
           </span>
         )}
       </h1>
 
-      <div className="flex-1 overflow-y-auto bg-white p-3 rounded-lg shadow-inner space-y-2 border relative">
-        {Array.isArray(messages) && messages.map((m) => (
-          <div key={m.id} className={`flex items-start gap-2 ${m.user_id === user?.id ? "justify-end" : "justify-start"}`}>
-            <img src={m.coverage_url || "/default_avatar.png"} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
-            <div className="flex flex-col max-w-[80%]">
-              <div className={`px-3 py-2 rounded-lg ${m.user_id === user?.id ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"}`}>
-                <div className="text-xs opacity-70 mb-1">{m.user_name}</div>
+      <div className="flex-1 overflow-y-auto bg-white p-3 rounded border space-y-2">
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={`flex gap-2 ${
+              m.user_id === user.profilsid ? "justify-end" : ""
+            }`}
+          >
+            <img
+              src={m.coverage_url}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+            <div className="max-w-[80%]">
+              <div className="text-xs opacity-70">{m.user_name}</div>
+
+              <div className="bg-gray-200 rounded px-3 py-2">
                 {editingId === m.id ? (
-                  <input value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full px-2 py-1 text-black rounded" />
+                  <input
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
                 ) : (
-                  <div>{m.content}</div>
+                  m.content
                 )}
-                <div className="text-[10px] text-right opacity-70 mt-1">{formatDate(m.created_at)}</div>
               </div>
 
-              {m.user_id === user?.id && (
-                <div className="flex gap-2 mt-1 text-xs opacity-70">
+              <div className="text-[10px] opacity-60 text-right">
+                {formatDate(m.created_at)}
+              </div>
+
+              {m.user_id === user.profilsid && (
+                <div className="flex gap-2 mt-1 text-xs">
                   {editingId === m.id ? (
                     <>
-                      <button onClick={saveEdit} className="text-green-600"><Check size={14} /></button>
-                      <button onClick={cancelEdit} className="text-red-600"><X size={14} /></button>
+                      <button onClick={saveEdit}><Check size={14} /></button>
+                      <button onClick={() => setEditingId(null)}><X size={14} /></button>
                     </>
                   ) : (
                     <>
@@ -318,38 +303,37 @@ export default function Chat({ user, readOnly = false }) {
             </div>
           </div>
         ))}
-        <div ref={endRef}></div>
+        <div ref={endRef} />
       </div>
 
       {typingUsers.length > 0 && (
-        <div className="text-sm text-gray-600 mt-2">✍️ {typingUsers.join(", ")} écrit...</div>
+        <div className="text-sm mt-2 text-gray-500">
+          ✍️ {typingUsers.join(", ")} écrit...
+        </div>
       )}
 
       <div className="flex mt-3 gap-2 relative">
         <input
-          disabled={readOnly}
           value={input}
           onChange={handleInputChange}
-          placeholder="Écrire un message... @pseudo"
-          className="flex-1 px-3 py-2 border rounded-lg shadow-sm"
+          placeholder="Écrire un message… @pseudo"
+          className="flex-1 border rounded px-3 py-2"
         />
         <button
           onClick={sendMessage}
-          disabled={readOnly}
-          className="bg-blue-600 text-white px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1"
+          className="bg-blue-600 text-white px-4 rounded"
         >
           <SendHorizonal size={18} />
         </button>
 
         {mentionSuggestions.length > 0 && (
-          <div className="absolute bottom-12 left-0 bg-white border rounded shadow max-h-40 overflow-y-auto z-50 w-full">
+          <div className="absolute bottom-12 left-0 bg-white border rounded shadow w-full">
             {mentionSuggestions.map((u) => (
               <div
-                key={u.id}
+                key={u.profilsid}
                 className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
                 onClick={() => {
-                  const newText = input.replace(/@\w*$/, `@${u.nom} `);
-                  setInput(newText);
+                  setInput(input.replace(/@\w*$/, `@${u.nom} `));
                   setMentionSuggestions([]);
                 }}
               >
