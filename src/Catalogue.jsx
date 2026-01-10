@@ -242,7 +242,7 @@ export default function Catalogue({ user }) {
       body: JSON.stringify({
         type: "notif_jeux", // 👈 le serveur filtrera tous les devices avec notif_jeux = true
         title: `🎲 Nouveau jeu : ${newJeu.nom}`,
-        body: `${newJeu.nom} à été ajouté à la ludothèque c'est un jeu ${newJeu.type} pour ${newJeu.min_joueurs} à ${newJeu.max_joueurs} joueurs d'une durée de ${newJeu.duree}. Cliquez pour plus de détails !`,
+        body: `${newJeu.nom} à été ajouté à la ludothèque c'est un jeu ${newJeu.type} pour ${newJeu.min_joueurs} à ${newJeu.max_joueurs} joueurs d'une durée de ${newJeu.duree} minutes. Cliquez pour plus de détails !`,
         url: "/catalogue",
       }),
     });

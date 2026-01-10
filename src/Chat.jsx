@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import { SendHorizonal, Edit3, Trash2, Check, X } from "lucide-react";
 
-export default function Chat({ user, readOnly = false }) {
+export default function Chat({ profil, readOnly = false }) {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
   const [input, setInput] = useState("");
@@ -24,9 +24,15 @@ export default function Chat({ user, readOnly = false }) {
     }, 50);
   };
 
+  // --- Initialisation profil ---
+  useEffect(() => {
+    if (!profil?.profilsid) return;
+    setCurrentProfilId(profil.profilsid);
+  }, [profil?.profilsid]);
+
   // --- Enrichir message ---
   const enrichMessage = async (message) => {
-    const { data: profil } = await supabase
+    const { data: p } = await supabase
       .from("profils")
       .select("profilsid, nom, jeufavoris1")
       .eq("profilsid", message.user_id)
@@ -34,18 +40,19 @@ export default function Chat({ user, readOnly = false }) {
 
     let coverage_url = "/default_avatar.png";
 
-    if (profil?.jeufavoris1) {
+    if (p?.jeufavoris1) {
       const { data: jeu } = await supabase
         .from("jeux")
         .select("couverture_url")
-        .eq("id", profil.jeufavoris1)
+        .eq("id", p.jeufavoris1)
         .single();
+
       coverage_url = jeu?.couverture_url || coverage_url;
     }
 
     return {
       ...message,
-      user_name: profil?.nom || message.user_name,
+      user_name: p?.nom || message.user_name,
       coverage_url,
     };
   };
@@ -77,12 +84,12 @@ export default function Chat({ user, readOnly = false }) {
       .in("id", jeuxIds);
 
     const enriched = data.map((m) => {
-      const profil = profils.find((p) => p.profilsid === m.user_id);
-      const jeu = jeux.find((j) => j.id === profil?.jeufavoris1);
+      const p = profils.find((pr) => pr.profilsid === m.user_id);
+      const jeu = jeux.find((j) => j.id === p?.jeufavoris1);
 
       return {
         ...m,
-        user_name: profil?.nom || m.user_name,
+        user_name: p?.nom || m.user_name,
         coverage_url: jeu?.couverture_url || "/default_avatar.png",
       };
     });
@@ -100,29 +107,18 @@ export default function Chat({ user, readOnly = false }) {
   // --- Notifications navigateur ---
   const notifyBrowser = (title, body) => {
     if (!("Notification" in window)) return;
-
     if (Notification.permission === "granted") {
       new Notification(title, { body });
-    } else if (Notification.permission !== "denied") {
-      Notification.requestPermission();
     }
   };
 
-  // --- Realtime + initialisation ---
+  // --- Realtime ---
   useEffect(() => {
-    if (!user?.profilsid) return;
+    if (!currentProfilId) return;
 
-    // ✅ Initialiser currentProfilId avant tout
-    setCurrentProfilId(user.profilsid);
+    loadMessages();
+    loadUsers();
 
-    // Charger messages + utilisateurs
-    const init = async () => {
-      await loadMessages();
-      await loadUsers();
-    };
-    init();
-
-    // Setup realtime
     const channel = supabase.channel("chat-room");
 
     channel
@@ -134,7 +130,7 @@ export default function Chat({ user, readOnly = false }) {
           setMessages((prev) => [...prev, enriched]);
           scrollToBottom();
 
-          if (msg.user_id !== user.profilsid) {
+          if (msg.user_id !== currentProfilId) {
             setUnreadCount((c) => c + 1);
             notifyBrowser("Nouveau message", msg.content);
           }
@@ -158,7 +154,7 @@ export default function Chat({ user, readOnly = false }) {
         }
       )
       .on("broadcast", { event: "typing" }, ({ payload }) => {
-        if (payload.name === user.nom) return;
+        if (payload.name === profil.nom) return;
 
         setTypingUsers((prev) =>
           prev.includes(payload.name) ? prev : [...prev, payload.name]
@@ -176,7 +172,7 @@ export default function Chat({ user, readOnly = false }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.profilsid]);
+  }, [currentProfilId]);
 
   // --- Typing ---
   const sendTyping = () => {
@@ -185,7 +181,7 @@ export default function Chat({ user, readOnly = false }) {
     channelRef.current.send({
       type: "broadcast",
       event: "typing",
-      payload: { name: user.nom },
+      payload: { name: profil.nom },
     });
   };
 
@@ -197,8 +193,8 @@ export default function Chat({ user, readOnly = false }) {
     if (!text) return;
 
     await supabase.from("chat").insert({
-      user_id: user.profilsid,
-      user_name: user.nom,
+      user_id: profil.profilsid,
+      user_name: profil.nom,
       content: text,
     });
 
@@ -269,19 +265,22 @@ export default function Chat({ user, readOnly = false }) {
               src={m.coverage_url}
               className="w-8 h-8 rounded-full object-cover"
             />
+
             <div className="max-w-[80%]">
               <div className="text-xs opacity-70">{m.user_name}</div>
 
-              <div className={`rounded px-3 py-2 ${
-                m.user_id === currentProfilId
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-900"
-              }`}>
+              <div
+                className={`rounded px-3 py-2 ${
+                  m.user_id === currentProfilId
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-900"
+                }`}
+              >
                 {editingId === m.id ? (
                   <input
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
-                    className="w-full text-black rounded px-2 py-1"
+                    className="w-full px-2 py-1 rounded text-black"
                   />
                 ) : (
                   m.content
@@ -296,13 +295,24 @@ export default function Chat({ user, readOnly = false }) {
                 <div className="flex gap-2 mt-1 text-xs">
                   {editingId === m.id ? (
                     <>
-                      <button onClick={saveEdit} className="text-green-600"><Check size={14} /></button>
-                      <button onClick={() => setEditingId(null)} className="text-red-600"><X size={14} /></button>
+                      <button onClick={saveEdit} className="text-green-600">
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="text-red-600"
+                      >
+                        <X size={14} />
+                      </button>
                     </>
                   ) : (
                     <>
-                      <button onClick={() => startEdit(m)}><Edit3 size={14} /></button>
-                      <button onClick={() => deleteMessage(m.id)}><Trash2 size={14} /></button>
+                      <button onClick={() => startEdit(m)}>
+                        <Edit3 size={14} />
+                      </button>
+                      <button onClick={() => deleteMessage(m.id)}>
+                        <Trash2 size={14} />
+                      </button>
                     </>
                   )}
                 </div>
