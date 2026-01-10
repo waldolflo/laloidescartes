@@ -34,8 +34,8 @@ export default function Chat({ user, readOnly = false }) {
   const enrichMessage = async (message) => {
     const { data: profil } = await supabase
       .from("profils")
-      .select("id, nom, jeufavoris1")
-      .eq("id", message.user_id)
+      .select("profils_id, nom, jeufavoris1")
+      .eq("profils_id", message.user_id)
       .single();
 
     let coverage_url = "/default_avatar.png";
@@ -68,8 +68,8 @@ export default function Chat({ user, readOnly = false }) {
     const userIds = [...new Set(chatData.map((m) => m.user_id))];
     const { data: profilsData } = await supabase
       .from("profils")
-      .select("id, nom, jeufavoris1")
-      .in("id", userIds);
+      .select("profils_id, nom, jeufavoris1")
+      .in("profils_id", userIds);
 
     const jeuxIds = [
       ...new Set(profilsData.filter((p) => p.jeufavoris1).map((p) => p.jeufavoris1))
@@ -80,7 +80,7 @@ export default function Chat({ user, readOnly = false }) {
       .in("id", jeuxIds);
 
     const messagesWithDetails = chatData.map((m) => {
-      const profil = profilsData.find((p) => p.id === m.user_id);
+      const profil = profilsData.find((p) => p.profils_id === m.user_id);
       const jeu = jeuxData.find((j) => j.id === profil?.jeufavoris1);
       return {
         ...m,
@@ -94,7 +94,7 @@ export default function Chat({ user, readOnly = false }) {
 
   // Charger les utilisateurs pour @mentions
   const loadUsers = async () => {
-    const { data } = await supabase.from("profils").select("id, nom");
+    const { data } = await supabase.from("profils").select("profils_id, nom");
     if (data) setUsersList(data);
   };
 
