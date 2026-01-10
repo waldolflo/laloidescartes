@@ -24,12 +24,6 @@ export default function Chat({ user, readOnly = false }) {
     }, 50);
   };
 
-  useEffect(() => {
-    if (user?.profilsid) {
-      setCurrentProfilId(user.profilsid);
-    }
-  }, [user?.profilsid]);
-
   // --- Enrichir message ---
   const enrichMessage = async (message) => {
     const { data: profil } = await supabase
@@ -46,7 +40,6 @@ export default function Chat({ user, readOnly = false }) {
         .select("couverture_url")
         .eq("id", profil.jeufavoris1)
         .single();
-
       coverage_url = jeu?.couverture_url || coverage_url;
     }
 
@@ -115,11 +108,21 @@ export default function Chat({ user, readOnly = false }) {
     }
   };
 
-  // --- Realtime ---
+  // --- Realtime + initialisation ---
   useEffect(() => {
-    loadMessages();
-    loadUsers();
+    if (!user?.profilsid) return;
 
+    // ✅ Initialiser currentProfilId avant tout
+    setCurrentProfilId(user.profilsid);
+
+    // Charger messages + utilisateurs
+    const init = async () => {
+      await loadMessages();
+      await loadUsers();
+    };
+    init();
+
+    // Setup realtime
     const channel = supabase.channel("chat-room");
 
     channel
@@ -131,7 +134,7 @@ export default function Chat({ user, readOnly = false }) {
           setMessages((prev) => [...prev, enriched]);
           scrollToBottom();
 
-          if (msg.user_id !== currentProfilId) {
+          if (msg.user_id !== user.profilsid) {
             setUnreadCount((c) => c + 1);
             notifyBrowser("Nouveau message", msg.content);
           }
@@ -173,7 +176,7 @@ export default function Chat({ user, readOnly = false }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user.profilsid]);
+  }, [user?.profilsid]);
 
   // --- Typing ---
   const sendTyping = () => {
@@ -270,12 +273,15 @@ export default function Chat({ user, readOnly = false }) {
               <div className="text-xs opacity-70">{m.user_name}</div>
 
               <div className={`rounded px-3 py-2 ${
-              m.user_id === currentProfilId ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
-            }`}>
+                m.user_id === currentProfilId
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-900"
+              }`}>
                 {editingId === m.id ? (
                   <input
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
+                    className="w-full text-black rounded px-2 py-1"
                   />
                 ) : (
                   m.content
