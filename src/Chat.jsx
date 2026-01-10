@@ -12,6 +12,7 @@ export default function Chat({ user, readOnly = false }) {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [currentProfilId, setCurrentProfilId] = useState(null);
 
   const typingTimeoutRef = useRef(null);
   const endRef = useRef(null);
@@ -22,6 +23,12 @@ export default function Chat({ user, readOnly = false }) {
       endRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 50);
   };
+
+  useEffect(() => {
+    if (user?.profilsid) {
+      setCurrentProfilId(user.profilsid);
+    }
+  }, [user?.profilsid]);
 
   // --- Enrichir message ---
   const enrichMessage = async (message) => {
@@ -124,7 +131,7 @@ export default function Chat({ user, readOnly = false }) {
           setMessages((prev) => [...prev, enriched]);
           scrollToBottom();
 
-          if (msg.user_id !== user.profilsid) {
+          if (msg.user_id !== currentProfilId) {
             setUnreadCount((c) => c + 1);
             notifyBrowser("Nouveau message", msg.content);
           }
@@ -252,7 +259,7 @@ export default function Chat({ user, readOnly = false }) {
           <div
             key={m.id}
             className={`flex gap-2 ${
-              m.user_id === user.profilsid ? "justify-end" : ""
+              m.user_id === currentProfilId ? "justify-end" : ""
             }`}
           >
             <img
@@ -263,7 +270,7 @@ export default function Chat({ user, readOnly = false }) {
               <div className="text-xs opacity-70">{m.user_name}</div>
 
               <div className={`rounded px-3 py-2 ${
-              m.user_id === user.profilsid ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
+              m.user_id === currentProfilId ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
             }`}>
                 {editingId === m.id ? (
                   <input
@@ -279,7 +286,7 @@ export default function Chat({ user, readOnly = false }) {
                 {formatDate(m.created_at)}
               </div>
 
-              {m.user_id === user.profilsid && (
+              {m.user_id === currentProfilId && (
                 <div className="flex gap-2 mt-1 text-xs">
                   {editingId === m.id ? (
                     <>
