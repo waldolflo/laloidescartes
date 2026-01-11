@@ -1,4 +1,3 @@
-// src/Chat.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import { SendHorizonal, Edit3, Trash2, Check, X } from "lucide-react";
@@ -24,13 +23,14 @@ export default function Chat({ profil, readOnly = false }) {
     }, 50);
   };
 
-  // --- Initialisation profil ---
+  /* ---------------- PROFIL ---------------- */
   useEffect(() => {
-    if (!profil?.profilsid) return;
-    setCurrentProfilId(profil.profilsid);
+    if (profil?.profilsid) {
+      setCurrentProfilId(profil.profilsid);
+    }
   }, [profil?.profilsid]);
 
-  // --- Enrichir message ---
+  /* ---------------- ENRICH MESSAGE ---------------- */
   const enrichMessage = async (message) => {
     const { data: p } = await supabase
       .from("profils")
@@ -57,7 +57,7 @@ export default function Chat({ profil, readOnly = false }) {
     };
   };
 
-  // --- Charger messages ---
+  /* ---------------- LOAD MESSAGES (TOUJOURS) ---------------- */
   const loadMessages = async () => {
     const { data } = await supabase
       .from("chat")
@@ -98,13 +98,13 @@ export default function Chat({ profil, readOnly = false }) {
     scrollToBottom();
   };
 
-  // --- Utilisateurs pour mentions ---
+  /* ---------------- USERS FOR MENTIONS ---------------- */
   const loadUsers = async () => {
     const { data } = await supabase.from("profils").select("profilsid, nom");
     if (data) setUsersList(data);
   };
 
-  // --- Notifications navigateur ---
+  /* ---------------- NOTIFICATIONS ---------------- */
   const notifyBrowser = (title, body) => {
     if (!("Notification" in window)) return;
     if (Notification.permission === "granted") {
@@ -112,13 +112,14 @@ export default function Chat({ profil, readOnly = false }) {
     }
   };
 
-  // --- Realtime ---
+  /* ---------------- INIT (SANS PROFIL) ---------------- */
   useEffect(() => {
-    if (!currentProfilId) return;
-
     loadMessages();
     loadUsers();
+  }, []);
 
+  /* ---------------- REALTIME (SANS BLOQUAGE) ---------------- */
+  useEffect(() => {
     const channel = supabase.channel("chat-room");
 
     channel
@@ -130,7 +131,7 @@ export default function Chat({ profil, readOnly = false }) {
           setMessages((prev) => [...prev, enriched]);
           scrollToBottom();
 
-          if (msg.user_id !== currentProfilId) {
+          if (currentProfilId && msg.user_id !== currentProfilId) {
             setUnreadCount((c) => c + 1);
             notifyBrowser("Nouveau message", msg.content);
           }
@@ -154,7 +155,7 @@ export default function Chat({ profil, readOnly = false }) {
         }
       )
       .on("broadcast", { event: "typing" }, ({ payload }) => {
-        if (payload.name === profil.nom) return;
+        if (payload.name === profil?.nom) return;
 
         setTypingUsers((prev) =>
           prev.includes(payload.name) ? prev : [...prev, payload.name]
@@ -172,11 +173,11 @@ export default function Chat({ profil, readOnly = false }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentProfilId]);
+  }, [currentProfilId, profil?.nom]);
 
-  // --- Typing ---
+  /* ---------------- TYPING ---------------- */
   const sendTyping = () => {
-    if (!channelRef.current) return;
+    if (!channelRef.current || !profil?.nom) return;
 
     channelRef.current.send({
       type: "broadcast",
@@ -185,9 +186,9 @@ export default function Chat({ profil, readOnly = false }) {
     });
   };
 
-  // --- Envoyer message ---
+  /* ---------------- SEND MESSAGE ---------------- */
   const sendMessage = async () => {
-    if (readOnly) return;
+    if (readOnly || !profil?.profilsid) return;
 
     const text = input.trim();
     if (!text) return;
@@ -202,7 +203,7 @@ export default function Chat({ profil, readOnly = false }) {
     setMentionSuggestions([]);
   };
 
-  // --- Edition ---
+  /* ---------------- EDIT / DELETE ---------------- */
   const startEdit = (m) => {
     setEditingId(m.id);
     setEditText(m.content);
