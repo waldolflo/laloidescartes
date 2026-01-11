@@ -278,35 +278,46 @@ export default function Chat({ user, readOnly = false }) {
       </h1>
 
       <div className="flex-1 overflow-y-auto bg-white p-3 rounded border space-y-2">
-        {Array.isArray(messages) && messages.map((m) => (
-          <div key={m.id} className={`flex gap-2 ${m.user_id === user?.id ? "justify-end" : ""}`}>
-            <img src={m.coverage_url || "/default_avatar.png"} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={`flex gap-2 ${
+              m.user_id === user?.id ? "justify-end" : ""
+            }`}
+          >
+            <img
+              src={m.coverage_url}
+              className="w-8 h-8 rounded-full object-cover"
+            />
             <div className="max-w-[80%]">
               <div className="text-xs opacity-70">{m.user_name}</div>
-                <div className={`rounded px-3 py-2 ${
-                  m.user_id === currentProfilId
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-900"
-                }`}>
-                  {editingId === m.id ? (
-                    <input
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      className="w-full text-black rounded px-2 py-1"
-                    />
-                  ) : (
-                    m.content
-                  )}
-                </div>
-                <div className="text-[10px] text-right opacity-70 mt-1">{formatDate(m.created_at)}</div>
+
+              <div className={`rounded px-3 py-2 ${
+                m.user_id === user?.id
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-900"
+              }`}>
+                {editingId === m.id ? (
+                  <input
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="w-full text-black rounded px-2 py-1"
+                  />
+                ) : (
+                  m.content
+                )}
+              </div>
+
+              <div className="text-[10px] opacity-60 text-right">
+                {formatDate(m.created_at)}
               </div>
 
               {m.user_id === user?.id && (
-                <div className="flex gap-2 mt-1 text-xs opacity-70">
+                <div className="flex gap-2 mt-1 text-xs">
                   {editingId === m.id ? (
                     <>
                       <button onClick={saveEdit} className="text-green-600"><Check size={14} /></button>
-                      <button onClick={cancelEdit} className="text-red-600"><X size={14} /></button>
+                      <button onClick={() => setEditingId(null)} className="text-red-600"><X size={14} /></button>
                     </>
                   ) : (
                     <>
@@ -319,7 +330,7 @@ export default function Chat({ user, readOnly = false }) {
             </div>
           </div>
         ))}
-        <div ref={endRef}></div>
+        <div ref={endRef} />
       </div>
 
       {typingUsers.length > 0 && (
