@@ -309,10 +309,21 @@ export default function Chat({ user, readOnly = false }) {
                       e.target.style.height = "auto";
                       e.target.style.height = `${e.target.scrollHeight}px`;
                     }}
-                    className="w-full bg-transparent resize-none outline-none overflow-hidden"
+                    style={{ minHeight: "1.5em" }}
+                    className="
+                      w-full
+                      bg-transparent
+                      resize-none
+                      outline-none
+                      overflow-hidden
+                      whitespace-pre-wrap
+                      leading-normal
+                    "
                   />
                 ) : (
-                  m.content
+                  <div className="whitespace-pre-wrap leading-normal">
+                    {m.content}
+                  </div>
                 )}
               </div>
 
