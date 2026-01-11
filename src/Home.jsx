@@ -301,7 +301,7 @@ export default function Home({ user }) {
                 </div>
               )}
               <div className="mb-8 mt-8">
-                <Chat profil={currentUser} readOnly={false} />
+                <Chat user={currentUser} readOnly={false} />
               </div>
             </section>
           )}
