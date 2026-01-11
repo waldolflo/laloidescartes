@@ -25,10 +25,10 @@ export default function Chat({ profil, readOnly = false }) {
 
   /* ---------------- PROFIL ---------------- */
   useEffect(() => {
-    if (profil?.profilsid) {
+    if (profil?.profilsid && !currentProfilId) {
       setCurrentProfilId(profil.profilsid);
     }
-  }, [profil?.profilsid]);
+  }, [profil?.profilsid, currentProfilId]);
 
   /* ---------------- ENRICH MESSAGE ---------------- */
   const enrichMessage = async (message) => {
