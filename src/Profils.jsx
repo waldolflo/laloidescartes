@@ -71,7 +71,8 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   // Détecte si notifications disponibles sur iOS
   const canUsePushNotifications = () => {
     if (!isIOS()) return true; // Android et PC → ok
-    return isPWA(); // iOS → seulement si PWA installée
+    return true;
+    //return isPWA(); // iOS → seulement si PWA installée
   };
 
   const toggleNotif = async (key, value) => {
