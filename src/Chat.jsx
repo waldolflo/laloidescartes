@@ -285,9 +285,14 @@ export default function Chat({ user, readOnly = false }) {
               <div className={`px-3 py-2 rounded-lg ${m.user_id === user?.id ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"}`}>
                 <div className="text-xs opacity-70 mb-1">{m.user_name}</div>
                 {editingId === m.id ? (
-                  <input value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full px-2 py-1 text-black rounded" />
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    rows={1}
+                    className="w-full px-2 py-1 text-black rounded resize-none min-h-[2.5rem]"
+                  />
                 ) : (
-                  <div>{m.content}</div>
+                  <div className="whitespace-pre-wrap">{m.content}</div>
                 )}
                 <div className="text-[10px] text-right opacity-70 mt-1">{formatDate(m.created_at)}</div>
               </div>
