@@ -22,6 +22,10 @@ export default function Chat({ user, readOnly = false }) {
     }, 50);
   };
 
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   // --- Enrichir message avec profil + couverture ---
   const enrichMessage = async (message) => {
     const { data: profil } = await supabase
@@ -116,7 +120,6 @@ export default function Chat({ user, readOnly = false }) {
         async (payload) => {
           const newMessage = await enrichMessage(payload.new);
           setMessages((prev) => [...prev, newMessage]);
-          scrollToBottom();
 
           if (payload.new.user_id !== user?.id) {
             setUnreadCount((c) => c + 1);
