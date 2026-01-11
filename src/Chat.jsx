@@ -281,15 +281,15 @@ export default function Chat({ user, readOnly = false }) {
         {Array.isArray(messages) && messages.map((m) => (
           <div key={m.id} className={`flex items-start gap-2 ${m.user_id === user?.id ? "justify-end" : "justify-start"}`}>
             <img src={m.coverage_url || "/default_avatar.png"} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
-            <div className="flex flex-col max-w-[80%]">
-              <div className={`px-3 py-2 rounded-lg ${m.user_id === user?.id ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"}`}>
+            <div className="flex flex-col max-w-[80%] w-[80%]">
+              <div className={`px-3 py-2 rounded-lg w-full ${m.user_id === user?.id ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"}`}>
                 <div className="text-xs opacity-70 mb-1">{m.user_name}</div>
                 {editingId === m.id ? (
                   <textarea
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                     rows={1}
-                    className="w-full px-2 py-1 text-black rounded resize-none min-h-[2.5rem]"
+                    className="w-full bg-transparent resize-none outline-none"
                   />
                 ) : (
                   <div className="whitespace-pre-wrap">{m.content}</div>
