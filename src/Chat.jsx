@@ -267,17 +267,17 @@ export default function Chat({ user, readOnly = false }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[100vh] max-w-fit mx-auto relative">
-      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
+    <div className="flex flex-col h-screen mx-auto">
+      <h1 className="text-2xl font-bold mb-4">
         💬 Tchat de l'association
         {unreadCount > 0 && (
-          <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs">
+          <span className="ml-2 bg-red-500 text-white px-2 rounded-full text-xs">
             {unreadCount}
           </span>
         )}
       </h1>
 
-      <div className="flex-1 overflow-y-auto bg-white p-3 rounded-lg shadow-inner space-y-2 border relative">
+      <div className="flex-1 overflow-y-auto bg-white p-3 rounded border space-y-2">
         {Array.isArray(messages) && messages.map((m) => (
           <div key={m.id} className={`flex items-start gap-2 ${m.user_id === user?.id ? "justify-end" : "justify-start"}`}>
             <img src={m.coverage_url || "/default_avatar.png"} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
