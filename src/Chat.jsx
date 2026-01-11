@@ -290,7 +290,7 @@ export default function Chat({ user, readOnly = false }) {
               className="w-8 h-8 rounded-full object-cover"
             />
             <div className="max-w-[80%]">
-              <div className="text-xs opacity-70">{m.user_name}</div>
+              <div className="text-xs opacity-70 mb-1">{m.user_name}</div>
 
               <div className={`rounded px-3 py-2 ${
                 m.user_id === user?.id
@@ -298,10 +298,18 @@ export default function Chat({ user, readOnly = false }) {
                   : "bg-gray-200 text-gray-900"
               }`}>
                 {editingId === m.id ? (
-                  <input
+                  <textarea
                     value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    className="w-full text-black rounded px-2 py-1"
+                    onChange={(e) => {
+                      setEditText(e.target.value);
+                      e.target.style.height = "auto";
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.height = "auto";
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    className="w-full bg-transparent resize-none outline-none overflow-hidden"
                   />
                 ) : (
                   m.content
@@ -313,7 +321,7 @@ export default function Chat({ user, readOnly = false }) {
               </div>
 
               {m.user_id === user?.id && (
-                <div className="flex gap-2 mt-1 text-xs">
+                <div className="flex gap-2 mt-1 text-xs opacity-70">
                   {editingId === m.id ? (
                     <>
                       <button onClick={saveEdit} className="text-green-600"><Check size={14} /></button>
