@@ -23,6 +23,8 @@ export default function Catalogue({ user }) {
   const [selectedJeu, setSelectedJeu] = useState(null);
   const bestScoresFetched = useRef(false); // ✅ Empêche la boucle
   const bestScoreSynced = useRef(false);// ✅ Empêche la boucle
+  const [profils, setProfils] = useState([]);
+  const [profilCourant, setProfilCourant] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -37,6 +39,24 @@ export default function Catalogue({ user }) {
       if (!error) setUserRole(data?.role || "");
     };
 
+    const fetchProfils = async () => {
+      const { data, error } = await supabase
+        .from("profils")
+        .select("id, nom");
+
+      if (!error && data) {
+        setProfils(data);
+
+        // Profil courant
+        const me = data.find(p => p.id === user.id);
+        if (me) {
+          setProfilCourant(me);
+          setProprietaire(me.nom); // ✅ préremplissage
+        }
+      }
+    };
+
+    fetchProfils();
     fetchRole();
     fetchJeux();
   }, [user]);
@@ -455,7 +475,18 @@ export default function Catalogue({ user }) {
             <input className="w-full border p-2 rounded mb-2" placeholder="Nombre de joueurs max" value={maxJoueurs} onChange={e => setMaxJoueurs(e.target.value)} />
             <input className="w-full border p-2 rounded mb-2" placeholder="Type de jeu" value={type} onChange={e => setType(e.target.value)} />
             <input className="w-full border p-2 rounded mb-2" placeholder="Durée" value={duree} onChange={e => setDuree(e.target.value)} />
-            <input className="w-full border p-2 rounded mb-2" placeholder="Propriétaire" value={proprietaire} onChange={e => setProprietaire(e.target.value)} />
+            <select
+              className="w-full border p-2 rounded mb-2"
+              value={proprietaire}
+              onChange={e => setProprietaire(e.target.value)}
+            >
+              {profils.map(p => (
+                <option key={p.id} value={p.nom}>
+                  {p.nom}
+                  {p.id === user.id ? " (moi)" : ""}
+                </option>
+              ))}
+            </select>
             <input className="w-full border p-2 rounded mb-2" placeholder="ID BGG (Numéro dans l'URL)" value={bggId} onChange={e => setBggId(e.target.value)} />
 
             <div className="flex justify-end gap-2 mt-2">

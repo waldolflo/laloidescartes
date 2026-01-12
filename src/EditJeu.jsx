@@ -13,6 +13,21 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
     bgg_api: "",
   });
   const [errorMsg, setErrorMsg] = useState("");
+  const [profils, setProfils] = useState([]);
+
+  useEffect(() => {
+    const fetchProfils = async () => {
+      const { data, error } = await supabase
+        .from("profils")
+        .select("id, nom");
+
+      if (!error && data) {
+        setProfils(data);
+      }
+    };
+
+    fetchProfils();
+  }, []);
 
   useEffect(() => {
     if (jeu) setForm(jeu);
@@ -114,7 +129,22 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
         <input className="w-full border p-2 rounded mb-2" placeholder="Nombre de joueurs maximum" value={form.max_joueurs} onChange={e => handleChange("max_joueurs", e.target.value)} />
         <input className="w-full border p-2 rounded mb-2" placeholder="Type de jeu" value={form.type} onChange={e => handleChange("type", e.target.value)} />
         <input className="w-full border p-2 rounded mb-4" placeholder="Durée" value={form.duree} onChange={e => handleChange("duree", e.target.value)} />
-        <input className="w-full border p-2 rounded mb-4" placeholder="Propriétaire" value={form.proprietaire} onChange={e => handleChange("proprietaire", e.target.value)} />
+        <select
+          className="w-full border p-2 rounded mb-4"
+          value={form.proprietaire || ""}
+          onChange={e => handleChange("proprietaire", e.target.value)}
+        >
+          <option value="" disabled>
+            Sélectionner un propriétaire
+          </option>
+
+          {profils.map(p => (
+            <option key={p.id} value={p.nom}>
+              {p.nom}
+              {p.id === jeu.utilisateur_id ? "(moi)" : ""}
+            </option>
+          ))}
+        </select>
         <input className="w-full border p-2 rounded mb-4" placeholder="ID BGG (Numéro dans l'URL du jeu)" value={form.bgg_api} onChange={e => handleChange("bgg_api", e.target.value)} />
 
         <div className="flex justify-end gap-2">
