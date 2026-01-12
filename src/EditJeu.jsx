@@ -139,9 +139,8 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
           </option>
 
           {profils.map(p => (
-            <option key={p.id} value={p.nom}>
+            <option key={p.id} value={p.id}>
               {p.nom}
-              {p.id === jeu.utilisateur_id ? "(moi)" : ""}
             </option>
           ))}
         </select>

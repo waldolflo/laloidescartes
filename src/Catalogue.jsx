@@ -51,7 +51,7 @@ export default function Catalogue({ user }) {
         const me = data.find(p => p.id === user.id);
         if (me) {
           setProfilCourant(me);
-          setProprietaire(me.nom); // ✅ préremplissage
+          setProprietaire(me.id); // ✅ préremplissage avec l'ID
         }
       }
     };
@@ -427,7 +427,7 @@ export default function Catalogue({ user }) {
             <p>Nombre de joueurs : {j.min_joueurs} à {j.max_joueurs}</p>
             <p>Type : {j.type || "?"}</p>
             <p>Durée : {j.duree || "?"} minutes</p>
-            <p>Propriétaire : {j.proprietaire || "?"}</p>
+            <p>Propriétaire : {profils.find(p => p.id === j.utilisateur_id)?.nom || "?"}</p>
             <div className="flex flex-wrap gap-2 mt-3">
               {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
                 <button
@@ -481,7 +481,7 @@ export default function Catalogue({ user }) {
               onChange={e => setProprietaire(e.target.value)}
             >
               {profils.map(p => (
-                <option key={p.id} value={p.nom}>
+                <option key={p.id} value={p.id}>
                   {p.nom}
                   {p.id === user.id ? " (moi)" : ""}
                 </option>
