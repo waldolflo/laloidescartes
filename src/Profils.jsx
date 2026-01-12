@@ -70,9 +70,17 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
   // Détecte si notifications disponibles sur iOS
   const canUsePushNotifications = () => {
-    if (!isIOS()) return true; // Android et PC → ok
-    return true;
-    //return isPWA(); // iOS → seulement si PWA installée
+    if (typeof window === "undefined") return false;
+
+    // Non iOS → OK
+    if (!isIOS()) return "serviceWorker" in navigator && "PushManager" in window;
+
+    // iOS → uniquement si Service Worker + Push dispo
+    return (
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window
+    );
   };
 
   const toggleNotif = async (key, value) => {
@@ -139,6 +147,8 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       notif_ping: !!data.notif_ping,
     });
   };
+
+  const isIOSPWA = () => isIOS() && isPWA();
 
   // ✅ Hooks toujours au même niveau
   useEffect(() => {
@@ -486,19 +496,53 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
             🚫 <strong>Notifications indisponibles sur iOS</strong>
             <br />
-            Apple ne permet pas les notifications web sur iPhone.
+            Apple ne permet pas les notifications web sur iPhone hors application installée.
             <br />
             <p>Pour recevoir des notifications sur iPhone à partir d’iOS 16.4+ :</p>
-              <ul><li>1. Ouvrez Safari sur votre iPhone.</li>
-              <li>2. Allez sur notre site.</li>
-              <li>3. Cliquez sur “Partager” → “Ajouter à l’écran d’accueil”.</li>
-              <li>4. Autorisez les notifications à l’ouverture de l’app installée.</li></ul>
-            <span className="italic">
-              (Android et ordinateur uniquement)
-            </span>
+            <ul className="list-disc ml-4">
+              <li>Ouvrez Safari</li>
+              <li>Ajoutez l’app à l’écran d’accueil</li>
+              <li>Ouvrez l’app installée</li>
+            </ul>
           </div>
         ) : (
           <>
+            {/* 🔔 Bouton iOS obligatoire */}
+            {isIOS() && "PushManager" in window && Notification.permission !== "granted" && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-sm mb-2">
+                  🔔 Active les notifications sur cet appareil
+                </p>
+                <button
+                  onClick={async () => {
+                    const permission = await Notification.requestPermission();
+
+                    if (permission === "granted") {
+                      // 🔑 force la création du device iOS
+                      await enablePushForDevice(authUser.id, "notif_parties");
+                      await disablePushForDevice("notif_parties");
+
+                      fetchNotifSettings();
+                      fetchPushDevicesCount();
+                    } else {
+                      alert("Notifications refusées");
+                    }
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                  Activer les notifications
+                </button>
+              </div>
+            )}
+
+            {/* ✅ État notifications iOS */}
+            {isIOS() && Notification.permission === "granted" && (
+              <p className="text-sm text-green-700 mb-2">
+                ✅ Notifications activées sur cet appareil
+              </p>
+            )}
+
+            {/* ✅ Checkbox */}
             {[
               { key: "notif_parties", label: "🎲 Nouvelles parties" },
               { key: "notif_jeux", label: "🆕 Nouveaux jeux ajoutés à la ludothèque" },
@@ -514,7 +558,10 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                 <input
                   type="checkbox"
                   checked={!!notifSettings[key]}
-                  disabled={key === "notif_ping" && notifSettings.notif_chat}
+                  disabled={
+                    (isIOS() && "PushManager" in window && Notification.permission !== "granted") ||
+                    (key === "notif_ping" && notifSettings.notif_chat)
+                  }
                   onChange={(e) => {
                     const checked = e.target.checked;
 
