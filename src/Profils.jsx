@@ -68,21 +68,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     return false;
   };
 
-  // Détecte si notifications disponibles sur iOS
-  const canUsePushNotifications = () => {
-    if (typeof window === "undefined") return false;
-
-    // Non iOS → OK
-    if (!isIOS()) return "serviceWorker" in navigator && "PushManager" in window;
-
-    // iOS → uniquement si Service Worker + Push dispo
-    return (
-      "serviceWorker" in navigator &&
-      "PushManager" in window &&
-      "Notification" in window
-    );
-  };
-
   const toggleNotif = async (key, value) => {
     if (!authUser) return;
 
@@ -492,23 +477,24 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       <div className="mt-6 p-4 border rounded bg-gray-50">
         <h3 className="text-lg font-semibold mb-3">🔔 Notifications</h3>
 
-        {!canUsePushNotifications() ? (
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-            🚫 <strong>Notifications indisponibles sur iOS</strong>
-            <br />
-            Apple ne permet pas les notifications web sur iPhone hors application installée.
-            <br />
-            <p>Pour recevoir des notifications sur iPhone à partir d’iOS 16.4+ :</p>
-            <ul className="list-disc ml-4">
-              <li>Ouvrez Safari</li>
-              <li>Ajoutez l’app à l’écran d’accueil</li>
-              <li>Ouvrez l’app installée</li>
-            </ul>
-          </div>
-        ) : (
+        {/* 🍎 CAS iOS */}
+        {isIOS() ? (
           <>
-            {/* 🔔 Bouton iOS obligatoire */}
-            {isIOS() && "PushManager" in window && Notification.permission !== "granted" && (
+            {/* Message explicatif iOS */}
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+              🍎 <strong>Notifications sur iPhone</strong>
+              <br />
+              Les notifications fonctionnent uniquement si l’application est
+              ajoutée à l’écran d’accueil.
+              <ul className="list-disc ml-4 mt-2">
+                <li>Ouvrez Safari</li>
+                <li>Ajoutez l’app à l’écran d’accueil</li>
+                <li>Ouvrez l’app installée</li>
+              </ul>
+            </div>
+
+            {/* Bouton d’activation iOS */}
+            {Notification.permission !== "granted" ? (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
                 <p className="text-sm mb-2">
                   🔔 Active les notifications sur cet appareil
@@ -533,16 +519,15 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                   Activer les notifications
                 </button>
               </div>
-            )}
-
-            {/* ✅ État notifications iOS */}
-            {isIOS() && Notification.permission === "granted" && (
+            ) : (
               <p className="text-sm text-green-700 mb-2">
                 ✅ Notifications activées sur cet appareil
               </p>
             )}
-
-            {/* ✅ Checkbox */}
+          </>
+        ) : (
+          <>
+            {/*  🤖 ANDROID / 💻 DESKTOP → ✅ Checkbox */}
             {[
               { key: "notif_parties", label: "🎲 Nouvelles parties" },
               { key: "notif_jeux", label: "🆕 Nouveaux jeux ajoutés à la ludothèque" },
