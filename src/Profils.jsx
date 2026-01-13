@@ -135,6 +135,14 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
   const isIOSPWA = () => isIOS() && isPWA();
 
+  // 🔐 Permission notifications (safe pour iOS)
+  const notifPermission =
+    typeof window !== "undefined" &&
+    "Notification" in window &&
+    typeof Notification.permission === "string"
+      ? Notification.permission
+      : "unsupported";
+
   // ✅ Hooks toujours au même niveau
   useEffect(() => {
     if (!authUser) return;
@@ -494,7 +502,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
             </div>
 
             {/* Bouton d’activation iOS */}
-            {Notification.permission !== "granted" ? (
+            {notifPermission !== "granted" ? (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
                 <p className="text-sm mb-2">
                   🔔 Active les notifications sur cet appareil
@@ -544,7 +552,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                   type="checkbox"
                   checked={!!notifSettings[key]}
                   disabled={
-                    (isIOS() && "PushManager" in window && Notification.permission !== "granted") ||
+                    (isIOS() && notifPermission !== "granted") ||
                     (key === "notif_ping" && notifSettings.notif_chat)
                   }
                   onChange={(e) => {
