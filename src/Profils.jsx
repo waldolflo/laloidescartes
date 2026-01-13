@@ -70,17 +70,18 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
   // Détecte si notifications disponibles sur iOS
   const canUsePushNotifications = () => {
-    if (typeof window === "undefined") return false;
+    return true;
+    //if (typeof window === "undefined") return false;
 
     // Non iOS → OK
-    if (!isIOS()) return "serviceWorker" in navigator && "PushManager" in window;
+    //if (!isIOS()) return "serviceWorker" in navigator && "PushManager" in window;
 
     // iOS → uniquement si Service Worker + Push dispo
-    return (
-      "serviceWorker" in navigator &&
-      "PushManager" in window &&
-      "Notification" in window
-    );
+    //return (
+    //  "serviceWorker" in navigator &&
+    //  "PushManager" in window &&
+    //  "Notification" in window
+    //);
   };
 
   const toggleNotif = async (key, value) => {
@@ -492,7 +493,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       <div className="mt-6 p-4 border rounded bg-gray-50">
         <h3 className="text-lg font-semibold mb-3">🔔 Notifications</h3>
 
-        {canUsePushNotifications() ? (
+        {!canUsePushNotifications() ? (
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
             🚫 <strong>Notifications indisponibles sur iOS</strong>
             <br />

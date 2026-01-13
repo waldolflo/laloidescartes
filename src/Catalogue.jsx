@@ -427,7 +427,7 @@ export default function Catalogue({ user }) {
             <p>Nombre de joueurs : {j.min_joueurs} à {j.max_joueurs}</p>
             <p>Type : {j.type || "?"}</p>
             <p>Durée : {j.duree || "?"} minutes</p>
-            <p>Propriétaire : {profils.find(p => p.id === j.utilisateur_id)?.nom || "?"}</p>
+            <p>Propriétaire : {profils.find(p => p.id === j.proprietaire)?.nom || "?"}</p>
             <div className="flex flex-wrap gap-2 mt-3">
               {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
                 <button
