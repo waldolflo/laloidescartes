@@ -522,7 +522,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                       alert("Notifications refusées");
                     }
                   }}
-                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                  className="relative z-50 bg-blue-600 text-white px-6 py-3 rounded-lg transform translate-z-0 hover:bg-blue-700 active:scale-95 transition ease-in-out duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                 >
                   Activer les notifications
                 </button>
