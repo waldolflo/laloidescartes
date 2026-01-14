@@ -509,20 +509,51 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                 </p>
                 <button
                   onClick={async () => {
-                    const permission = await Notification.requestPermission();
+                    try {
+                      alert("CLICK OK");
 
-                    if (permission === "granted") {
-                      // 🔑 force la création du device iOS
+                      if (!("Notification" in window)) {
+                        alert("Notifications non supportées");
+                        return;
+                      }
+
+                      // ⚠️ iOS PWA : NE PAS await directement
+                      const permission = await new Promise((resolve) => {
+                        Notification.requestPermission(resolve);
+                      });
+
+                      alert("Permission = " + permission);
+
+                      if (permission !== "granted") {
+                        alert("Notifications refusées");
+                        return;
+                      }
+
+                      alert("Avant enablePush");
+
                       await enablePushForDevice(authUser.id, "notif_parties");
+
+                      alert("Après enablePush");
+
                       await disablePushForDevice("notif_parties");
 
                       fetchNotifSettings();
                       fetchPushDevicesCount();
-                    } else {
-                      alert("Notifications refusées");
+
+                      alert("FIN OK");
+                    } catch (err) {
+                      console.error(err);
+                      alert("ERREUR JS (voir console)");
                     }
                   }}
-                  className="relative z-50 bg-blue-600 text-white px-6 py-3 rounded-lg transform translate-z-0 hover:bg-blue-700 active:scale-95 transition ease-in-out duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                  className="
+                    relative z-50
+                    bg-blue-600 text-white
+                    px-6 py-3
+                    rounded-lg
+                    transform translate-z-0
+                    active:scale-95
+                  "
                 >
                   Activer les notifications
                 </button>
