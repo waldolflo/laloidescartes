@@ -177,7 +177,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
           ) : (
             /* Redirection si pas connecté */
             /*<Route path="/*" element={<Navigate to="/" replace />} />*/
-            <Route path="/catalogue" element={<Catalogue />} />
+            <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
           )}
         </Routes>
       </motion.div>
