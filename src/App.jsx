@@ -30,9 +30,9 @@ function Navbar({ currentUser, authUser, onLogout }) {
 
   const publicTabs = [
     { to: "/", label: "Accueil", icon: House },
-    { to: "/catalogue", label: "Ludothèque", icon: Dices },
   ];
   const privateTabs = [
+    { to: "/catalogue", label: "Ludothèque", icon: Dices },
     { to: "/parties", label: "Parties", icon: CalendarDays },
     { to: "/statistiques", label: "Statistiques", icon: ChartPie },
     { to: "/profils", label: "Profil", icon: User },
@@ -152,10 +152,11 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
           <Route path="/" element={<Home user={currentUser} />} />
           <Route path="/auth" element={<Auth onLogin={onLogin} />} />
           {/* Routes publiques */}
-          <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
+          
           {/* Routes protégées */}
           {currentUser ? (
             <>
+              <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
               <Route path="/parties" element={<Parties user={currentUser} authUser={authUser} />} />
               <Route path="/archives" element={<Archives user={currentUser} authUser={authUser} />} />
               <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
