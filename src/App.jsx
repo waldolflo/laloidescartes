@@ -28,9 +28,11 @@ import { House, ChartPie, CalendarDays, Dices, User, LogOut } from "lucide-react
 function Navbar({ currentUser, authUser, onLogout }) {
   const location = useLocation();
 
-  const publicTabs = [{ to: "/", label: "Accueil", icon: House }];
-  const privateTabs = [
+  const publicTabs = [
+    { to: "/", label: "Accueil", icon: House },
     { to: "/catalogue", label: "Ludothèque", icon: Dices },
+  ];
+  const privateTabs = [
     { to: "/parties", label: "Parties", icon: CalendarDays },
     { to: "/statistiques", label: "Statistiques", icon: ChartPie },
     { to: "/profils", label: "Profil", icon: User },
