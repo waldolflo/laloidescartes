@@ -326,13 +326,13 @@ export default function Catalogue({ user }) {
           <option value="poids-desc">Poids ↓</option>
           <option value="poids-asc">Poids ↑</option>
         </select>
-        {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo") && (
-          <button
-            onClick={() => setAddingJeu(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Ajouter un jeu
-          </button>
+        {user && (userRole === "admin" || userRole === "ludoplus" || userRole === "ludo") && (
+            <button
+              onClick={() => setAddingJeu(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Ajouter un jeu
+            </button>
         )}
       </div>
 
@@ -428,24 +428,26 @@ export default function Catalogue({ user }) {
             <p>Type : {j.type || "?"}</p>
             <p>Durée : {j.duree || "?"} minutes</p>
             <p>Propriétaire : {profils.find(p => p.id === j.proprietaire)?.nom || "?"}</p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
-                <button
-                  onClick={() => setEditingJeu(j)}
-                  className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
-                >
-                  Modifier
-                </button>
-              )}
-              {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo" || userRole === "membre") && (
-                <button
-                  onClick={() => setSelectedJeu(j)}
-                  className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
-                >
-                  Créer partie
-                </button>
-              )}
-            </div>
+            {user && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {(j.utilisateur_id === user.id || userRole === "admin" || userRole === "ludoplus") && (
+                  <button
+                    onClick={() => setEditingJeu(j)}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                  >
+                    Modifier
+                  </button>
+                )}
+                {(userRole === "admin" || userRole === "ludoplus" || userRole === "ludo" || userRole === "membre") && (
+                  <button
+                    onClick={() => setSelectedJeu(j)}
+                    className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                  >
+                    Créer partie
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
