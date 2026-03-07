@@ -151,11 +151,11 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
         <Routes location={location}>
           <Route path="/" element={<Home user={currentUser} />} />
           <Route path="/auth" element={<Auth onLogin={onLogin} />} />
-          
+          {/* Routes publiques */}
+          <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
           {/* Routes protégées */}
           {currentUser ? (
             <>
-              <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
               <Route path="/parties" element={<Parties user={currentUser} authUser={authUser} />} />
               <Route path="/archives" element={<Archives user={currentUser} authUser={authUser} />} />
               <Route path="/inscriptions" element={<Inscriptions user={currentUser} authUser={authUser} />} />
@@ -176,8 +176,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
             </>
           ) : (
             /* Redirection si pas connecté */
-            /*<Route path="/*" element={<Navigate to="/" replace />} />*/
-            <Route path="/catalogue" element={<Catalogue user={currentUser} authUser={authUser} />} />
+            <Route path="/*" element={<Navigate to="/" replace />} />
           )}
         </Routes>
       </motion.div>
