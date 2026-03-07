@@ -80,7 +80,7 @@ function Navbar({ currentUser, authUser, onLogout }) {
             ) : (
               <>
                 <span className="text-sm">
-                    Créez un compte pour vous inscrire aux parties, en créer, suivre vos statistiques et accéder à des fonctionnalités exclusives !
+                    Créez un compte pour voir notre ludothèque, vous inscrire aux parties, en créer, suivre vos statistiques et accéder à des fonctionnalités exclusives !
                   </span>
                 <Link
                   to="/auth"
