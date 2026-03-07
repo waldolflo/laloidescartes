@@ -78,12 +78,17 @@ function Navbar({ currentUser, authUser, onLogout }) {
                 </button>
               </>
             ) : (
-              <Link
-                to="/auth"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-              >
-                Connexion
-              </Link>
+              <>
+                <span className="text-sm">
+                    Créez un compte pour vous inscrire aux parties, en créer, suivre vos statistiques et accéder à des fonctionnalités exclusives !
+                  </span>
+                <Link
+                  to="/auth"
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+                >
+                  Connexion
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -171,7 +176,8 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
             </>
           ) : (
             /* Redirection si pas connecté */
-            <Route path="/*" element={<Navigate to="/" replace />} />
+            /*<Route path="/*" element={<Navigate to="/" replace />} />*/
+            <Route path="/catalogue" element={<Catalogue />} />
           )}
         </Routes>
       </motion.div>
