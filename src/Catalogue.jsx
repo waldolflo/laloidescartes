@@ -268,16 +268,23 @@ export default function Catalogue({ user }) {
     });
   };
 
-  // Filtre et tri dynamique
+  // 🔎 Filtre et tri dynamique
   useEffect(() => {
-    const text = searchText.toLowerCase();
-    let filtered = jeux.filter(j =>
-      (j.nom || "").toLowerCase().includes(text) ||
-      (j.type || "").toLowerCase().includes(text) ||
-      (j.proprietaire || "").toLowerCase().includes(text) ||
-      (j.duree || "").toLowerCase().includes(text) ||
-      (j.max_joueurs || "").toString().includes(text)
-    );
+    const text = searchText.toLowerCase().trim();
+
+    let filtered = jeux.filter(j => {
+      // 🔹 Recherche du nom du propriétaire à partir de son ID
+      const proprietaireNom =
+        profils.find(p => String(p.id) === String(j.proprietaire))?.nom || "";
+
+      return (
+        (j.nom || "").toLowerCase().includes(text) ||
+        (j.type || "").toLowerCase().includes(text) ||
+        proprietaireNom.toLowerCase().includes(text) ||
+        (j.duree || "").toString().toLowerCase().includes(text) ||
+        (j.max_joueurs || "").toString().includes(text)
+      );
+    });
 
     filtered.sort((a, b) => {
       switch (sortOption) {
@@ -296,7 +303,7 @@ export default function Catalogue({ user }) {
     });
 
     setFilteredJeux(filtered);
-  }, [searchText, jeux, sortOption]);
+  }, [searchText, jeux, sortOption, profils]);
 
   return (
     <div className="p-4">
