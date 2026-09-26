@@ -75,7 +75,7 @@ export default function HomeAssoContent({
                 </div>
                 <div className="text-center mt-6">
                   <img
-                  src="https://laloidescartes.my.canva.site/_assets/media/40f2fc69c9e39fdbb5063c9d0f32cab8.jpg"
+                  src="https://laloidescartes.vercel.app/partenairelaloidescartes.jpg"
                   alt="partenaires"
                   className="rounded-xl shadow-md max-h-80 object-contain"
                   />
@@ -179,7 +179,7 @@ export default function HomeAssoContent({
               </div>
 
               <img
-                src="https://laloidescartes.my.canva.site/_assets/media/e330db1ce4e0a769721d6668a95d40f4.png"
+                src="https://laloidescartes.vercel.app/lieulaloidescartes.png"
                 alt="Lieu de l'association"
                 className="rounded-lg shadow-md max-h-64 object-contain"
               />
