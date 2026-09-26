@@ -21,7 +21,7 @@ import Images from "./Images";
 import Auth from "./Auth";
 import Home from "./Home";
 import FooterBGG from "./FooterBGG";
-import Chat from "./Chat";
+import HomeAssoContent from "./HomeAssoContent";
 import { House, ChartPie, CalendarDays, Dices, User, LogOut } from "lucide-react";
 
 // --- Navbar responsive ---
@@ -172,7 +172,7 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
                   )
                 }
               />
-              <Route path="/chat" element={<Chat user={currentUser} />} />
+              <Route path="/HomeAssoContent" element={<HomeAssoContent user={currentUser} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           ) : (

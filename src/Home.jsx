@@ -7,6 +7,7 @@ import { Phone, Mail } from "lucide-react";
 import FacebookWidget from "./FacebookWidget";
 import DiaporamaSwiper from "./DiaporamaSwiper";
 import HomePublicContent from "./HomePublicContent";
+import HomeAssoContent from "./HomeAssoContent";
 
 export default function Home({ user }) {
   const currentUser = user || null;
@@ -268,6 +269,14 @@ export default function Home({ user }) {
         <div className="mb-8">
           <nav className="flex justify-center gap-4 mb-6">
             <button
+              onClick={() => setActiveTab("home")}
+              className={`px-4 py-2 rounded-full font-semibold transition ${
+                activeTab === "home" ? "bg-purple-700 text-white" : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              Accueil
+            </button>
+            <button
               onClick={() => setActiveTab("asso")}
               className={`px-4 py-2 rounded-full font-semibold transition ${
                 activeTab === "asso" ? "bg-purple-700 text-white" : "bg-gray-200 text-gray-700"
@@ -276,12 +285,12 @@ export default function Home({ user }) {
               Association
             </button>
             <button
-              onClick={() => setActiveTab("home")}
+              onClick={() => setActiveTab("tchat")}
               className={`px-4 py-2 rounded-full font-semibold transition ${
-                activeTab === "home" ? "bg-purple-700 text-white" : "bg-gray-200 text-gray-700"
+                activeTab === "tchat" ? "bg-purple-700 text-white" : "bg-gray-200 text-gray-700"
               }`}
             >
-              Accueil
+              Tchat
             </button>
           </nav>
         </div>
@@ -292,7 +301,39 @@ export default function Home({ user }) {
       {/* ------------------------- */}
       {currentUser ? (
         <>
+          {activeTab === "home" && (
+            <HomePublicContent
+              stats={stats}
+              countSeanceTotal={countSeanceTotal}
+              countAdherentTotal={countAdherentTotal}
+              countFollowersFB={countFollowersFB}
+              messagePresident={messagePresident}
+              planningImageUrl={planningImageUrl}
+              setZoomOpen={setZoomOpen}
+            />
+          )}
           {activeTab === "asso" && (
+            <section className="animate-fadeInBounce">
+              {annoncePresident?.trim() && (
+                <div className="p-6 bg-slate-800 text-white rounded-xl shadow-md mb-6 animate-fadeInBounce">
+                  <h2 className="text-2xl font-bold text-center mb-4">📢 Annonce du président</h2>
+                  <p className="text-center">{annoncePresident}</p>
+                </div>
+              )}
+              <div className="mb-8 mt-8">
+                <HomeAssoContent
+                  stats={stats}
+                  countSeanceTotal={countSeanceTotal}
+                  countAdherentTotal={countAdherentTotal}
+                  countFollowersFB={countFollowersFB}
+                  messagePresident={messagePresident}
+                  planningImageUrl={planningImageUrl}
+                  setZoomOpen={setZoomOpen}
+                />
+              </div>
+            </section>
+          )}
+          {activeTab === "tchat" && (
             <section className="animate-fadeInBounce">
               {annoncePresident?.trim() && (
                 <div className="p-6 bg-slate-800 text-white rounded-xl shadow-md mb-6 animate-fadeInBounce">
@@ -304,18 +345,6 @@ export default function Home({ user }) {
                 <Chat user={currentUser} readOnly={false} />
               </div>
             </section>
-          )}
-
-          {activeTab === "home" && (
-            <HomePublicContent
-              stats={stats}
-              countSeanceTotal={countSeanceTotal}
-              countAdherentTotal={countAdherentTotal}
-              countFollowersFB={countFollowersFB}
-              messagePresident={messagePresident}
-              planningImageUrl={planningImageUrl}
-              setZoomOpen={setZoomOpen}
-            />
           )}
         </>
       ) : (
