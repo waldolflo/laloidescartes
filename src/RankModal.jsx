@@ -269,64 +269,52 @@ export default function RankModal({ partie, onClose, fetchParties }) {
     setLoading(true);
 
     try {
-      // Créer le joueur
-      const { data: joueur, error: joueurError } = await supabase
-        .from("joueurs")
-        .insert([
-          {
-            nom,
-            actif: true,
-          },
-        ])
-        .select("id, nom, actif")
-        .single();
+      // Création du joueur + inscription à la partie
+      // effectuées côté Supabase dans une seule opération
+      const { data: joueurId, error } = await supabase.rpc(
+        "ajouter_joueur_partie",
+        {
+          p_partie_id: partie.id,
+          p_nom: nom,
+        }
+      );
 
-      if (joueurError) throw joueurError;
+      if (error) {
+        console.error(
+          "Erreur RPC ajouter_joueur_partie :",
+          error
+        );
+        throw error;
+      }
 
-      // Ajouter immédiatement le joueur à la liste générale
+      // Ajouter le nouveau joueur à la liste locale
+      const nouveauJoueur = {
+        id: joueurId,
+        nom,
+        actif: true,
+      };
+
       setAllJoueurs((prev) =>
-        [...prev, joueur].sort((a, b) =>
+        [...prev, nouveauJoueur].sort((a, b) =>
           a.nom.localeCompare(b.nom, "fr")
         )
       );
 
-      // Créer son inscription à la partie
-      const { data: inscription, error: inscriptionError } =
-        await supabase
-          .from("inscriptions")
-          .insert([
-            {
-              partie_id: partie.id,
-              utilisateur_id: null,
-              joueur_id: joueur.id,
-              rank: null,
-              score: null,
-            },
-          ])
-          .select(`
-            id,
-            partie_id,
-            utilisateur_id,
-            joueur_id,
-            rank,
-            score,
-            created_at,
-            joueurs (
-              id,
-              nom
-            )
-          `)
-          .single();
-
-      if (inscriptionError) throw inscriptionError;
-
+      // Ajouter l'inscription à l'affichage local
       setInscrits((prev) => [
         ...prev,
         {
-          ...inscription,
-          score: 0,
+          id: `new-${joueurId}`,
+          partie_id: partie.id,
+          utilisateur_id: null,
+          joueur_id: joueurId,
           rank: null,
+          score: 0,
           gagnant: false,
+          joueurs: {
+            id: joueurId,
+            nom,
+          },
         },
       ]);
 
@@ -334,8 +322,16 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
       alert(`${nom} a été ajouté à la partie.`);
     } catch (err) {
-      console.error(err);
-      alert("Erreur lors de la création du joueur.");
+      console.error(
+        "Erreur lors de la création du joueur :",
+        err
+      );
+
+      alert(
+        `Erreur lors de la création du joueur : ${
+          err?.message || "erreur inconnue"
+        }`
+      );
     } finally {
       setLoading(false);
     }
