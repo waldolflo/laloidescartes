@@ -326,9 +326,8 @@ export default function RankModal({ partie, onClose, fetchParties }) {
     setLoading(true);
 
     try {
-      // Création du joueur + inscription à la partie
-      // effectuées côté Supabase dans une seule opération
-      const { data: joueurId, error } = await supabase.rpc(
+      // Le RPC retourne maintenant l'ID de l'inscription
+      const { data: inscriptionId, error } = await supabase.rpc(
         "ajouter_joueur_partie",
         {
           p_partie_id: partie.id,
@@ -336,48 +335,54 @@ export default function RankModal({ partie, onClose, fetchParties }) {
         }
       );
 
-      if (error) {
-        console.error(
-          "Erreur RPC ajouter_joueur_partie :",
-          error
+      if (error) throw error;
+
+      // Récupérer l'inscription créée avec le joueur
+      const { data: inscription, error: fetchError } =
+        await supabase
+          .from("inscriptions")
+          .select(`
+            id,
+            partie_id,
+            utilisateur_id,
+            joueur_id,
+            rank,
+            score,
+            created_at,
+            joueurs (
+              id,
+              nom
+            )
+          `)
+          .eq("id", inscriptionId)
+          .single();
+
+      if (fetchError) throw fetchError;
+
+      // Ajouter le joueur à la liste générale
+      if (inscription.joueurs) {
+        setAllJoueurs((prev) =>
+          [...prev, inscription.joueurs].sort((a, b) =>
+            a.nom.localeCompare(b.nom, "fr")
+          )
         );
-        throw error;
       }
 
-      // Ajouter le nouveau joueur à la liste locale
-      const nouveauJoueur = {
-        id: joueurId,
-        nom,
-        actif: true,
-      };
-
-      setAllJoueurs((prev) =>
-        [...prev, nouveauJoueur].sort((a, b) =>
-          a.nom.localeCompare(b.nom, "fr")
-        )
-      );
-
-      // Ajouter l'inscription à l'affichage local
+      // Ajouter l'inscription à l'affichage
       setInscrits((prev) => [
         ...prev,
         {
-          id: `new-${joueurId}`,
-          partie_id: partie.id,
-          utilisateur_id: null,
-          joueur_id: joueurId,
-          rank: null,
+          ...inscription,
           score: 0,
+          rank: null,
           gagnant: false,
-          joueurs: {
-            id: joueurId,
-            nom,
-          },
         },
       ]);
 
       setNewPlayerName("");
 
       alert(`${nom} a été ajouté à la partie.`);
+
     } catch (err) {
       console.error(
         "Erreur lors de la création du joueur :",
