@@ -33,49 +33,124 @@ export default function Archives({ user, authUser }) {
     fetchPast();
   }, []);
 
-  const fetchPast = async () => {
+    const fetchPast = async () => {
     try {
+      // 1️⃣ Récupérer toutes les parties
       const { data: partiesData, error: errorParties } = await supabase
         .from("parties")
-        .select("*, jeux(*), organisateur:profils!parties_utilisateur_id_fkey(id, nom)")
+        .select(
+          "*, jeux(*), organisateur:profils!parties_utilisateur_id_fkey(id, nom)"
+        )
         .order("date_partie", { ascending: true });
 
       if (errorParties) throw errorParties;
 
       const now = new Date();
-      const pastParties = (partiesData || []).filter(p => new Date(`${p.date_partie}T${p.heure_partie}`) < now);
 
-      // 1️⃣ récupérer toutes les inscriptions pour ces parties
-      const partieIds = pastParties.map(p => p.id);
-      const { data: insData } = await supabase
+      const pastParties = (partiesData || []).filter(
+        (p) =>
+          new Date(`${p.date_partie}T${p.heure_partie}`) < now
+      );
+
+      // S'il n'y a aucune partie passée
+      if (pastParties.length === 0) {
+        setArchives([]);
+        return;
+      }
+
+      // 2️⃣ Récupérer toutes les inscriptions
+      const partieIds = pastParties.map((p) => p.id);
+
+      const { data: insData, error: errorInscriptions } = await supabase
         .from("inscriptions")
-        .select("utilisateur_id, partie_id, rank, score")
+        .select(
+          "id, utilisateur_id, joueur_id, partie_id, rank, score"
+        )
         .in("partie_id", partieIds);
 
-      // 2️⃣ récupérer tous les profils correspondants
-      const userIds = [...new Set(insData.map(i => i.utilisateur_id))];
-      const { data: profilsData } = await supabase
-        .from("profils")
-        .select("id, nom")
-        .in("id", userIds);
+      if (errorInscriptions) throw errorInscriptions;
 
-      // 3️⃣ assembler les inscriptions avec les profils
-      const inscritsMap = insData.reduce((acc, i) => {
-        const profil = profilsData.find(u => u.id === i.utilisateur_id);
+      const inscriptions = insData || [];
+
+      // 3️⃣ Récupérer uniquement les profils des vrais utilisateurs
+      const userIds = [
+        ...new Set(
+          inscriptions
+            .map((i) => i.utilisateur_id)
+            .filter(Boolean)
+        ),
+      ];
+
+      let profilsData = [];
+
+      if (userIds.length > 0) {
+        const { data, error } = await supabase
+          .from("profils")
+          .select("id, nom")
+          .in("id", userIds);
+
+        if (error) throw error;
+
+        profilsData = data || [];
+      }
+
+      // 4️⃣ Récupérer les joueurs sans compte
+      const joueurIds = [
+        ...new Set(
+          inscriptions
+            .map((i) => i.joueur_id)
+            .filter(Boolean)
+        ),
+      ];
+
+      let joueursData = [];
+
+      if (joueurIds.length > 0) {
+        const { data, error } = await supabase
+          .from("joueurs")
+          .select("id, nom")
+          .in("id", joueurIds);
+
+        if (error) throw error;
+
+        joueursData = data || [];
+      }
+
+      // 5️⃣ Assembler les inscriptions
+      const inscritsMap = inscriptions.reduce((acc, i) => {
+        const profil = profilsData.find(
+          (u) => u.id === i.utilisateur_id
+        );
+
+        const joueur = joueursData.find(
+          (j) => j.id === i.joueur_id
+        );
+
         const partieList = acc[i.partie_id] || [];
-        partieList.push({ ...i, profil });
+
+        partieList.push({
+          ...i,
+          profil: profil || null,
+          joueur: joueur || null,
+        });
+
         acc[i.partie_id] = partieList;
+
         return acc;
       }, {});
 
-      // 4️⃣ ajouter les inscriptions aux parties
-      const fullPast = pastParties.map(p => ({
+      // 6️⃣ Ajouter les inscriptions aux parties
+      const fullPast = pastParties.map((p) => ({
         ...p,
-        inscrits: inscritsMap[p.id] || []
+        inscrits: inscritsMap[p.id] || [],
       }));
 
-      // trier par date décroissante
-      fullPast.sort((a, b) => new Date(b.date_partie) - new Date(a.date_partie));
+      // 7️⃣ Trier par date décroissante
+      fullPast.sort(
+        (a, b) =>
+          new Date(`${b.date_partie}T${b.heure_partie}`) -
+          new Date(`${a.date_partie}T${a.heure_partie}`)
+      );
 
       setArchives(fullPast);
     } catch (err) {
@@ -165,7 +240,10 @@ export default function Archives({ user, authUser }) {
                   .map((i) => {
                     const rank = i.rank;
                     const score = i.score;
-                    const nom = i.profil?.nom || "Joueur inconnu";
+                    const nom =
+                      i.profil?.nom ||
+                      i.joueur?.nom ||
+                      "Joueur inconnu";
                     let bgColor = "bg-white";
                     let emoji = "";
                     if (rank === 1) {
@@ -179,7 +257,7 @@ export default function Archives({ user, authUser }) {
                       emoji = "🥉";
                     }
                     return (
-                    <div key={i.utilisateur_id} className={`flex justify-between px-3 py-1 border rounded mb-1 ${bgColor}`}>
+                    <div key={i.id} className={`flex justify-between px-3 py-1 border rounded mb-1 ${bgColor}`}>
                       <span className="font-medium flex items-center gap-2">{emoji && <span>{emoji}</span>}{nom}</span>
                       <span className="text-sm text-gray-700 flex items-center gap-2">{score !== null && score !== undefined && <span>{score}</span>} pts — {rank && <span>Rang {rank}</span>}</span>
                     </div>
