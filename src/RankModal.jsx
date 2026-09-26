@@ -185,70 +185,127 @@ export default function RankModal({ partie, onClose, fetchParties }) {
     setLoading(true);
 
     try {
-      // Le select contient :
-      // user_UUID  pour un utilisateur
-      // player_ID  pour un joueur sans compte
-
       const [type, value] = newParticipant.split(":");
 
       // Vérifier si déjà présent
       const alreadyExists =
         type === "user"
           ? inscrits.some((i) => i.utilisateur_id === value)
-          : inscrits.some((i) => String(i.joueur_id) === String(value));
+          : inscrits.some(
+              (i) => String(i.joueur_id) === String(value)
+            );
 
       if (alreadyExists) {
         alert("Ce joueur est déjà inscrit !");
-        setLoading(false);
         return;
       }
 
-      const inscription = {
-        partie_id: partie.id,
-        utilisateur_id: type === "user" ? value : null,
-        joueur_id: type === "player" ? Number(value) : null,
-        rank: null,
-        score: null,
-      };
+      // ========================================================
+      // UTILISATEUR AVEC COMPTE
+      // ========================================================
 
-      const { data, error } = await supabase
-        .from("inscriptions")
-        .insert([inscription])
-        .select(`
-          id,
-          partie_id,
-          utilisateur_id,
-          joueur_id,
-          rank,
-          score,
-          created_at,
-          profils (
-            id,
-            nom
-          ),
-          joueurs (
-            id,
-            nom
-          )
-        `)
-        .single();
+      if (type === "user") {
+        const { data: inscriptionId, error } = await supabase.rpc(
+          "ajouter_utilisateur_partie",
+          {
+            p_partie_id: partie.id,
+            p_utilisateur_id: value,
+          }
+        );
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setInscrits((prev) => [
-        ...prev,
-        {
-          ...data,
-          score: 0,
-          rank: null,
-          gagnant: false,
-        },
-      ]);
+        // Récupérer l'inscription créée
+        const { data: inscription, error: fetchError } =
+          await supabase
+            .from("inscriptions")
+            .select(`
+              id,
+              partie_id,
+              utilisateur_id,
+              joueur_id,
+              rank,
+              score,
+              created_at,
+              profils (
+                id,
+                nom
+              )
+            `)
+            .eq("id", inscriptionId)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        setInscrits((prev) => [
+          ...prev,
+          {
+            ...inscription,
+            score: 0,
+            rank: null,
+            gagnant: false,
+          },
+        ]);
+      }
+
+      // ========================================================
+      // JOUEUR SANS COMPTE EXISTANT
+      // ========================================================
+
+      if (type === "player") {
+        const { data: inscriptionId, error } = await supabase.rpc(
+          "ajouter_joueur_existant_partie",
+          {
+            p_partie_id: partie.id,
+            p_joueur_id: Number(value),
+          }
+        );
+
+        if (error) throw error;
+
+        // Récupérer l'inscription créée
+        const { data: inscription, error: fetchError } =
+          await supabase
+            .from("inscriptions")
+            .select(`
+              id,
+              partie_id,
+              utilisateur_id,
+              joueur_id,
+              rank,
+              score,
+              created_at,
+              joueurs (
+                id,
+                nom
+              )
+            `)
+            .eq("id", inscriptionId)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        setInscrits((prev) => [
+          ...prev,
+          {
+            ...inscription,
+            score: 0,
+            rank: null,
+            gagnant: false,
+          },
+        ]);
+      }
 
       setNewParticipant("");
+
     } catch (err) {
-      console.error(err);
-      alert("Erreur lors de l’ajout du joueur.");
+      console.error("Erreur ajout participant :", err);
+
+      alert(
+        `Erreur lors de l'ajout du joueur : ${
+          err?.message || "erreur inconnue"
+        }`
+      );
     } finally {
       setLoading(false);
     }
