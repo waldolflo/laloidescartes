@@ -201,10 +201,7 @@ export default function Parties({ user, authUser }) {
 
     const lienPartie = `${window.location.origin}/parties?partie=${partie.id}`;
 
-    let message = `🎲 *Nouvelle partie — La Loi des Cartes* 🎲
-    🎯 *${partie.jeux?.nom || "Jeu"}*
-    📅 ${formatDate(partie.date_partie)}
-    🕐 ${formatHeure(partie.heure_partie)}`;
+    let message = `🎲 *Nouvelle partie — La Loi des Cartes* 🎲\n🎯 *${partie.jeux?.nom || "Jeu"}*\n📅 ${formatDate(partie.date_partie)}\n🕐 ${formatHeure(partie.heure_partie)}`;
 
     if (partie.lieu) {
       message += `\n📍 ${partie.lieu}`;
