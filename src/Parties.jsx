@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom"; 
+import { Link, useSearchParams } from "react-router-dom"; 
 import { supabase } from "./supabaseClient";
 import EditPartie from "./EditPartie";
 
 export default function Parties({ user, authUser }) {
+  const [searchParams] = useSearchParams();
+  const partieIdFromUrl = searchParams.get("partie");
   const currentUser = user || authUser;
 
   const [parties, setParties] = useState([]);
@@ -21,6 +23,7 @@ export default function Parties({ user, authUser }) {
   const [showModal, setShowModal] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [search, setSearch] = useState("");
+  const [highlightedPartie, setHighlightedPartie] = useState(null);
 
   // a supprimer si sa change rien if (!currentUser) return <p>Chargement de l’utilisateur…</p>;
 
@@ -45,7 +48,7 @@ export default function Parties({ user, authUser }) {
   useEffect(() => {
     fetchJeux();
     fetchParties();
-  }, []);
+  }, [partieIdFromUrl]);
 
   const fetchJeux = async () => {
     const { data } = await supabase.from("jeux").select("*");
@@ -93,6 +96,27 @@ export default function Parties({ user, authUser }) {
       });
 
       setParties(partiesFull);
+
+      // Si une partie est indiquée dans l'URL,
+      // la retrouver pour pouvoir la mettre en évidence
+      if (partieIdFromUrl) {
+        const partieCible = partiesFull.find(
+          (p) => String(p.id) === String(partieIdFromUrl)
+        );
+
+        if (partieCible) {
+          setHighlightedPartie(partieCible.id);
+
+          setTimeout(() => {
+            document
+              .getElementById(`partie-${partieCible.id}`)
+              ?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+          }, 300);
+        }
+      }
     } catch (err) {
       console.error("Erreur fetchParties :", err);
     }
@@ -167,7 +191,47 @@ export default function Parties({ user, authUser }) {
         formatDate(p.date_partie).includes(search)
     );
   };
+  // -----------------------------------------------------
+  // PARTAGE WHATSAPP
+  // -----------------------------------------------------
+  const shareOnWhatsApp = (partie) => {
+    const maxJoueurs = partie.jeux?.max_joueurs || 0;
+    const nombreInscrits = partie.inscrits?.length || 0;
+    const placesRestantes = Math.max(maxJoueurs - nombreInscrits, 0);
 
+    const lienPartie = `${window.location.origin}/parties?partie=${partie.id}`;
+
+    let message = `🎲 *Nouvelle partie — La Loi des Cartes* 🎲
+    🎯 *${partie.jeux?.nom || "Jeu"}*
+    📅 ${formatDate(partie.date_partie)}
+    🕐 ${formatHeure(partie.heure_partie)}`;
+
+    if (partie.lieu) {
+      message += `\n📍 ${partie.lieu}`;
+    }
+
+    if (maxJoueurs > 0) {
+      message += `\n👥 ${nombreInscrits}/${maxJoueurs} joueurs`;
+
+      if (placesRestantes > 0) {
+        message += `\n🟢 ${placesRestantes} place${
+          placesRestantes > 1 ? "s" : ""
+        } restante${placesRestantes > 1 ? "s" : ""}`;
+      } else {
+        message += `\n🔴 Partie complète`;
+      }
+    }
+
+    if (partie.description) {
+      message += `\n\n📝 ${partie.description}`;
+    }
+
+    message += `\n\n👉 *S'inscrire / voir la partie :*\n${lienPartie}`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank");
+  };
   // -----------------------------------------------------
   // RENDU
   // -----------------------------------------------------
@@ -295,7 +359,15 @@ export default function Parties({ user, authUser }) {
             (p.jeux?.max_joueurs || 0) - (p.inscrits?.length || 0);
 
           return (
-            <div key={p.id} className="relative border rounded p-4 bg-white shadow overflow-hidden">
+            <div
+              id={`partie-${p.id}`}
+              key={p.id}
+              className={`relative border rounded p-4 shadow overflow-hidden transition-all duration-500 ${
+                highlightedPartie === p.id
+                  ? "bg-yellow-50 border-yellow-500 ring-4 ring-yellow-300"
+                  : "bg-white"
+              }`}
+            >
               {/* Badges empilés en haut à droite */}
               <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
                 {/* Favori */}
@@ -424,6 +496,15 @@ export default function Parties({ user, authUser }) {
                   }`}
                 >
                   {isInscrit ? "Se désinscrire" : "S'inscrire"}
+                </button>
+
+                {/* PARTAGE WHATSAPP */}
+                <button
+                  onClick={() => shareOnWhatsApp(p)}
+                  className="px-3 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-medium flex items-center justify-center gap-2"
+                >
+                  <span>📱</span>
+                  Partager sur WhatsApp
                 </button>
 
                 {(p.utilisateur_id === currentUser.id ||
