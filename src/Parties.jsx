@@ -269,8 +269,8 @@ export default function Parties({ user, authUser }) {
 
       {/* MODAL CREATION */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
+        <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="relative z-[101] bg-white p-6 rounded shadow-lg max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">Nouvelle partie</h2>
 
             {errorMsg && <p className="text-red-600">{errorMsg}</p>}
