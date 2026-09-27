@@ -13,6 +13,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [nom, setNom] = useState("");
   const [jeux, setJeux] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [allJoueurs, setAllJoueurs] = useState([]);
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
   const [globalImageUrl, setGlobalImageUrl] = useState("");
   const [globalTexte, setGlobalTexte] = useState("");
@@ -183,11 +184,25 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         setProfilGlobal?.(updatedData);
 
         if (updatedData.role === "admin") {
-          const { data: usersData } = await supabase
+          // 👤 Vrais utilisateurs
+          const { data: usersData, error: usersError } = await supabase
             .from("profils")
             .select("id, nom, role")
             .order("nom", { ascending: true });
-          if (usersData) setAllUsers(usersData);
+
+          if (!usersError && usersData) {
+            setAllUsers(usersData);
+          }
+
+          // 👤 Faux comptes / joueurs
+          const { data: joueursData, error: joueursError } = await supabase
+            .from("joueurs")
+            .select("id, nom, actif, utilisateur_id")
+            .order("nom", { ascending: true });
+
+          if (!joueursError && joueursData) {
+            setAllJoueurs(joueursData);
+          }
         }
       }
     };
@@ -403,6 +418,66 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       .select()
       .single();
     if (!error) setAllUsers((prev) => prev.map((u) => (u.id === userId ? data : u)));
+  };
+
+  const updateJoueurUtilisateur = async (joueurId, utilisateurId) => {
+    const nouveauUtilisateurId = utilisateurId || null;
+
+    const joueur = allJoueurs.find((j) => j.id === joueurId);
+
+    if (!joueur) return;
+
+    // Vérifie qu'on ne tente pas de créer un doublon
+    if (
+      nouveauUtilisateurId &&
+      allJoueurs.some(
+        (j) =>
+          j.id !== joueurId &&
+          j.utilisateur_id === nouveauUtilisateurId
+      )
+    ) {
+      alert("❌ Ce vrai compte est déjà lié à un faux compte.");
+      return;
+    }
+
+    const nomUtilisateur =
+      allUsers.find((u) => u.id === nouveauUtilisateurId)?.nom ||
+      "";
+
+    const message = nouveauUtilisateurId
+      ? `Lier le faux compte "${joueur.nom}" au compte "${nomUtilisateur}" ?\n\nSes anciennes parties et statistiques seront rattachées à ce compte.`
+      : `Délier le faux compte "${joueur.nom}" de son compte utilisateur ?`;
+
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("joueurs")
+      .update({
+        utilisateur_id: nouveauUtilisateurId,
+      })
+      .eq("id", joueurId)
+      .select("id, nom, actif, utilisateur_id")
+      .single();
+
+    if (error) {
+      console.error("Erreur liaison faux compte :", error);
+      alert(`❌ Impossible de modifier la liaison : ${error.message}`);
+      return;
+    }
+
+    setAllJoueurs((prev) =>
+      prev.map((j) =>
+        j.id === joueurId ? data : j
+      )
+    );
+
+    alert(
+      nouveauUtilisateurId
+        ? `✅ "${joueur.nom}" est maintenant lié à "${nomUtilisateur}".`
+        : `✅ "${joueur.nom}" a été délié.`
+    );
   };
 
   const handleDeleteAccount = async () => {
@@ -707,30 +782,53 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
               <tr>
                 <th className="border border-gray-300 p-2">Nom</th>
                 <th className="border border-gray-300 p-2">Rôle</th>
+                <th className="border border-gray-300 p-2">
+                  Lier à un compte
+                </th>
               </tr>
             </thead>
+
             <tbody>
+              {/* ============================= */}
+              {/* 👤 VRAIS UTILISATEURS */}
+              {/* ============================= */}
+
               {allUsers.map((u) => {
                 const isCurrentAdmin = u.id === profil.id;
                 const isAdminUser = u.role === "admin";
+
+                // Vérifie si ce vrai compte est déjà lié à un faux compte
+                const fauxCompteLie = allJoueurs.find(
+                  (j) => j.utilisateur_id === u.id
+                );
+
                 return (
-                  <tr key={u.id} className="text-center">
-                    <td className="border border-gray-300 p-2">{u.nom}</td>
+                  <tr key={`user-${u.id}`} className="text-center">
+                    <td className="border border-gray-300 p-2">
+                      {u.nom}
+                    </td>
+
                     <td className="border border-gray-300 p-2">
                       {isCurrentAdmin || isAdminUser ? (
-                        <span className="px-2 py-1 bg-gray-200 rounded">{u.role}</span>
+                        <span className="px-2 py-1 bg-gray-200 rounded">
+                          {u.role}
+                        </span>
                       ) : (
                         <select
                           value={u.role}
                           onChange={(e) => {
                             const newRole = e.target.value;
-                            if (window.confirm(`Changer le rôle de ${u.nom} en "${newRole}" ?`)) {
+
+                            if (
+                              window.confirm(
+                                `Changer le rôle de ${u.nom} en "${newRole}" ?`
+                              )
+                            ) {
                               updateUserRole(u.id, newRole);
-                            } else e.target.value = u.role;
+                            }
                           }}
                           className="border p-1 rounded"
                         >
-                          <option value="fauxcompte">fauxcompte</option>
                           <option value="user">user</option>
                           <option value="membre">membre</option>
                           <option value="ludo">ludo</option>
@@ -739,9 +837,78 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                         </select>
                       )}
                     </td>
+
+                    <td className="border border-gray-300 p-2">
+                      {fauxCompteLie ? (
+                        <span className="text-sm">
+                          🎭 {fauxCompteLie.nom}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">
+                          —
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
+
+              {/* ============================= */}
+              {/* 🎭 FAUX COMPTES */}
+              {/* ============================= */}
+
+              {allJoueurs.map((joueur) => (
+                <tr
+                  key={`joueur-${joueur.id}`}
+                  className="text-center bg-yellow-50"
+                >
+                  <td className="border border-gray-300 p-2 font-medium">
+                    🎭 {joueur.nom}
+                  </td>
+
+                  <td className="border border-gray-300 p-2">
+                    <span className="px-2 py-1 bg-yellow-200 rounded">
+                      Faux compte
+                    </span>
+                  </td>
+
+                  <td className="border border-gray-300 p-2">
+                    <select
+                      value={joueur.utilisateur_id || ""}
+                      onChange={(e) =>
+                        updateJoueurUtilisateur(
+                          joueur.id,
+                          e.target.value
+                        )
+                      }
+                      className="border p-1 rounded w-full"
+                    >
+                      <option value="">
+                        -- Aucun compte lié --
+                      </option>
+
+                      {allUsers.map((u) => (
+                        <option
+                          key={u.id}
+                          value={u.id}
+                          disabled={
+                            allJoueurs.some(
+                              (j) =>
+                                j.id !== joueur.id &&
+                                j.utilisateur_id === u.id
+                            )
+                          }
+                        >
+                          {u.nom}
+                          {u.id === profil.id
+                            ? " (moi)"
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
           <h3 className="text-xl font-semibold mb-4">Rôles :</h3>
