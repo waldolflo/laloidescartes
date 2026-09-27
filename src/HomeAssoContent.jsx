@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient";
 import CountUp from "react-countup";
 import { Phone, Mail } from "lucide-react";
 import FacebookWidget from "./FacebookWidget";
@@ -13,6 +14,77 @@ export default function HomeAssoContent({
   planningImageUrl,
   setZoomOpen,
 }) {
+  // ============================================================
+  // DATES DES PROCHAINES RENCONTRES
+  // ============================================================
+
+  const [datesEvenements, setDatesEvenements] = useState([]);
+  const [chargementDates, setChargementDates] = useState(true);
+
+  useEffect(() => {
+    const fetchDatesEvenements = async () => {
+      setChargementDates(true);
+
+      // Date du jour en heure locale
+      const maintenant = new Date();
+
+      const aujourdHui = `${maintenant.getFullYear()}-${String(
+        maintenant.getMonth() + 1
+      ).padStart(2, "0")}-${String(
+        maintenant.getDate()
+      ).padStart(2, "0")}`;
+
+      const { data, error } = await supabase
+        .from("dates_evenements")
+        .select(
+          "id, date_evenement, type_evenement, heure_debut, heure_fin, texte"
+        )
+        .eq("actif", true)
+        .gte("date_evenement", aujourdHui)
+        .order("date_evenement", { ascending: true })
+        .order("heure_debut", { ascending: true });
+
+      if (error) {
+        console.error(
+          "Erreur lors du chargement des dates d'événements :",
+          error
+        );
+        setDatesEvenements([]);
+      } else {
+        setDatesEvenements(data || []);
+      }
+
+      setChargementDates(false);
+    };
+
+    fetchDatesEvenements();
+  }, []);
+
+  // ============================================================
+  // FORMATAGE DES DATES
+  // ============================================================
+
+  const formaterDateEvenement = (dateString) => {
+    const date = new Date(`${dateString}T12:00:00`);
+
+    return {
+      jour: date.toLocaleDateString("fr-FR", {
+        weekday: "long",
+      }),
+      numero: date.toLocaleDateString("fr-FR", {
+        day: "numeric",
+      }),
+      mois: date.toLocaleDateString("fr-FR", {
+        month: "long",
+      }),
+    };
+  };
+
+  const formaterHeure = (heure) => {
+    if (!heure) return "";
+    return heure.slice(0, 5);
+  };
+
   return (
     <>
       {/* STATS */}
@@ -104,6 +176,103 @@ export default function HomeAssoContent({
         </section>
       )}
 
+      {/* ============================================================
+          PROCHAINES RENCONTRES
+          ============================================================ */}
+
+      {!chargementDates && datesEvenements.length > 0 && (
+        <section className="mt-12 mb-12">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+
+            {/* TITRE */}
+            <div className="bg-purple-600 text-white px-6 py-5">
+              <h2 className="text-2xl md:text-3xl font-bold text-center">
+                📅 Prochaines rencontres
+              </h2>
+
+              <p className="text-center text-purple-100 mt-1">
+                Après-midi et soirées jeux
+              </p>
+            </div>
+
+            {/* LISTE DES EVENEMENTS */}
+            <div className="p-6 md:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+                {datesEvenements.map((evenement) => {
+                  const date = formaterDateEvenement(
+                    evenement.date_evenement
+                  );
+
+                  const estSoiree =
+                    evenement.type_evenement === "soiree";
+
+                  return (
+                    <div
+                      key={evenement.id}
+                      className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition bg-white"
+                    >
+                      <div className="flex">
+
+                        {/* DATE */}
+                        <div
+                          className={`w-28 flex-shrink-0 flex flex-col items-center justify-center text-white p-4 ${
+                            estSoiree
+                              ? "bg-purple-600"
+                              : "bg-orange-500"
+                          }`}
+                        >
+                          <span className="text-sm font-semibold uppercase">
+                            {date.jour}
+                          </span>
+
+                          <span className="text-4xl font-bold leading-none mt-1">
+                            {date.numero}
+                          </span>
+
+                          <span className="text-sm font-medium capitalize mt-1">
+                            {date.mois}
+                          </span>
+                        </div>
+
+                        {/* INFORMATIONS */}
+                        <div className="flex-1 p-4">
+
+                          <h3 className="font-bold text-lg text-gray-800">
+                            {estSoiree
+                              ? "🌙 Soirée jeux"
+                              : "☀️ Après-midi jeux"}
+                          </h3>
+
+                          <p className="text-gray-600 mt-2">
+                            🕐{" "}
+                            <strong>
+                              {formaterHeure(evenement.heure_debut)}
+                            </strong>
+                            {" – "}
+                            <strong>
+                              {formaterHeure(evenement.heure_fin)}
+                            </strong>
+                          </p>
+
+                          {evenement.texte && (
+                            <p className="text-gray-600 mt-3 text-sm leading-relaxed">
+                              {evenement.texte}
+                            </p>
+                          )}
+
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* --- Section TARIFS --- */}
       <section className="mt-12 bg-white rounded-xl shadow-md p-6 md:p-10">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">
@@ -159,10 +328,12 @@ export default function HomeAssoContent({
           </div>
         </div>
       </section>
+
       {/* DiaporamaSwiper */}
       <section className="mt-12 bg-white rounded-xl shadow-md">
         <DiaporamaSwiper />
       </section>
+
       {/* --- Section ADRESSE & CARTE --- */}
       <section className="mt-12 bg-slate-800 text-white rounded-xl shadow-md overflow-hidden">
         <div className="p-6 md:p-10">
@@ -184,8 +355,10 @@ export default function HomeAssoContent({
                 className="rounded-lg shadow-md max-h-64 object-contain"
               />
             </div>
+
             <div className="space-y-6">
               <div className="space-y-3">
+
                 <div className="flex items-center gap-3">
                   <Phone size={20} className="text-rose-400" />
                   <span className="text-lg">06 44 17 10 82</span>
@@ -200,6 +373,7 @@ export default function HomeAssoContent({
                     laloidescartes@gmail.com
                   </a>
                 </div>
+
                 <div className="w-full h-[300px] rounded-lg overflow-hidden">
                   <iframe
                     title="Carte Google Maps"
@@ -209,6 +383,7 @@ export default function HomeAssoContent({
                     referrerPolicy="no-referrer-when-downgrade"
                   />
                 </div>
+
               </div>
             </div>
           </div>
