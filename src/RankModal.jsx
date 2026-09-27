@@ -511,7 +511,7 @@ export default function RankModal({ partie, onClose, fetchParties }) {
             >
               <div className="flex flex-col">
                 <span className="font-medium">
-                  {estJoueurSansCompte ? "👥 " : "👤 "}
+                  {estJoueurSansCompte ? "🎭 " : "👤 "}
                   {nomParticipant}
                 </span>
 
@@ -608,7 +608,7 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
               </optgroup>
 
-              <optgroup label="👥 Joueurs sans compte">
+              <optgroup label="🎭 Joueurs sans compte">
 
                 {allJoueurs
                   .filter(
@@ -654,7 +654,7 @@ export default function RankModal({ partie, onClose, fetchParties }) {
         <div className="border-t pt-3 mt-4">
 
           <h3 className="font-semibold mb-2 text-center">
-            👥 Nouveau joueur sans compte
+            🎭 Nouveau joueur sans compte
           </h3>
 
           <div className="flex gap-2">

@@ -67,11 +67,14 @@ export default function Statistiques({ user }) {
 
       if (userError) throw userError;
 
-      // 👥 Joueurs sans compte
+      // 🎭 Joueurs sans compte
+      // On récupère TOUS les joueurs afin de conserver
+      // les statistiques historiques des joueurs désactivés.
+      // utilisateur_id permet de savoir si le joueur fictif
+      // est maintenant lié à un vrai compte.
       const { data: joueurs, error: joueursError } = await supabase
         .from("joueurs")
-        .select("id, nom")
-        .eq("actif", true);
+        .select("id, nom, utilisateur_id");
 
       if (joueursError) throw joueursError;
 
@@ -152,8 +155,9 @@ export default function Statistiques({ user }) {
       // utilisateur_id = UUID
       // joueur_id      = BIGINT
       //
-      // On utilise participantType + participantId
-      // pour différencier les deux.
+      // Si un joueur fictif est lié à un vrai utilisateur,
+      // ses anciennes inscriptions joueur_id sont comptabilisées
+      // dans les statistiques du vrai utilisateur.
       // ============================================================
 
       const calculatePointsForParticipant = (
@@ -164,13 +168,43 @@ export default function Statistiques({ user }) {
         return inscriptions
           .filter((ins) => {
             if (participantType === "user") {
-              return ins.utilisateur_id === participantId;
+              // Inscription directement liée au vrai compte
+              if (ins.utilisateur_id === participantId) {
+                return true;
+              }
+
+              // Ou ancienne inscription faite avec le faux compte
+              // désormais lié à ce vrai compte.
+              if (ins.joueur_id !== null) {
+                const joueurLie = joueurs.find(
+                  (j) =>
+                    String(j.id) === String(ins.joueur_id)
+                );
+
+                return (
+                  joueurLie?.utilisateur_id === participantId
+                );
+              }
+
+              return false;
             }
 
             if (participantType === "player") {
+              // Un faux compte n'est considéré comme participant
+              // indépendant que s'il n'est pas encore lié à un
+              // vrai compte.
+              if (ins.joueur_id === null) {
+                return false;
+              }
+
+              const joueur = joueurs.find(
+                (j) =>
+                  String(j.id) === String(ins.joueur_id)
+              );
+
               return (
-                ins.joueur_id !== null &&
-                String(ins.joueur_id) === String(participantId)
+                String(ins.joueur_id) === String(participantId) &&
+                !joueur?.utilisateur_id
               );
             }
 
@@ -220,6 +254,11 @@ export default function Statistiques({ user }) {
       // ============================================================
       // 👥 LISTE UNIFIÉE DES PARTICIPANTS
       // ============================================================
+      //
+      // Les joueurs fictifs liés à un vrai compte ne sont plus
+      // affichés séparément : leurs statistiques sont fusionnées
+      // avec celles du vrai compte.
+      // ============================================================
 
       const participants = [
         // 👤 Utilisateurs
@@ -229,12 +268,16 @@ export default function Statistiques({ user }) {
           nom: user.nom,
         })),
 
-        // 👥 Joueurs sans compte
-        ...joueurs.map((joueur) => ({
-          type: "player",
-          id: joueur.id,
-          nom: joueur.nom,
-        })),
+        // 🎭 Joueurs sans compte
+        // On conserve uniquement les joueurs qui ne sont pas
+        // encore liés à un vrai compte.
+        ...joueurs
+          .filter((joueur) => !joueur.utilisateur_id)
+          .map((joueur) => ({
+            type: "player",
+            id: joueur.id,
+            nom: joueur.nom,
+          })),
       ];
 
       // ============================================================
@@ -256,7 +299,9 @@ export default function Statistiques({ user }) {
         );
 
         return {
-          nom: participant.nom,
+          nom: participant.type === "user"
+            ? `👤 ${participant.nom}`
+            : `🎭 ${participant.nom}`,
           points,
         };
       });
@@ -277,7 +322,9 @@ export default function Statistiques({ user }) {
         );
 
         return {
-          nom: participant.nom,
+          nom: participant.type === "user"
+            ? `👤 ${participant.nom}`
+            : `🎭 ${participant.nom}`,
           points,
         };
       });
@@ -335,7 +382,9 @@ export default function Statistiques({ user }) {
 
       const ranking = participants.map(
         (participant) => ({
-          nom: participant.nom,
+          nom: participant.type === "user"
+            ? `👤 ${participant.nom}`
+            : `🎭 ${participant.nom}`,
 
           points:
             calculatePointsForParticipant(
