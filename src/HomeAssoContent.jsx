@@ -85,6 +85,45 @@ export default function HomeAssoContent({
     return heure.slice(0, 5);
   };
 
+    // ============================================================
+    // TYPE D'ÉVÉNEMENT
+    // ============================================================
+
+    const estTypePersonnalise = (type) => {
+      return typeof type === "string" && type.startsWith("custom|");
+    };
+
+    const getEmojiTypePersonnalise = (type) => {
+      if (!estTypePersonnalise(type)) return "";
+      const morceaux = type.split("|");
+      return morceaux[1] || "";
+    };
+
+    const getNomTypePersonnalise = (type) => {
+      if (!estTypePersonnalise(type)) return "";
+      const morceaux = type.split("|");
+      return morceaux.slice(2).join("|") || "";
+    };
+
+    const getLibelleTypeEvenement = (type) => {
+      if (type === "soiree") {
+        return "🌙 Soirée jeux";
+      }
+
+      if (type === "apres_midi") {
+        return "☀️ Après-midi jeux";
+      }
+
+      if (estTypePersonnalise(type)) {
+        const emoji = getEmojiTypePersonnalise(type);
+        const nom = getNomTypePersonnalise(type);
+
+        return `${emoji} ${nom}`.trim();
+      }
+
+      return "🎲 Rencontre jeux";
+    };
+
   return (
     <>
       {/* ============================================================
@@ -102,7 +141,7 @@ export default function HomeAssoContent({
               </h2>
 
               <p className="text-center text-purple-100 mt-1">
-                Après-midi et soirées jeux
+                Retrouvez nos prochaines rencontres
               </p>
             </div>
 
@@ -118,6 +157,9 @@ export default function HomeAssoContent({
                   const estSoiree =
                     evenement.type_evenement === "soiree";
 
+                  const estApresMidi =
+                    evenement.type_evenement === "apres_midi";
+
                   return (
                     <div
                       key={evenement.id}
@@ -129,8 +171,10 @@ export default function HomeAssoContent({
                         <div
                           className={`w-28 flex-shrink-0 flex flex-col items-center justify-center text-white p-4 ${
                             estSoiree
-                              ? "bg-purple-600"
-                              : "bg-orange-500"
+                              ? "bg-black"
+                              : estApresMidi
+                              ? "bg-orange-500"
+                              : "bg-purple-600"
                           }`}
                         >
                           <span className="text-sm font-semibold uppercase">
@@ -150,9 +194,9 @@ export default function HomeAssoContent({
                         <div className="flex-1 p-4">
 
                           <h3 className="font-bold text-lg text-gray-800">
-                            {estSoiree
-                              ? "🌙 Soirée jeux"
-                              : "☀️ Après-midi jeux"}
+                            {getLibelleTypeEvenement(
+                              evenement.type_evenement
+                            )}
                           </h3>
 
                           <p className="text-gray-600 mt-2">
