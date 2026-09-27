@@ -49,6 +49,10 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [chargementDates, setChargementDates] = useState(false);
   const [texteEvenement, setTexteEvenement] = useState("");
 
+  // Type personnalisé
+  const [emojiEvenement, setEmojiEvenement] = useState("🎲");
+  const [nomTypePersonnalise, setNomTypePersonnalise] = useState("");
+
   // Préremplissage selon le jour choisi
   const getDefaultsFromDate = (date) => {
     if (!date) {
@@ -78,6 +82,43 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     };
   };
 
+  // =========================================================
+  // 🎨 TYPES D'ÉVÉNEMENTS PERSONNALISÉS
+  // =========================================================
+
+  // Transforme un type personnalisé en valeur stockable
+  const creerTypePersonnalise = (emoji, nom) => {
+    return `custom|${emoji}|${nom}`;
+  };
+
+  // Permet de savoir si un type est personnalisé
+  const estTypePersonnalise = (type) => {
+    return typeof type === "string" && type.startsWith("custom|");
+  };
+
+  // Récupère l'emoji d'un type personnalisé
+  const getEmojiTypePersonnalise = (type) => {
+    if (!estTypePersonnalise(type)) return "";
+    const morceaux = type.split("|");
+    return morceaux[1] || "";
+  };
+
+  // Récupère le nom d'un type personnalisé
+  const getNomTypePersonnalise = (type) => {
+    if (!estTypePersonnalise(type)) return "";
+    const morceaux = type.split("|");
+    return morceaux.slice(2).join("|") || "";
+  };
+
+  // Récupère tous les types personnalisés déjà utilisés
+  const getTypesPersonnalises = () => {
+    const types = datesEvenements
+      .filter((date) => estTypePersonnalise(date.type_evenement))
+      .map((date) => date.type_evenement);
+
+    return [...new Set(types)];
+  };
+
   // Quand on choisit une nouvelle date, on applique les horaires par défaut.
   // En mode modification, on conserve les horaires existants.
   const handleDateEvenementChange = (nouvelleDate) => {
@@ -98,6 +139,8 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     setHeureDebut("20:00");
     setHeureFin("23:00");
     setTexteEvenement("");
+    setEmojiEvenement("🎲");
+    setNomTypePersonnalise("");
     setDateEvenementEnEdition(null);
   };
 
@@ -138,9 +181,28 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       return;
     }
 
+    let typeFinal = typeEvenement;
+
+    if (typeEvenement === "personnalise") {
+      if (!emojiEvenement.trim()) {
+        alert("❌ Veuillez choisir un emoji.");
+        return;
+      }
+
+      if (!nomTypePersonnalise.trim()) {
+        alert("❌ Veuillez renseigner le nom du type d'événement.");
+        return;
+      }
+
+      typeFinal = creerTypePersonnalise(
+        emojiEvenement.trim(),
+        nomTypePersonnalise.trim()
+      );
+    }
+
     const donnees = {
       date_evenement: dateEvenement,
-      type_evenement: typeEvenement,
+      type_evenement: typeFinal,
       heure_debut: heureDebut,
       heure_fin: heureFin,
       texte: texteEvenement || null,
@@ -152,7 +214,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         .from("dates_evenements")
         .update({
           date_evenement: dateEvenement,
-          type_evenement: typeEvenement,
+          type_evenement: typeFinal,
           heure_debut: heureDebut,
           heure_fin: heureFin,
           texte: texteEvenement || null,
@@ -210,9 +272,34 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
   const modifierDateEvenement = (date) => {
     setDateEvenement(date.date_evenement);
+
     setTypeEvenement(date.type_evenement);
-    setHeureDebut(date.heure_debut ? date.heure_debut.slice(0, 5) : "");
-    setHeureFin(date.heure_fin ? date.heure_fin.slice(0, 5) : "");
+
+    if (estTypePersonnalise(date.type_evenement)) {
+      setEmojiEvenement(
+        getEmojiTypePersonnalise(date.type_evenement)
+      );
+
+      setNomTypePersonnalise(
+        getNomTypePersonnalise(date.type_evenement)
+      );
+    } else {
+      setEmojiEvenement("🎲");
+      setNomTypePersonnalise("");
+    }
+
+    setHeureDebut(
+      date.heure_debut
+        ? date.heure_debut.slice(0, 5)
+        : ""
+    );
+
+    setHeureFin(
+      date.heure_fin
+        ? date.heure_fin.slice(0, 5)
+        : ""
+    );
+
     setTexteEvenement(date.texte || "");
     setDateEvenementEnEdition(date.id);
 
@@ -1581,11 +1668,24 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
                 <select
                   value={typeEvenement}
-                  onChange={(e) =>
-                    setTypeEvenement(
-                      e.target.value
-                    )
-                  }
+                  onChange={(e) => {
+                    const nouvelleValeur = e.target.value;
+
+                    setTypeEvenement(nouvelleValeur);
+
+                    if (nouvelleValeur === "personnalise") {
+                      setEmojiEvenement("🎲");
+                      setNomTypePersonnalise("");
+                    } else if (estTypePersonnalise(nouvelleValeur)) {
+                      setEmojiEvenement(
+                        getEmojiTypePersonnalise(nouvelleValeur)
+                      );
+
+                      setNomTypePersonnalise(
+                        getNomTypePersonnalise(nouvelleValeur)
+                      );
+                    }
+                  }}
                   className="border p-2 rounded w-full"
                 >
 
@@ -1597,9 +1697,76 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
                     ☀️ Après-midi
                   </option>
 
+                  {getTypesPersonnalises().length > 0 && (
+                    <optgroup label="Types personnalisés">
+
+                      {getTypesPersonnalises().map((type) => (
+                        <option
+                          key={type}
+                          value={type}
+                        >
+                          {getEmojiTypePersonnalise(type)}{" "}
+                          {getNomTypePersonnalise(type)}
+                        </option>
+                      ))}
+
+                    </optgroup>
+                  )}
+
+                  <option value="personnalise">
+                    ✨ Créer un nouveau type...
+                  </option>
+
                 </select>
 
               </div>
+              {/* TYPE PERSONNALISÉ */}
+
+              {typeEvenement === "personnalise" && (
+
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+
+                  <div>
+
+                    <label className="block font-medium mb-1">
+                      Emoji :
+                    </label>
+
+                    <input
+                      type="text"
+                      value={emojiEvenement}
+                      onChange={(e) =>
+                        setEmojiEvenement(e.target.value)
+                      }
+                      className="border p-2 rounded w-full text-center text-2xl"
+                      placeholder="🎲"
+                      maxLength={8}
+                    />
+
+                  </div>
+
+                  <div className="md:col-span-2">
+
+                    <label className="block font-medium mb-1">
+                      Nom du type :
+                    </label>
+
+                    <input
+                      type="text"
+                      value={nomTypePersonnalise}
+                      onChange={(e) =>
+                        setNomTypePersonnalise(e.target.value)
+                      }
+                      className="border p-2 rounded w-full"
+                      placeholder="Ex. Tournoi, Halloween, Jeu de rôle..."
+                      maxLength={50}
+                    />
+
+                  </div>
+
+                </div>
+
+              )}
 
               {/* HEURE DEBUT */}
 
@@ -1747,10 +1914,20 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
                           <div className="font-semibold">
 
-                            {date.type_evenement ===
-                            "soiree"
-                              ? "🌙 Soirée"
-                              : "☀️ Après-midi"}
+                            {date.type_evenement === "soiree" && (
+                              <>🌙 Soirée</>
+                            )}
+
+                            {date.type_evenement === "apres_midi" && (
+                              <>☀️ Après-midi</>
+                            )}
+
+                            {estTypePersonnalise(date.type_evenement) && (
+                              <>
+                                {getEmojiTypePersonnalise(date.type_evenement)}{" "}
+                                {getNomTypePersonnalise(date.type_evenement)}
+                              </>
+                            )}
 
                           </div>
 
