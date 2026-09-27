@@ -87,95 +87,6 @@ export default function HomeAssoContent({
 
   return (
     <>
-      {/* STATS */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-        {[
-          { label: "Création de l'asso", value: "2021", color: "text-black-600" },
-          { label: "Jeux", value: stats.jeux, color: "text-yellow-600" },
-          ...(countSeanceTotal > 0
-            ? [{ label: "Après-midi et soirées jeux", value: countSeanceTotal, color: "text-purple-600" }]
-            : []),
-          ...(countAdherentTotal > 0
-            ? [{ label: "Adhérents de l'asso de 7 à 73 ans", value: countAdherentTotal, color: "text-pink-600" }]
-            : []),
-          //{ label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-teal-600" },
-          { label: "Parties organisées via l'App", value: stats.parties, color: "text-green-600" },
-          { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
-          { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
-          ...(countFollowersFB > 0
-            ? [{ label: "Followers Facebook", value: countFollowersFB, color: "text-blue-600" }]
-            : [])
-        ].map((stat) => (
-          <div key={stat.label} className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
-            <h2 className={`text-3xl font-bold ${stat.color}`}>
-              <CountUp end={stat.value} duration={1.5} separator="" />
-            </h2>
-            <p className="text-gray-600 mt-1">{stat.label}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* MOT DU PRESIDENT + PLANNING + FACEBOOK */}
-      {(messagePresident || planningImageUrl ) && (
-        <section className="mb-12 p-6 bg-blue-50 rounded shadow">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-            
-            {/* COLONNE GAUCHE — Président */}
-            {messagePresident && (
-              <div className="flex flex-col">
-                <p className="text-gray-700 text-center">{messagePresident}</p>
-
-                {/* Boutons d'action */}
-                <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                  <a
-                    href="https://www.facebook.com/LaLoidesCartes"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition text-center"
-                  >
-                    Nos actualités sur Facebook
-                  </a>
-
-                  <a
-                    href="https://www.helloasso.com/associations/la-loi-des-cartes/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition text-center"
-                  >
-                    Adhérer en ligne sur HelloAsso
-                  </a>
-                </div>
-                <div className="text-center mt-6">
-                  <img
-                  src="https://laloidescartes.vercel.app/partenairelaloidescartes.jpg"
-                  alt="partenaires"
-                  className="rounded-xl shadow-md max-h-80 object-contain"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* COLONNE CENTRALE — Planning */}
-            {planningImageUrl && (
-              <div className="flex justify-center">
-                <img
-                  src={planningImageUrl}
-                  alt="Planning des prochaines rencontres"
-                  onClick={() => setZoomOpen(true)}
-                  className="max-h-80 object-contain rounded cursor-pointer hover:scale-105 transition-transform"
-                />
-              </div>
-            )}
-
-            {/* COLONNE DROITE — Facebook */}
-            <div className="w-full flex justify-center">
-              <FacebookWidget />
-            </div>
-
-          </div>
-        </section>
-      )}
-
       {/* ============================================================
           PROCHAINES RENCONTRES
           ============================================================ */}
@@ -269,6 +180,94 @@ export default function HomeAssoContent({
 
               </div>
             </div>
+          </div>
+        </section>
+      )}
+      {/* STATS */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+        {[
+          { label: "Création de l'asso", value: "2021", color: "text-black-600" },
+          { label: "Jeux", value: stats.jeux, color: "text-yellow-600" },
+          ...(countSeanceTotal > 0
+            ? [{ label: "Après-midi et soirées jeux", value: countSeanceTotal, color: "text-purple-600" }]
+            : []),
+          ...(countAdherentTotal > 0
+            ? [{ label: "Adhérents de l'asso de 7 à 73 ans", value: countAdherentTotal, color: "text-pink-600" }]
+            : []),
+          //{ label: "Après-midi et soirées jeux", value: stats.rencontres, color: "text-teal-600" },
+          { label: "Parties organisées via l'App", value: stats.parties, color: "text-green-600" },
+          { label: "Heures de jeu organisées via l'App", value: stats.heures, color: "text-orange-600" },
+          { label: "Adhérents sur l'App", value: stats.membres, color: "text-rose-600" },
+          ...(countFollowersFB > 0
+            ? [{ label: "Followers Facebook", value: countFollowersFB, color: "text-blue-600" }]
+            : [])
+        ].map((stat) => (
+          <div key={stat.label} className="p-6 bg-white rounded shadow hover:shadow-lg transition text-center">
+            <h2 className={`text-3xl font-bold ${stat.color}`}>
+              <CountUp end={stat.value} duration={1.5} separator="" />
+            </h2>
+            <p className="text-gray-600 mt-1">{stat.label}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* MOT DU PRESIDENT + PLANNING + FACEBOOK */}
+      {(messagePresident || planningImageUrl ) && (
+        <section className="mb-12 p-6 bg-blue-50 rounded shadow">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            
+            {/* COLONNE GAUCHE — Président */}
+            {messagePresident && (
+              <div className="flex flex-col">
+                <p className="text-gray-700 text-center">{messagePresident}</p>
+
+                {/* Boutons d'action */}
+                <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                  <a
+                    href="https://www.facebook.com/LaLoidesCartes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition text-center"
+                  >
+                    Nos actualités sur Facebook
+                  </a>
+
+                  <a
+                    href="https://www.helloasso.com/associations/la-loi-des-cartes/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition text-center"
+                  >
+                    Adhérer en ligne sur HelloAsso
+                  </a>
+                </div>
+                <div className="text-center mt-6">
+                  <img
+                  src="https://laloidescartes.vercel.app/partenairelaloidescartes.jpg"
+                  alt="partenaires"
+                  className="rounded-xl shadow-md max-h-80 object-contain"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* COLONNE CENTRALE — Planning */}
+            {planningImageUrl && (
+              <div className="flex justify-center">
+                <img
+                  src={planningImageUrl}
+                  alt="Planning des prochaines rencontres"
+                  onClick={() => setZoomOpen(true)}
+                  className="max-h-80 object-contain rounded cursor-pointer hover:scale-105 transition-transform"
+                />
+              </div>
+            )}
+
+            {/* COLONNE DROITE — Facebook */}
+            <div className="w-full flex justify-center">
+              <FacebookWidget />
+            </div>
+
           </div>
         </section>
       )}
