@@ -227,6 +227,341 @@ export default function HomeAssoContent({
           </div>
         </section>
       )}
+      {!chargementDates && datesEvenements.length > 0 && (
+        <section className="mt-12 mb-12">
+          <div className="relative overflow-hidden rounded-3xl shadow-2xl bg-gradient-to-br from-slate-950 via-purple-950 to-indigo-900">
+
+            {/* Éléments décoratifs */}
+            <div className="absolute -top-24 -right-24 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl" />
+            <div className="absolute -bottom-32 -left-24 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl" />
+
+            {/* EN-TÊTE */}
+            <div className="relative px-6 pt-8 pb-6 md:px-10 md:pt-10">
+
+              <div className="flex justify-center mb-5">
+                <div className="bg-white rounded-2xl px-5 py-3 shadow-xl">
+                  <img
+                    src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                    alt="La Loi des Cartes"
+                    className="h-20 md:h-24 w-auto object-contain"
+                  />
+                </div>
+              </div>
+
+              <h2 className="text-3xl md:text-4xl font-extrabold text-white text-center tracking-tight">
+                📅 Prochaines rencontres
+              </h2>
+
+              <p className="text-center text-purple-200 mt-2 text-base md:text-lg">
+                Retrouvez-nous autour d'une table pour jouer !
+              </p>
+            </div>
+
+            {/* ÉVÉNEMENTS */}
+            <div className="relative px-5 pb-6 md:px-10 md:pb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+                {datesEvenements.map((evenement) => {
+                  const date = formaterDateEvenement(
+                    evenement.date_evenement
+                  );
+
+                  const estSoiree =
+                    evenement.type_evenement === "soiree";
+
+                  const estApresMidi =
+                    evenement.type_evenement === "apres_midi";
+
+                  return (
+                    <div
+                      key={evenement.id}
+                      className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                    >
+                      <div className="flex min-h-[150px]">
+
+                        {/* DATE */}
+                        <div
+                          className={`w-28 md:w-32 flex-shrink-0 flex flex-col items-center justify-center text-white p-4 ${
+                            estSoiree
+                              ? "bg-gradient-to-b from-gray-950 to-black"
+                              : estApresMidi
+                              ? "bg-gradient-to-b from-orange-400 to-orange-600"
+                              : "bg-gradient-to-b from-purple-500 to-indigo-600"
+                          }`}
+                        >
+                          <span className="text-xs md:text-sm font-bold uppercase tracking-wide opacity-90">
+                            {date.jour}
+                          </span>
+
+                          <span className="text-5xl md:text-6xl font-black leading-none mt-1">
+                            {date.numero}
+                          </span>
+
+                          <span className="text-sm font-semibold capitalize mt-1">
+                            {date.mois}
+                          </span>
+                        </div>
+
+                        {/* INFORMATIONS */}
+                        <div className="flex-1 p-5 flex flex-col justify-center">
+
+                          <h3 className="font-extrabold text-lg md:text-xl text-gray-900 leading-tight">
+                            {getLibelleTypeEvenement(
+                              evenement.type_evenement
+                            )}
+                          </h3>
+
+                          <div className="flex items-center gap-2 text-gray-600 mt-3">
+                            <span className="text-lg">🕐</span>
+                            <span className="font-semibold">
+                              {formaterHeure(evenement.heure_debut)}
+                              {" – "}
+                              {formaterHeure(evenement.heure_fin)}
+                            </span>
+                          </div>
+
+                          {evenement.texte && (
+                            <p className="text-gray-600 mt-3 text-sm leading-relaxed">
+                              {evenement.texte}
+                            </p>
+                          )}
+
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              </div>
+            </div>
+
+            {/* PIED DE L'AFFICHE */}
+            <div className="relative border-t border-white/10 bg-black/20 px-6 py-5 md:px-10">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-white text-center">
+                <span className="text-xl">📍</span>
+
+                <span className="font-semibold text-sm md:text-base">
+                  2 Rue Albert Leroy, 62170 Neuville-sous-Montreuil
+                </span>
+              </div>
+
+              <p className="text-center text-purple-200 text-xs md:text-sm mt-2">
+                La Loi des Cartes • Association de jeux de société
+              </p>
+            </div>
+
+          </div>
+        </section>
+      )}
+      {!chargementDates && datesEvenements.length > 0 && (
+        <section className="mt-12 mb-12">
+          <div className="relative max-w-6xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br from-slate-950 via-purple-950 to-indigo-950">
+
+            {/* ========================= */}
+            {/* FOND GRAPHIQUE */}
+            {/* ========================= */}
+
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+
+              {/* Logo en filigrane */}
+              <img
+                src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                alt=""
+                className="absolute -right-20 top-1/3 w-[420px] opacity-[0.035] rotate-[-12deg]"
+              />
+
+              {/* Cercles décoratifs */}
+              <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-purple-500/20 blur-3xl" />
+
+              <div className="absolute top-1/4 -right-32 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl" />
+
+              <div className="absolute -bottom-40 left-1/3 w-96 h-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
+
+            </div>
+
+            {/* ========================= */}
+            {/* EN-TÊTE */}
+            {/* ========================= */}
+
+            <div className="relative px-5 pt-8 pb-6 md:px-10 md:pt-10">
+
+              <div className="flex justify-center">
+                <div className="bg-white rounded-2xl px-6 py-3 shadow-2xl">
+                  <img
+                    src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                    alt="La Loi des Cartes"
+                    className="h-20 md:h-24 w-auto object-contain"
+                  />
+                </div>
+              </div>
+
+              <div className="text-center mt-6">
+
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-purple-200 text-xs md:text-sm font-bold uppercase tracking-[0.18em]">
+                  🎲 La Loi des Cartes
+                </div>
+
+                <h2 className="mt-4 text-4xl md:text-5xl font-black text-white tracking-tight leading-none">
+                  PROCHAINES
+                  <span className="block text-purple-300">
+                    RENCONTRES
+                  </span>
+                </h2>
+
+                <p className="mt-4 text-purple-100 text-base md:text-lg">
+                  Retrouvez-nous autour d'une table pour jouer,
+                  partager et découvrir de nouveaux jeux !
+                </p>
+
+              </div>
+            </div>
+
+            {/* ========================= */}
+            {/* ÉVÉNEMENTS */}
+            {/* ========================= */}
+
+            <div className="relative px-4 pb-8 md:px-10">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+                {datesEvenements.map((evenement) => {
+                  const date = formaterDateEvenement(
+                    evenement.date_evenement
+                  );
+
+                  const estSoiree =
+                    evenement.type_evenement === "soiree";
+
+                  const estApresMidi =
+                    evenement.type_evenement === "apres_midi";
+
+                  return (
+                    <div
+                      key={evenement.id}
+                      className="group relative bg-white rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                    >
+
+                      {/* Petit bandeau supérieur */}
+                      <div
+                        className={`h-1.5 ${
+                          estSoiree
+                            ? "bg-black"
+                            : estApresMidi
+                            ? "bg-orange-500"
+                            : "bg-purple-600"
+                        }`}
+                      />
+
+                      <div className="flex">
+
+                        {/* ================= */}
+                        {/* DATE */}
+                        {/* ================= */}
+
+                        <div
+                          className={`w-28 md:w-32 flex-shrink-0 text-white flex flex-col items-center justify-center px-3 py-5 ${
+                            estSoiree
+                              ? "bg-gradient-to-b from-gray-950 to-black"
+                              : estApresMidi
+                              ? "bg-gradient-to-b from-orange-400 to-orange-600"
+                              : "bg-gradient-to-b from-purple-500 to-indigo-700"
+                          }`}
+                        >
+
+                          <span className="text-[11px] md:text-xs font-black uppercase tracking-wider opacity-90">
+                            {date.jour}
+                          </span>
+
+                          <span className="text-5xl md:text-6xl font-black leading-none mt-1">
+                            {date.numero}
+                          </span>
+
+                          <span className="text-sm md:text-base font-bold capitalize mt-1">
+                            {date.mois}
+                          </span>
+
+                        </div>
+
+                        {/* ================= */}
+                        {/* INFOS */}
+                        {/* ================= */}
+
+                        <div className="flex-1 min-w-0 p-5 flex flex-col justify-center">
+
+                          <h3 className="font-black text-lg md:text-xl text-gray-900 leading-tight">
+                            {getLibelleTypeEvenement(
+                              evenement.type_evenement
+                            )}
+                          </h3>
+
+                          <div className="inline-flex items-center gap-2 mt-3 text-gray-700">
+                            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-100">
+                              🕐
+                            </span>
+
+                            <span className="font-bold text-sm md:text-base">
+                              {formaterHeure(evenement.heure_debut)}
+                              {" – "}
+                              {formaterHeure(evenement.heure_fin)}
+                            </span>
+                          </div>
+
+                          {evenement.texte && (
+                            <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                              {evenement.texte}
+                            </p>
+                          )}
+
+                        </div>
+
+                      </div>
+
+                    </div>
+                  );
+                })}
+
+              </div>
+            </div>
+
+            {/* ========================= */}
+            {/* FOOTER / ADRESSE */}
+            {/* ========================= */}
+
+            <div className="relative border-t border-white/10 bg-black/25">
+
+              <div className="px-5 py-6 md:px-10">
+
+                <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-5 text-center">
+
+                  <div className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 border border-white/10 text-2xl">
+                    📍
+                  </div>
+
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-purple-300 font-bold">
+                      Retrouvez-nous
+                    </p>
+
+                    <p className="mt-1 text-white font-black text-base md:text-lg">
+                      2 Rue Albert Leroy, 62170 Neuville-sous-Montreuil
+                    </p>
+                  </div>
+
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-white/10 text-center">
+                  <p className="text-purple-200 text-xs md:text-sm">
+                    🎲 Jeux de société • Rencontres • Convivialité
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+      )}
       {false && (
        <>
           {/* STATS */}
