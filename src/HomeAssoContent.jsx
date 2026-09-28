@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import CountUp from "react-countup";
 import { Phone, Mail } from "lucide-react";
 import FacebookWidget from "./FacebookWidget";
 import DiaporamaSwiper from "./DiaporamaSwiper";
+import { toPng } from "html-to-image";
 
 export default function HomeAssoContent({
   stats,
@@ -14,6 +15,7 @@ export default function HomeAssoContent({
   planningImageUrl,
   setZoomOpen,
 }) {
+  const agendaRef = useRef(null);
   // ============================================================
   // DATES DES PROCHAINES RENCONTRES
   // ============================================================
@@ -145,6 +147,62 @@ export default function HomeAssoContent({
 
     const couleurAgenda =
       couleursAgenda[(jourDuMois - 1) % couleursAgenda.length];
+    
+    // ============================================================
+    // PARTAGER / TÉLÉCHARGER L'AGENDA
+    // ============================================================
+
+    const partagerAgenda = async () => {
+      if (!agendaRef.current) return;
+
+      try {
+        const dataUrl = await toPng(agendaRef.current, {
+          pixelRatio: 2,
+          cacheBust: true,
+          backgroundColor: "#ffffff",
+        });
+
+        // Transformation de l'image en fichier PNG
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+
+        const fichier = new File(
+          [blob],
+          `agenda-la-loi-des-cartes-${new Date()
+            .toISOString()
+            .slice(0, 10)}.png`,
+          {
+            type: "image/png",
+          }
+        );
+
+        // 📱 Partage natif sur téléphone
+        if (
+          navigator.share &&
+          navigator.canShare &&
+          navigator.canShare({ files: [fichier] })
+        ) {
+          await navigator.share({
+            title: "Agenda - La Loi des Cartes",
+            text: "Agenda des prochaines activités de La Loi des Cartes",
+            files: [fichier],
+          });
+
+          return;
+        }
+
+        // 💾 Sinon téléchargement de l'image
+        const lien = document.createElement("a");
+        lien.download = fichier.name;
+        lien.href = dataUrl;
+        lien.click();
+      } catch (error) {
+        console.error(
+          "Erreur lors du partage de l'agenda :",
+          error
+        );
+      }
+    };
 
   return (
     <>
@@ -153,7 +211,7 @@ export default function HomeAssoContent({
           ============================================================ */}
       {!chargementDates && datesEvenements.length > 0 && (
         <section className="mt-12 mb-12">
-          <div className={`relative max-w-6xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurAgenda}`}>
+          <div ref={agendaRef} className={`relative max-w-6xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurAgenda}`}>
 
             {/* ========================= */}
             {/* FOND GRAPHIQUE */}
@@ -387,6 +445,20 @@ export default function HomeAssoContent({
             </div>
 
           </div>
+
+          {/* ========================= */}
+          {/* PARTAGE DE L'AGENDA */}
+          {/* ========================= */}
+
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={partagerAgenda}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-purple-900 font-bold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all"
+            >
+              🖼️ Partager / télécharger l’agenda
+            </button>
+          </div>
+
         </section>
       )}
     </>
