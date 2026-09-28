@@ -162,9 +162,40 @@ export default function HomeAssoContent({
           backgroundColor: "#ffffff",
         });
 
-        // Transformation de l'image en fichier PNG
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
+        // Convertit directement le Data URL en Blob
+        // sans utiliser fetch() (compatible avec ton CSP)
+        const [header, base64] = dataUrl.split(",");
+
+        const mimeMatch = header.match(/data:(.*?);base64/);
+        const mimeType = mimeMatch
+          ? mimeMatch[1]
+          : "image/png";
+
+        const byteCharacters = atob(base64);
+        const byteArrays = [];
+
+        for (
+          let offset = 0;
+          offset < byteCharacters.length;
+          offset += 1024
+        ) {
+          const slice = byteCharacters.slice(
+            offset,
+            offset + 1024
+          );
+
+          const byteNumbers = new Array(slice.length);
+
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+
+          byteArrays.push(new Uint8Array(byteNumbers));
+        }
+
+        const blob = new Blob(byteArrays, {
+          type: mimeType,
+        });
 
         const fichier = new File(
           [blob],
@@ -180,7 +211,9 @@ export default function HomeAssoContent({
         if (
           navigator.share &&
           navigator.canShare &&
-          navigator.canShare({ files: [fichier] })
+          navigator.canShare({
+            files: [fichier],
+          })
         ) {
           await navigator.share({
             title: "Agenda - La Loi des Cartes",
@@ -191,11 +224,20 @@ export default function HomeAssoContent({
           return;
         }
 
-        // 💾 Sinon téléchargement de l'image
+        // 💾 Téléchargement sur ordinateur
         const lien = document.createElement("a");
+
+        lien.href = URL.createObjectURL(blob);
         lien.download = fichier.name;
-        lien.href = dataUrl;
+
+        document.body.appendChild(lien);
         lien.click();
+        document.body.removeChild(lien);
+
+        // Libération de l'URL temporaire
+        setTimeout(() => {
+          URL.revokeObjectURL(lien.href);
+        }, 1000);
       } catch (error) {
         console.error(
           "Erreur lors du partage de l'agenda :",
