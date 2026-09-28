@@ -15,7 +15,9 @@ export default function HomeAssoContent({
   planningImageUrl,
   setZoomOpen,
 }) {
-  const agendaRef = useRef(null);
+  // Références pour les exports réseaux sociaux
+  const instagramAgendaRef = useRef(null);
+  const facebookAgendaRef = useRef(null);
   // ============================================================
   // DATES DES PROCHAINES RENCONTRES
   // ============================================================
@@ -149,29 +151,56 @@ export default function HomeAssoContent({
       couleursAgenda[(jourDuMois - 1) % couleursAgenda.length];
     
     // ============================================================
-    // PARTAGER / TÉLÉCHARGER L'AGENDA
+    // EXPORT AGENDA RÉSEAUX SOCIAUX
     // ============================================================
 
-    const partagerAgenda = async () => {
-      if (!agendaRef.current) return;
+    const partagerAgenda = async (format) => {
+      let element;
+      let largeur;
+      let hauteur;
+      let nomFichier;
+
+      if (format === "instagram") {
+        element = instagramAgendaRef.current;
+        largeur = 1080;
+        hauteur = 1350;
+        nomFichier = "agenda-la-loi-des-cartes-instagram";
+      } else {
+        element = facebookAgendaRef.current;
+        largeur = 1200;
+        hauteur = 630;
+        nomFichier = "agenda-la-loi-des-cartes-facebook";
+      }
+
+      if (!element) {
+        console.error("Élément d'export introuvable");
+        return;
+      }
 
       try {
-        const dataUrl = await toPng(agendaRef.current, {
-          pixelRatio: 2,
+        const dataUrl = await toPng(element, {
+          width: largeur,
+          height: hauteur,
+          pixelRatio: 1,
           cacheBust: true,
-          backgroundColor: "#ffffff",
+          backgroundColor: "#111827",
         });
 
-        // Convertit directement le Data URL en Blob
-        // sans utiliser fetch() (compatible avec ton CSP)
+        // ========================================================
+        // Conversion Data URL → Blob
+        // Pas de fetch() afin d'éviter les problèmes CSP
+        // ========================================================
+
         const [header, base64] = dataUrl.split(",");
 
         const mimeMatch = header.match(/data:(.*?);base64/);
+
         const mimeType = mimeMatch
           ? mimeMatch[1]
           : "image/png";
 
         const byteCharacters = atob(base64);
+
         const byteArrays = [];
 
         for (
@@ -199,15 +228,16 @@ export default function HomeAssoContent({
 
         const fichier = new File(
           [blob],
-          `agenda-la-loi-des-cartes-${new Date()
-            .toISOString()
-            .slice(0, 10)}.png`,
+          `${nomFichier}.png`,
           {
             type: "image/png",
           }
         );
 
-        // 📱 Partage natif sur téléphone
+        // ========================================================
+        // 📱 PARTAGE NATIF
+        // ========================================================
+
         if (
           navigator.share &&
           navigator.canShare &&
@@ -216,31 +246,46 @@ export default function HomeAssoContent({
           })
         ) {
           await navigator.share({
-            title: "Agenda - La Loi des Cartes",
-            text: "Agenda des prochaines activités de La Loi des Cartes",
+            title:
+              format === "instagram"
+                ? "Agenda - La Loi des Cartes"
+                : "Agenda - La Loi des Cartes",
+
+            text:
+              format === "instagram"
+                ? "Les prochaines rencontres de La Loi des Cartes 🎲"
+                : "Agenda des prochaines rencontres de La Loi des Cartes 🎲",
+
             files: [fichier],
           });
 
           return;
         }
 
-        // 💾 Téléchargement sur ordinateur
+        // ========================================================
+        // 💾 TÉLÉCHARGEMENT PC
+        // ========================================================
+
+        const url = URL.createObjectURL(blob);
+
         const lien = document.createElement("a");
 
-        lien.href = URL.createObjectURL(blob);
+        lien.href = url;
         lien.download = fichier.name;
 
         document.body.appendChild(lien);
+
         lien.click();
+
         document.body.removeChild(lien);
 
-        // Libération de l'URL temporaire
         setTimeout(() => {
-          URL.revokeObjectURL(lien.href);
+          URL.revokeObjectURL(url);
         }, 1000);
+
       } catch (error) {
         console.error(
-          "Erreur lors du partage de l'agenda :",
+          `Erreur lors de la création de l'agenda ${format} :`,
           error
         );
       }
@@ -248,12 +293,445 @@ export default function HomeAssoContent({
 
   return (
     <>
+      {/* ==========================================================
+          VERSION INSTAGRAM
+          1080 × 1080
+          ========================================================== */}
+
+      <div
+        ref={instagramAgendaRef}
+        style={{
+          position: "absolute",
+          left: "-10000px",
+          top: "0",
+          width: "1080px",
+          height: "1080px",
+          overflow: "hidden",
+        }}
+      >
+
+        {/* FOND */}
+
+        <div
+          className={`relative w-full h-full bg-gradient-to-br ${couleurAgenda} text-white`}
+        >
+
+          {/* Décors */}
+
+          <div className="absolute inset-0 overflow-hidden">
+
+            <img
+              src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+              alt=""
+              crossOrigin="anonymous"
+              className="absolute -right-32 top-1/3 w-[600px] opacity-[0.035] rotate-[-12deg]"
+            />
+
+            <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-3xl" />
+
+            <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-3xl" />
+
+            <div className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-fuchsia-500/10 blur-3xl" />
+
+          </div>
+
+
+          {/* CONTENU */}
+
+          <div className="relative h-full flex flex-col px-12 py-10">
+
+            {/* LOGO */}
+
+            <div className="flex justify-center">
+
+              <div className="bg-white rounded-3xl px-8 py-4 shadow-2xl">
+
+                <img
+                  src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                  alt="La Loi des Cartes"
+                  crossOrigin="anonymous"
+                  className="h-24 w-auto object-contain"
+                />
+
+              </div>
+
+            </div>
+
+
+            {/* TITRE */}
+
+            <div className="text-center mt-8">
+
+              <div className="text-purple-200 text-xl font-bold uppercase tracking-[0.25em]">
+                🎲 La Loi des Cartes
+              </div>
+
+              <div className="text-7xl font-black leading-none mt-3">
+                AGENDA
+              </div>
+
+              <div className="text-5xl font-black text-purple-300 mt-2">
+                DU CLUB
+              </div>
+
+            </div>
+
+
+            {/* ÉVÉNEMENTS */}
+
+            <div
+              className={`grid ${
+                datesEvenements.length <= 4
+                  ? "grid-cols-2"
+                  : "grid-cols-2"
+              } gap-4 mt-8 flex-1 content-center`}
+            >
+
+              {datesEvenements.map((evenement) => {
+
+                const date = formaterDateEvenement(
+                  evenement.date_evenement
+                );
+
+                const estSoiree =
+                  evenement.type_evenement === "soiree";
+
+                const estApresMidi =
+                  evenement.type_evenement === "apres_midi";
+
+                return (
+                  <div
+                    key={evenement.id}
+                    className="bg-white rounded-2xl overflow-hidden shadow-2xl text-gray-900"
+                  >
+
+                    <div
+                      className={`h-2 ${
+                        estSoiree
+                          ? "bg-black"
+                          : estApresMidi
+                          ? "bg-orange-500"
+                          : "bg-purple-600"
+                      }`}
+                    />
+
+                    <div className="flex">
+
+                      {/* DATE */}
+
+                      <div
+                        className={`w-32 flex-shrink-0 text-white flex flex-col items-center justify-center py-4 ${
+                          estSoiree
+                            ? "bg-gradient-to-b from-gray-950 to-black"
+                            : estApresMidi
+                            ? "bg-gradient-to-b from-orange-400 to-orange-600"
+                            : "bg-gradient-to-b from-purple-500 to-indigo-700"
+                        }`}
+                      >
+
+                        <div className="text-xs font-black uppercase">
+                          {date.jour}
+                        </div>
+
+                        <div className="text-5xl font-black leading-none">
+                          {date.numero}
+                        </div>
+
+                        <div className="text-sm font-bold capitalize">
+                          {date.mois}
+                        </div>
+
+                      </div>
+
+
+                      {/* INFOS */}
+
+                      <div className="flex-1 p-4">
+
+                        <div className="font-black text-lg leading-tight">
+                          {getLibelleTypeEvenement(
+                            evenement.type_evenement
+                          )}
+                        </div>
+
+                        <div className="font-bold text-sm mt-2">
+                          🕐{" "}
+                          {formaterHeure(
+                            evenement.heure_debut
+                          )}
+                          {" – "}
+                          {formaterHeure(
+                            evenement.heure_fin
+                          )}
+                        </div>
+
+                        {evenement.texte && (
+                          <div className="text-xs text-gray-600 mt-2 leading-tight">
+                            {evenement.texte}
+                          </div>
+                        )}
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                );
+              })}
+
+            </div>
+
+
+            {/* FOOTER */}
+
+            <div className="mt-6 pt-5 border-t border-white/20 text-center">
+
+              <div className="text-lg font-black">
+                📍 Maison des associations
+              </div>
+
+              <div className="text-sm font-semibold mt-1">
+                2 Rue Albert Leroy, 62170 Neuville-sous-Montreuil
+              </div>
+
+              <div className="flex justify-center gap-8 mt-3 text-sm font-bold">
+
+                <span>
+                  📞 06 44 17 10 82
+                </span>
+
+                <span>
+                  ✉️ laloidescartes@gmail.com
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      {/* ==========================================================
+          VERSION FACEBOOK
+          1200 × 630
+          ========================================================== */}
+
+      <div
+        ref={facebookAgendaRef}
+        style={{
+          position: "absolute",
+          left: "-10000px",
+          top: "0",
+          width: "1200px",
+          height: "630px",
+          overflow: "hidden",
+        }}
+      >
+
+        <div
+          className={`relative w-full h-full bg-gradient-to-br ${couleurAgenda} text-white`}
+        >
+
+          {/* DÉCOR */}
+
+          <div className="absolute inset-0 overflow-hidden">
+
+            <img
+              src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+              alt=""
+              crossOrigin="anonymous"
+              className="absolute -right-40 top-20 w-[550px] opacity-[0.035] rotate-[-12deg]"
+            />
+
+            <div className="absolute -top-48 -left-48 w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-3xl" />
+
+            <div className="absolute -bottom-48 right-20 w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-3xl" />
+
+          </div>
+
+
+          {/* CONTENU */}
+
+          <div className="relative h-full flex flex-col px-10 py-8">
+
+
+            {/* EN-TÊTE */}
+
+            <div className="flex items-center gap-6">
+
+              <div className="bg-white rounded-2xl px-5 py-3 shadow-2xl flex-shrink-0">
+
+                <img
+                  src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                  alt="La Loi des Cartes"
+                  crossOrigin="anonymous"
+                  className="h-20 w-auto object-contain"
+                />
+
+              </div>
+
+
+              <div>
+
+                <div className="text-purple-200 text-sm font-bold uppercase tracking-[0.2em]">
+                  🎲 La Loi des Cartes
+                </div>
+
+                <div className="text-5xl font-black leading-none mt-1">
+                  AGENDA
+                </div>
+
+                <div className="text-3xl font-black text-purple-300">
+                  DU CLUB
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* ÉVÉNEMENTS */}
+
+            <div className="grid grid-cols-3 gap-4 mt-7 flex-1">
+
+              {datesEvenements.slice(0, 6).map((evenement) => {
+
+                const date = formaterDateEvenement(
+                  evenement.date_evenement
+                );
+
+                const estSoiree =
+                  evenement.type_evenement === "soiree";
+
+                const estApresMidi =
+                  evenement.type_evenement === "apres_midi";
+
+                return (
+                  <div
+                    key={evenement.id}
+                    className="bg-white rounded-xl overflow-hidden shadow-xl text-gray-900"
+                  >
+
+                    <div
+                      className={`h-1.5 ${
+                        estSoiree
+                          ? "bg-black"
+                          : estApresMidi
+                          ? "bg-orange-500"
+                          : "bg-purple-600"
+                      }`}
+                    />
+
+                    <div className="flex h-full">
+
+                      <div
+                        className={`w-24 flex-shrink-0 text-white flex flex-col items-center justify-center ${
+                          estSoiree
+                            ? "bg-gradient-to-b from-gray-950 to-black"
+                            : estApresMidi
+                            ? "bg-gradient-to-b from-orange-400 to-orange-600"
+                            : "bg-gradient-to-b from-purple-500 to-indigo-700"
+                        }`}
+                      >
+
+                        <div className="text-[10px] font-black uppercase">
+                          {date.jour}
+                        </div>
+
+                        <div className="text-4xl font-black leading-none">
+                          {date.numero}
+                        </div>
+
+                        <div className="text-xs font-bold capitalize">
+                          {date.mois}
+                        </div>
+
+                      </div>
+
+
+                      <div className="flex-1 p-3">
+
+                        <div className="font-black text-sm leading-tight">
+                          {getLibelleTypeEvenement(
+                            evenement.type_evenement
+                          )}
+                        </div>
+
+                        <div className="font-bold text-xs mt-2">
+                          🕐{" "}
+                          {formaterHeure(
+                            evenement.heure_debut
+                          )}
+                          {" – "}
+                          {formaterHeure(
+                            evenement.heure_fin
+                          )}
+                        </div>
+
+                        {evenement.texte && (
+                          <div className="text-[10px] text-gray-600 mt-2 leading-tight">
+                            {evenement.texte}
+                          </div>
+                        )}
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                );
+              })}
+
+            </div>
+
+
+            {/* FOOTER */}
+
+            <div className="mt-5 pt-4 border-t border-white/20 flex items-center justify-between">
+
+              <div>
+
+                <div className="font-black text-base">
+                  📍 Maison des associations
+                </div>
+
+                <div className="text-xs font-semibold">
+                  2 Rue Albert Leroy, 62170 Neuville-sous-Montreuil
+                </div>
+
+              </div>
+
+
+              <div className="flex gap-5 text-xs font-bold">
+
+                <span>
+                  📞 06 44 17 10 82
+                </span>
+
+                <span>
+                  ✉️ laloidescartes@gmail.com
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
       {/* ============================================================
           PROCHAINES RENCONTRES
           ============================================================ */}
       {!chargementDates && datesEvenements.length > 0 && (
         <section className="mt-12 mb-12">
-          <div ref={agendaRef} className={`relative max-w-6xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurAgenda}`}>
+          <div className={`relative max-w-6xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurAgenda}`}>
 
             {/* ========================= */}
             {/* FOND GRAPHIQUE */}
@@ -488,19 +966,38 @@ export default function HomeAssoContent({
 
           </div>
 
-          {/* ========================= */}
-          {/* PARTAGE DE L'AGENDA */}
-          {/* ========================= */}
+          {/* ======================================================
+              BOUTONS RÉSEAUX SOCIAUX
+              ====================================================== */}
 
-          <div className="flex justify-center mt-6">
+          <div className="flex flex-wrap justify-center gap-3 mt-6">
+
+            {/* INSTAGRAM */}
+
             <button
-              onClick={partagerAgenda}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-purple-900 font-bold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all"
+              onClick={() => partagerAgenda("instagram")}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-orange-400 text-white font-bold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all"
             >
-              🖼️ Partager / télécharger l’agenda
+              📸
+              <span>
+                Partager l'Agenda format Instagram
+              </span>
             </button>
-          </div>
 
+
+            {/* FACEBOOK */}
+
+            <button
+              onClick={() => partagerAgenda("facebook")}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition-all"
+            >
+              📘
+              <span>
+                Partager l'Agenda format Facebook
+              </span>
+            </button>
+
+          </div>
         </section>
       )}
     </>
