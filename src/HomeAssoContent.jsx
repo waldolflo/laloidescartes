@@ -155,141 +155,168 @@ export default function HomeAssoContent({
     // ============================================================
 
     const partagerAgenda = async (format) => {
-      let element;
-      let largeur;
-      let hauteur;
-      let nomFichier;
+    let element;
+    let largeur;
+    let hauteur;
+    let nomFichier;
 
-      if (format === "instagram") {
-        element = instagramAgendaRef.current;
-        largeur = 1080;
-        hauteur = 1350;
-        nomFichier = "agenda-la-loi-des-cartes-instagram";
-      } else {
-        element = facebookAgendaRef.current;
-        largeur = 1200;
-        hauteur = 630;
-        nomFichier = "agenda-la-loi-des-cartes-facebook";
+    if (format === "instagram") {
+      element = instagramAgendaRef.current;
+      largeur = 1080;
+      hauteur = 1350;
+      nomFichier = "agenda-la-loi-des-cartes-instagram";
+    } else {
+      element = facebookAgendaRef.current;
+      largeur = 1200;
+      hauteur = 630;
+      nomFichier = "agenda-la-loi-des-cartes-facebook";
+    }
+
+    if (!element) {
+      console.error("Élément d'export introuvable");
+      return;
+    }
+
+    // Sauvegarde du style actuel
+    const ancienStyle = {
+      position: element.style.position,
+      left: element.style.left,
+      top: element.style.top,
+      zIndex: element.style.zIndex,
+      opacity: element.style.opacity,
+      pointerEvents: element.style.pointerEvents,
+    };
+
+    try {
+      // ============================================================
+      // ON PLACE TEMPORAIREMENT L'IMAGE DANS LA ZONE VISIBLE
+      // pour forcer le navigateur à réellement la rendre
+      // ============================================================
+
+      element.style.position = "fixed";
+      element.style.left = "0";
+      element.style.top = "0";
+      element.style.zIndex = "999999";
+      element.style.opacity = "1";
+      element.style.pointerEvents = "none";
+
+      // Laisse le navigateur effectuer le rendu avant la capture
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      // ============================================================
+      // CAPTURE
+      // ============================================================
+
+      const dataUrl = await toPng(element, {
+        width: largeur,
+        height: hauteur,
+        pixelRatio: 1,
+        cacheBust: true,
+        backgroundColor: "#111827",
+      });
+
+      // ============================================================
+      // DATA URL → BLOB
+      // Sans fetch() pour éviter les problèmes CSP
+      // ============================================================
+
+      const [header, base64] = dataUrl.split(",");
+
+      const mimeMatch = header.match(/data:(.*?);base64/);
+      const mimeType = mimeMatch ? mimeMatch[1] : "image/png";
+
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
+
+      for (
+        let offset = 0;
+        offset < byteCharacters.length;
+        offset += 1024
+      ) {
+        const slice = byteCharacters.slice(offset, offset + 1024);
+        const byteNumbers = new Array(slice.length);
+
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+
+        byteArrays.push(new Uint8Array(byteNumbers));
       }
 
-      if (!element) {
-        console.error("Élément d'export introuvable");
+      const blob = new Blob(byteArrays, {
+        type: mimeType,
+      });
+
+      const fichier = new File(
+        [blob],
+        `${nomFichier}.png`,
+        {
+          type: "image/png",
+        }
+      );
+
+      // ============================================================
+      // PARTAGE NATIF
+      // ============================================================
+
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({
+          files: [fichier],
+        })
+      ) {
+        await navigator.share({
+          title: "Agenda - La Loi des Cartes",
+          text:
+            format === "instagram"
+              ? "Les prochaines rencontres de La Loi des Cartes 🎲"
+              : "Agenda des prochaines rencontres de La Loi des Cartes 🎲",
+          files: [fichier],
+        });
+
         return;
       }
 
-      try {
-        const dataUrl = await toPng(element, {
-          width: largeur,
-          height: hauteur,
-          pixelRatio: 1,
-          cacheBust: true,
-          backgroundColor: "#111827",
-        });
+      // ============================================================
+      // TÉLÉCHARGEMENT SUR PC
+      // ============================================================
 
-        // ========================================================
-        // Conversion Data URL → Blob
-        // Pas de fetch() afin d'éviter les problèmes CSP
-        // ========================================================
+      const url = URL.createObjectURL(blob);
 
-        const [header, base64] = dataUrl.split(",");
+      const lien = document.createElement("a");
+      lien.href = url;
+      lien.download = fichier.name;
 
-        const mimeMatch = header.match(/data:(.*?);base64/);
+      document.body.appendChild(lien);
+      lien.click();
+      document.body.removeChild(lien);
 
-        const mimeType = mimeMatch
-          ? mimeMatch[1]
-          : "image/png";
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error(
+        `Erreur lors de la création de l'agenda ${format} :`,
+        error
+      );
+    } finally {
+      // ============================================================
+      // ON RESTAURE LA POSITION INITIALE
+      // ============================================================
 
-        const byteCharacters = atob(base64);
-
-        const byteArrays = [];
-
-        for (
-          let offset = 0;
-          offset < byteCharacters.length;
-          offset += 1024
-        ) {
-          const slice = byteCharacters.slice(
-            offset,
-            offset + 1024
-          );
-
-          const byteNumbers = new Array(slice.length);
-
-          for (let i = 0; i < slice.length; i++) {
-            byteNumbers[i] = slice.charCodeAt(i);
-          }
-
-          byteArrays.push(new Uint8Array(byteNumbers));
-        }
-
-        const blob = new Blob(byteArrays, {
-          type: mimeType,
-        });
-
-        const fichier = new File(
-          [blob],
-          `${nomFichier}.png`,
-          {
-            type: "image/png",
-          }
-        );
-
-        // ========================================================
-        // 📱 PARTAGE NATIF
-        // ========================================================
-
-        if (
-          navigator.share &&
-          navigator.canShare &&
-          navigator.canShare({
-            files: [fichier],
-          })
-        ) {
-          await navigator.share({
-            title:
-              format === "instagram"
-                ? "Agenda - La Loi des Cartes"
-                : "Agenda - La Loi des Cartes",
-
-            text:
-              format === "instagram"
-                ? "Les prochaines rencontres de La Loi des Cartes 🎲"
-                : "Agenda des prochaines rencontres de La Loi des Cartes 🎲",
-
-            files: [fichier],
-          });
-
-          return;
-        }
-
-        // ========================================================
-        // 💾 TÉLÉCHARGEMENT PC
-        // ========================================================
-
-        const url = URL.createObjectURL(blob);
-
-        const lien = document.createElement("a");
-
-        lien.href = url;
-        lien.download = fichier.name;
-
-        document.body.appendChild(lien);
-
-        lien.click();
-
-        document.body.removeChild(lien);
-
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 1000);
-
-      } catch (error) {
-        console.error(
-          `Erreur lors de la création de l'agenda ${format} :`,
-          error
-        );
-      }
-    };
+      element.style.position = ancienStyle.position;
+      element.style.left = ancienStyle.left;
+      element.style.top = ancienStyle.top;
+      element.style.zIndex = ancienStyle.zIndex;
+      element.style.opacity = ancienStyle.opacity;
+      element.style.pointerEvents = ancienStyle.pointerEvents;
+    }
+  };
 
   return (
     <>
@@ -301,11 +328,11 @@ export default function HomeAssoContent({
       <div
         ref={instagramAgendaRef}
         style={{
-          position: "absolute",
+          position: "fixed",
           left: "-10000px",
           top: "0",
           width: "1080px",
-          height: "1080px",
+          height: "1350px",
           overflow: "hidden",
         }}
       >
@@ -524,7 +551,7 @@ export default function HomeAssoContent({
       <div
         ref={facebookAgendaRef}
         style={{
-          position: "absolute",
+          position: "fixed",
           left: "-10000px",
           top: "0",
           width: "1200px",
