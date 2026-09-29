@@ -1,6 +1,12 @@
 // CreatePartieModal.jsx
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
+import {
+  Plus,
+  X,
+  AlertCircle,
+  Dices,
+} from "lucide-react";
 
 export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
   const [newPartie, setNewPartie] = useState({
@@ -28,6 +34,8 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
   }, []);
 
   const addPartie = async () => {
+    setErrorMsg("");
+
     if (
       !newPartie.jeu_id ||
       !newPartie.date_partie ||
@@ -38,7 +46,9 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
       return;
     }
 
-    const jeuData = jeux.find((j) => j.id === newPartie.jeu_id);
+    const jeuData = jeux.find(
+      (j) => String(j.id) === String(newPartie.jeu_id)
+    );
 
     if (!jeuData) {
       setErrorMsg("Impossible de trouver le jeu sélectionné");
@@ -114,192 +124,239 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={onClose}
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-center p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div
-        className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="relative z-[101] bg-white rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden"
+        onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* En-tête */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 px-6 py-6 text-white">
-          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10" />
-          <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-white/5" />
 
-          <div className="relative flex items-start justify-between gap-4">
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 text-xl backdrop-blur-sm">
-                  🎲
-                </span>
+        {/* ======================================================
+            HEADER MODAL
+            ====================================================== */}
 
-                <span className="text-sm font-medium uppercase tracking-wider text-indigo-100">
-                  Nouvelle partie
-                </span>
-              </div>
+        <div className="relative bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-950 px-6 py-6 text-white overflow-hidden">
 
-              <h2 className="text-2xl font-bold tracking-tight">
-                Créer une partie
-              </h2>
+          {/* Décor */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
 
-              <p className="mt-1 text-sm text-indigo-100">
-                Organisez votre prochaine session de jeu
-              </p>
-            </div>
+            <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-indigo-500/20 blur-2xl" />
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl text-white transition hover:bg-white/20"
-              aria-label="Fermer"
-            >
-              ×
-            </button>
+            <div className="absolute -bottom-28 -left-20 w-56 h-56 rounded-full bg-purple-500/20 blur-2xl" />
+
+            <Dices
+              size={180}
+              className="absolute -right-8 -bottom-16 text-white opacity-[0.035] rotate-12"
+            />
+
           </div>
-        </div>
 
-        {/* Contenu */}
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-6">
-          {errorMsg && (
-            <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              <span className="mt-0.5">⚠️</span>
-              <p>{errorMsg}</p>
-            </div>
-          )}
-
-          <div className="space-y-5">
-            {/* Jeu */}
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Jeu
-              </label>
-
-              <select
-                className={`w-full rounded-2xl border bg-gray-50 px-4 py-3 text-gray-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 ${
-                  jeu
-                    ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500"
-                    : "border-gray-200"
-                }`}
-                value={newPartie.jeu_id}
-                onChange={(e) =>
-                  setNewPartie({
-                    ...newPartie,
-                    jeu_id: e.target.value,
-                  })
-                }
-                disabled={!!jeu}
-              >
-                <option value="">Choisir un jeu</option>
-
-                {jeux.map((j) => (
-                  <option key={j.id} value={j.id}>
-                    {j.nom}
-                  </option>
-                ))}
-              </select>
-
-              {jeu && (
-                <p className="mt-2 text-xs text-gray-500">
-                  Le jeu est défini depuis le catalogue.
-                </p>
-              )}
-            </div>
-
-            {/* Date et heure */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Date
-                </label>
-
-                <input
-                  type="date"
-                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                  value={newPartie.date_partie}
-                  onChange={(e) =>
-                    setNewPartie({
-                      ...newPartie,
-                      date_partie: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Heure
-                </label>
-
-                <input
-                  type="time"
-                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                  value={newPartie.heure_partie}
-                  onChange={(e) =>
-                    setNewPartie({
-                      ...newPartie,
-                      heure_partie: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Description
-                <span className="ml-2 font-normal text-gray-400">
-                  optionnelle
-                </span>
-              </label>
-
-              <textarea
-                placeholder="Ajoutez quelques informations sur la partie..."
-                rows={3}
-                className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                value={newPartie.description}
-                onChange={(e) =>
-                  setNewPartie({
-                    ...newPartie,
-                    description: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-            {/* Lieu */}
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Lieu
-              </label>
-
-              <input
-                type="text"
-                placeholder="Lieu de la partie"
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                value={newPartie.lieu}
-                onChange={(e) =>
-                  setNewPartie({
-                    ...newPartie,
-                    lieu: e.target.value,
-                  })
-                }
-              />
-
-              <p className="mt-2 text-xs text-gray-500">
-                Les notifications sont envoyées uniquement pour les parties
-                organisées à « La loi des cartes ».
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Pied de modale */}
-        <div className="flex flex-col-reverse gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 active:scale-[0.98]"
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition z-10"
+            aria-label="Fermer"
+          >
+            <X size={19} />
+          </button>
+
+          <div className="relative flex items-center gap-3">
+
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+              <Plus size={25} />
+            </div>
+
+            <div>
+              <p className="text-indigo-200 text-xs uppercase tracking-widest font-bold">
+                La Loi des Cartes
+              </p>
+
+              <h2 className="text-2xl font-black">
+                Nouvelle partie
+              </h2>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ======================================================
+            CONTENU
+            ====================================================== */}
+
+        <div className="p-6 max-h-[75vh] overflow-y-auto">
+
+          {/* Erreur */}
+          {errorMsg && (
+            <div className="mb-4 flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-red-700">
+
+              <AlertCircle
+                size={20}
+                className="flex-shrink-0 mt-0.5"
+              />
+
+              <p className="text-sm font-medium">
+                {errorMsg}
+              </p>
+
+            </div>
+          )}
+
+          {/* ==================================================
+              JEU
+              ================================================== */}
+
+          <label className="block mb-1.5 text-sm font-bold text-gray-700">
+            Jeu
+          </label>
+
+          <select
+            value={newPartie.jeu_id}
+            onChange={(e) =>
+              setNewPartie((prev) => ({
+                ...prev,
+                jeu_id: e.target.value,
+              }))
+            }
+            disabled={!!jeu}
+            className={`w-full border bg-gray-50 p-3 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              jeu
+                ? "border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed"
+                : "border-gray-200 text-gray-800"
+            }`}
+          >
+            <option value="">Choisir un jeu</option>
+
+            {jeux.map((j) => (
+              <option key={j.id} value={j.id}>
+                {j.nom}
+              </option>
+            ))}
+          </select>
+
+          {jeu && (
+            <p className="-mt-2 mb-4 text-xs text-gray-500">
+              Le jeu est défini depuis le catalogue.
+            </p>
+          )}
+
+          {/* ==================================================
+              DATE + HEURE
+              ================================================== */}
+
+          <div className="grid grid-cols-2 gap-3">
+
+            {/* Date */}
+            <div>
+
+              <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                Date
+              </label>
+
+              <input
+                type="date"
+                value={newPartie.date_partie}
+                onChange={(e) =>
+                  setNewPartie((p) => ({
+                    ...p,
+                    date_partie: e.target.value,
+                  }))
+                }
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+
+            </div>
+
+            {/* Heure */}
+            <div>
+
+              <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                Heure
+              </label>
+
+              <input
+                type="time"
+                value={newPartie.heure_partie}
+                onChange={(e) =>
+                  setNewPartie((p) => ({
+                    ...p,
+                    heure_partie: e.target.value,
+                  }))
+                }
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+
+            </div>
+
+          </div>
+
+          {/* ==================================================
+              DESCRIPTION
+              ================================================== */}
+
+          <label className="block mt-4 mb-1.5 text-sm font-bold text-gray-700">
+            Description
+            <span className="ml-2 text-xs font-normal text-gray-400">
+              optionnelle
+            </span>
+          </label>
+
+          <textarea
+            placeholder="Ajoutez quelques informations sur la partie..."
+            rows={3}
+            value={newPartie.description}
+            onChange={(e) =>
+              setNewPartie((p) => ({
+                ...p,
+                description: e.target.value,
+              }))
+            }
+            className="w-full resize-none border border-gray-200 bg-gray-50 p-3 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+
+          {/* ==================================================
+              LIEU
+              ================================================== */}
+
+          <label className="block mt-4 mb-1.5 text-sm font-bold text-gray-700">
+            Lieu
+          </label>
+
+          <input
+            type="text"
+            placeholder="Lieu de la partie"
+            value={newPartie.lieu}
+            onChange={(e) =>
+              setNewPartie((p) => ({
+                ...p,
+                lieu: e.target.value,
+              }))
+            }
+            className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+
+          <p className="mt-2 text-xs text-gray-500">
+            Les notifications sont envoyées uniquement pour les parties
+            organisées à « La loi des cartes ».
+          </p>
+
+        </div>
+
+        {/* ======================================================
+            BOUTONS
+            ====================================================== */}
+
+        <div className="flex gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition"
           >
             Annuler
           </button>
@@ -307,11 +364,16 @@ export default function CreatePartieModal({ user, jeu, onClose, onCreated }) {
           <button
             type="button"
             onClick={addPartie}
-            className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl active:scale-[0.98]"
+            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
           >
-            🎲 Créer la partie
+            <span className="inline-flex items-center justify-center gap-2">
+              <Plus size={18} />
+              Créer la partie
+            </span>
           </button>
+
         </div>
+
       </div>
     </div>
   );
