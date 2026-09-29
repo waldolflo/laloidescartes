@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Gamepad2,
   Library,
+  X,
 } from "lucide-react";
 
 export default function Catalogue({ user }) {
@@ -38,10 +39,39 @@ export default function Catalogue({ user }) {
   const [addingJeu, setAddingJeu] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [selectedJeu, setSelectedJeu] = useState(null);
+
   const bestScoresFetched = useRef(false);
   const bestScoreSynced = useRef(false);
+
   const [profils, setProfils] = useState([]);
   const [profilCourant, setProfilCourant] = useState(null);
+
+  // ============================================================
+  // COULEUR GÉNÉRALE
+  // Même logique que Parties
+  // ============================================================
+
+  const couleursCatalogue = [
+    "from-purple-950 via-purple-900 to-indigo-950",
+    "from-blue-950 via-blue-900 to-indigo-950",
+    "from-teal-950 via-teal-900 to-cyan-950",
+    "from-green-950 via-green-900 to-emerald-950",
+    "from-orange-950 via-orange-900 to-amber-950",
+    "from-pink-950 via-pink-900 to-fuchsia-950",
+    "from-red-950 via-red-900 to-rose-950",
+    "from-indigo-950 via-indigo-900 to-blue-950",
+    "from-cyan-950 via-cyan-900 to-blue-950",
+    "from-amber-950 via-amber-900 to-orange-950",
+  ];
+
+  const jourDuMois = new Date().getDate();
+
+  const couleurCatalogue =
+    couleursCatalogue[(jourDuMois - 1) % couleursCatalogue.length];
+
+  // ============================================================
+  // FETCH ROLE + PROFILS + JEUX
+  // ============================================================
 
   useEffect(() => {
     if (!user) return;
@@ -53,7 +83,9 @@ export default function Catalogue({ user }) {
         .eq("id", user.id)
         .single();
 
-      if (!error) setUserRole(data?.role || "");
+      if (!error) {
+        setUserRole(data?.role || "");
+      }
     };
 
     const fetchProfils = async () => {
@@ -64,7 +96,9 @@ export default function Catalogue({ user }) {
       if (!error && data) {
         setProfils(data);
 
-        const me = data.find(p => p.id === user.id);
+        const me = data.find(
+          (p) => String(p.id) === String(user.id)
+        );
 
         if (me) {
           setProfilCourant(me);
@@ -78,6 +112,10 @@ export default function Catalogue({ user }) {
     fetchJeux();
   }, [user]);
 
+  // ============================================================
+  // MEILLEURS SCORES
+  // ============================================================
+
   useEffect(() => {
     const fetchBestScores = async () => {
       if (!jeux.length || bestScoresFetched.current) return;
@@ -85,21 +123,31 @@ export default function Catalogue({ user }) {
       bestScoresFetched.current = true;
 
       try {
-        const { data: allParties, error: errorParties } = await supabase
-          .from("parties")
-          .select("id, jeu_id");
+        const { data: allParties, error: errorParties } =
+          await supabase
+            .from("parties")
+            .select("id, jeu_id");
 
         if (errorParties || !allParties?.length) return;
 
         const partieIds = allParties.map((p) => p.id);
 
-        const { data: allInscriptions, error: errorInscriptions } =
-          await supabase
-            .from("inscriptions")
-            .select("partie_id, score, utilisateurs:utilisateur_id(nom)")
-            .in("partie_id", partieIds);
+        const {
+          data: allInscriptions,
+          error: errorInscriptions,
+        } = await supabase
+          .from("inscriptions")
+          .select(
+            "partie_id, score, utilisateurs:utilisateur_id(nom)"
+          )
+          .in("partie_id", partieIds);
 
-        if (errorInscriptions || !allInscriptions?.length) return;
+        if (
+          errorInscriptions ||
+          !allInscriptions?.length
+        ) {
+          return;
+        }
 
         const inscriptionsByJeu = {};
 
@@ -120,10 +168,13 @@ export default function Catalogue({ user }) {
         }
 
         const updatedJeux = jeux.map((jeu) => {
-          const inscriptions = inscriptionsByJeu[jeu.id] || [];
+          const inscriptions =
+            inscriptionsByJeu[jeu.id] || [];
 
           const valid = inscriptions.filter(
-            (i) => i.score != null && i.score > 0
+            (i) =>
+              i.score != null &&
+              i.score > 0
           );
 
           if (!valid.length) {
@@ -134,11 +185,16 @@ export default function Catalogue({ user }) {
             };
           }
 
-          const maxScore = Math.max(...valid.map((i) => i.score));
+          const maxScore = Math.max(
+            ...valid.map((i) => i.score)
+          );
 
           const bestUsers = valid
             .filter((i) => i.score === maxScore)
-            .map((i) => i.utilisateurs?.nom || "?");
+            .map(
+              (i) =>
+                i.utilisateurs?.nom || "?"
+            );
 
           return {
             ...jeu,
@@ -150,12 +206,19 @@ export default function Catalogue({ user }) {
         setJeux(updatedJeux);
         syncBestScores(updatedJeux);
       } catch (err) {
-        console.error("Erreur fetchBestScores :", err);
+        console.error(
+          "Erreur fetchBestScores :",
+          err
+        );
       }
     };
 
     fetchBestScores();
   }, [jeux]);
+
+  // ============================================================
+  // SYNCHRONISATION MEILLEURS SCORES
+  // ============================================================
 
   const syncBestScores = async (jeux) => {
     if (bestScoreSynced.current) return;
@@ -163,16 +226,27 @@ export default function Catalogue({ user }) {
     bestScoreSynced.current = true;
 
     for (const jeu of jeux) {
-      if (!jeu.bestScore || jeu.bestScore <= 0) continue;
+      if (
+        !jeu.bestScore ||
+        jeu.bestScore <= 0
+      ) {
+        continue;
+      }
 
-      if (!Array.isArray(jeu.bestUsers) || jeu.bestUsers.length === 0) {
+      if (
+        !Array.isArray(jeu.bestUsers) ||
+        jeu.bestUsers.length === 0
+      ) {
         continue;
       }
 
       const bestUser = jeu.bestUsers[0];
 
-      const sameScore = jeu.best_score === jeu.bestScore;
-      const sameUser = jeu.best_users === bestUser;
+      const sameScore =
+        jeu.best_score === jeu.bestScore;
+
+      const sameUser =
+        jeu.best_users === bestUser;
 
       if (sameScore && sameUser) continue;
 
@@ -185,12 +259,21 @@ export default function Catalogue({ user }) {
         .eq("id", jeu.id);
 
       if (error) {
-        console.error(`❌ Sync bestScore (${jeu.nom})`, error);
+        console.error(
+          `❌ Sync bestScore (${jeu.nom})`,
+          error
+        );
       } else {
-        console.log(`✔ BestScore sync (${jeu.nom})`);
+        console.log(
+          `✔ BestScore sync (${jeu.nom})`
+        );
       }
     }
   };
+
+  // ============================================================
+  // FETCH JEUX
+  // ============================================================
 
   const fetchJeux = async () => {
     const { data, error } = await supabase
@@ -200,10 +283,15 @@ export default function Catalogue({ user }) {
 
     if (!error) {
       setJeux(data || []);
+
       bestScoresFetched.current = false;
       bestScoreSynced.current = false;
     }
   };
+
+  // ============================================================
+  // BGG
+  // ============================================================
 
   const fetchBGGData = async (bggId) => {
     if (!bggId) {
@@ -222,7 +310,9 @@ export default function Catalogue({ user }) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: bggId }),
+          body: JSON.stringify({
+            id: bggId,
+          }),
         }
       );
 
@@ -235,12 +325,18 @@ export default function Catalogue({ user }) {
       }
 
       return {
-        couverture_url: data.image || data.thumbnail || null,
+        couverture_url:
+          data.image ||
+          data.thumbnail ||
+          null,
         poids: data.weight || null,
         note: data.rating || null,
       };
     } catch (err) {
-      console.error("Erreur fetchBGGData :", err);
+      console.error(
+        "Erreur fetchBGGData :",
+        err
+      );
 
       return {
         couverture_url: null,
@@ -250,9 +346,15 @@ export default function Catalogue({ user }) {
     }
   };
 
+  // ============================================================
+  // AJOUT JEU
+  // ============================================================
+
   const addJeu = async () => {
     if (!nom) {
-      setErrorMsg("Le nom du jeu est requis");
+      setErrorMsg(
+        "Le nom du jeu est requis"
+      );
       return;
     }
 
@@ -287,20 +389,26 @@ export default function Catalogue({ user }) {
 
     let newJeu = data[0];
 
-    const bggData = await fetchBGGData(bggId);
+    const bggData =
+      await fetchBGGData(bggId);
 
-    const { error: updateError } = await supabase
-      .from("jeux")
-      .update({
-        couverture_url: bggData.couverture_url,
-        note: bggData.note,
-        poids: bggData.poids,
-      })
-      .eq("id", newJeu.id)
-      .select("*");
+    const { error: updateError } =
+      await supabase
+        .from("jeux")
+        .update({
+          couverture_url:
+            bggData.couverture_url,
+          note: bggData.note,
+          poids: bggData.poids,
+        })
+        .eq("id", newJeu.id)
+        .select("*");
 
     if (updateError) {
-      console.error("Erreur update couverture :", updateError);
+      console.error(
+        "Erreur update couverture :",
+        updateError
+      );
     }
 
     newJeu = {
@@ -308,7 +416,10 @@ export default function Catalogue({ user }) {
       ...bggData,
     };
 
-    setJeux(prev => [newJeu, ...prev]);
+    setJeux((prev) => [
+      newJeu,
+      ...prev,
+    ]);
 
     setAddingJeu(false);
 
@@ -330,7 +441,8 @@ export default function Catalogue({ user }) {
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":
+            "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -343,55 +455,101 @@ export default function Catalogue({ user }) {
     );
   };
 
-  useEffect(() => {
-    const text = searchText.toLowerCase().trim();
+  // ============================================================
+  // RECHERCHE + TRI
+  // ============================================================
 
-    let filtered = jeux.filter(j => {
+  useEffect(() => {
+    const text =
+      searchText.toLowerCase().trim();
+
+    let filtered = jeux.filter((j) => {
       const proprietaireNom =
         profils.find(
-          p => String(p.id) === String(j.proprietaire)
+          (p) =>
+            String(p.id) ===
+            String(j.proprietaire)
         )?.nom || "";
 
       return (
-        (j.nom || "").toLowerCase().includes(text) ||
-        (j.type || "").toLowerCase().includes(text) ||
-        proprietaireNom.toLowerCase().includes(text) ||
-        (j.duree || "").toString().toLowerCase().includes(text) ||
-        (j.max_joueurs || "").toString().includes(text)
+        (j.nom || "")
+          .toLowerCase()
+          .includes(text) ||
+        (j.type || "")
+          .toLowerCase()
+          .includes(text) ||
+        proprietaireNom
+          .toLowerCase()
+          .includes(text) ||
+        (j.duree || "")
+          .toString()
+          .toLowerCase()
+          .includes(text) ||
+        (j.max_joueurs || "")
+          .toString()
+          .includes(text)
       );
     });
 
     filtered.sort((a, b) => {
       switch (sortOption) {
         case "nom-asc":
-          return (a.nom || "").localeCompare(b.nom || "");
+          return (a.nom || "").localeCompare(
+            b.nom || ""
+          );
 
         case "nom-desc":
-          return (b.nom || "").localeCompare(a.nom || "");
+          return (b.nom || "").localeCompare(
+            a.nom || ""
+          );
 
         case "max-joueurs-asc":
-          return (a.max_joueurs || 0) - (b.max_joueurs || 0);
+          return (
+            (a.max_joueurs || 0) -
+            (b.max_joueurs || 0)
+          );
 
         case "max-joueurs-desc":
-          return (b.max_joueurs || 0) - (a.max_joueurs || 0);
+          return (
+            (b.max_joueurs || 0) -
+            (a.max_joueurs || 0)
+          );
 
         case "fav-desc":
-          return (b.fav || 0) - (a.fav || 0);
+          return (
+            (b.fav || 0) -
+            (a.fav || 0)
+          );
 
         case "fav-asc":
-          return (a.fav || 0) - (b.fav || 0);
+          return (
+            (a.fav || 0) -
+            (b.fav || 0)
+          );
 
         case "note-desc":
-          return (b.note || 0) - (a.note || 0);
+          return (
+            (b.note || 0) -
+            (a.note || 0)
+          );
 
         case "note-asc":
-          return (a.note || 0) - (b.note || 0);
+          return (
+            (a.note || 0) -
+            (b.note || 0)
+          );
 
         case "poids-desc":
-          return (b.poids || 0) - (a.poids || 0);
+          return (
+            (b.poids || 0) -
+            (a.poids || 0)
+          );
 
         case "poids-asc":
-          return (a.poids || 0) - (b.poids || 0);
+          return (
+            (a.poids || 0) -
+            (b.poids || 0)
+          );
 
         default:
           return 0;
@@ -399,389 +557,698 @@ export default function Catalogue({ user }) {
     });
 
     setFilteredJeux(filtered);
-  }, [searchText, jeux, sortOption, profils]);
+  }, [
+    searchText,
+    jeux,
+    sortOption,
+    profils,
+  ]);
+
+  // ============================================================
+  // RENDU
+  // ============================================================
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="max-w-[1800px] mx-auto">
+    <div className="min-h-screen px-4 py-6 md:px-6">
 
-        {/* =====================================================
-            EN-TÊTE
-        ====================================================== */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950 via-purple-900 to-slate-900 px-6 py-7 sm:px-8 sm:py-8 mb-6 shadow-2xl border border-white/10">
+      {/* ========================================================
+          EN-TÊTE
+      ======================================================== */}
 
-          {/* Décoration */}
-          <div className="absolute -right-16 -top-20 w-64 h-64 rounded-full bg-purple-500/20 blur-3xl" />
-          <div className="absolute -left-20 -bottom-24 w-72 h-72 rounded-full bg-indigo-500/20 blur-3xl" />
+      <section
+        className={`relative max-w-7xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurCatalogue}`}
+      >
 
-          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+        {/* Décor */}
 
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-indigo-200 text-xs font-bold tracking-wider uppercase mb-3">
-                <Gamepad2 className="w-4 h-4" />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+
+          <img
+            src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+            alt=""
+            className="absolute -right-24 top-1/4 w-[500px] opacity-[0.035] rotate-[-12deg]"
+          />
+
+          <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-3xl" />
+
+          <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-3xl" />
+
+          <div className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-fuchsia-500/10 blur-3xl" />
+
+        </div>
+
+        <div className="relative px-5 py-7 md:px-10 md:py-9">
+
+          <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+
+            {/* Logo */}
+
+            <div className="flex-shrink-0 flex justify-center lg:justify-start">
+
+              <div className="bg-white rounded-2xl px-5 py-3 shadow-2xl">
+
+                <img
+                  src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                  alt="La Loi des Cartes"
+                  className="h-20 md:h-24 w-auto object-contain"
+                />
+
+              </div>
+
+            </div>
+
+            {/* Texte */}
+
+            <div className="flex-1 text-center lg:text-left">
+
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-purple-200 text-xs md:text-sm font-bold uppercase tracking-[0.18em]">
+                <Gamepad2 size={16} />
                 La Loi des Cartes
               </div>
 
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+              <h1 className="mt-3 text-4xl md:text-5xl font-black text-white tracking-tight leading-none">
                 LUDOTHÈQUE
+                <span className="block text-purple-300">
+                  DU CLUB
+                </span>
               </h1>
 
-              <p className="mt-2 text-sm sm:text-base text-indigo-200 max-w-2xl">
-                Retrouvez tous les jeux de l'association, leurs informations,
-                leurs scores et les parties auxquelles ils peuvent participer.
+              <p className="mt-3 text-purple-100 text-base md:text-lg">
+                Retrouvez tous les jeux de
+                l'association, leurs informations,
+                leurs scores et les parties
+                auxquelles ils peuvent participer.
               </p>
+
             </div>
 
-            <div className="flex items-center gap-3 self-start lg:self-center">
-              <div className="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-center backdrop-blur">
-                <div className="text-2xl font-black text-white">
-                  {jeux.length}
-                </div>
-                <div className="text-xs font-medium text-indigo-200">
-                  jeux
-                </div>
+            {/* Statistiques */}
+
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
+
+              <div className="inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white text-indigo-900 font-black shadow-xl">
+
+                <Library size={20} />
+
+                <span>
+                  {jeux.length} jeu
+                  {jeux.length > 1
+                    ? "x"
+                    : ""}
+                </span>
+
               </div>
 
-              <div className="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-center backdrop-blur">
-                <div className="text-2xl font-black text-white">
-                  {filteredJeux.length}
-                </div>
-                <div className="text-xs font-medium text-indigo-200">
-                  affichés
-                </div>
+              <div className="inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white/10 border border-white/20 text-white font-bold">
+
+                <Search size={19} />
+
+                <span>
+                  {filteredJeux.length} affiché
+                  {filteredJeux.length > 1
+                    ? "s"
+                    : ""}
+                </span>
+
               </div>
+
             </div>
+
           </div>
+
         </div>
 
-        {/* =====================================================
-            BARRE DE RECHERCHE / TRI
-        ====================================================== */}
-        <div className="mb-6 rounded-3xl bg-white/95 p-4 sm:p-5 shadow-xl border border-white/20">
+      </section>
 
-          <div className="flex flex-col xl:flex-row gap-3">
+      {/* ========================================================
+          RECHERCHE + TRI
+      ======================================================== */}
+
+      <div className="max-w-7xl mx-auto mt-6">
+
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3">
+
+          <div className="flex flex-col lg:flex-row gap-3">
 
             {/* Recherche */}
+
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+
+              <Search
+                size={21}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              />
 
               <input
-                className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                placeholder="Rechercher par nom, type, propriétaire, durée ou nombre max de joueurs"
+                type="text"
+                placeholder="Rechercher un jeu, un type, un propriétaire, une durée..."
                 value={searchText}
-                onChange={e => setSearchText(e.target.value)}
+                onChange={(e) =>
+                  setSearchText(e.target.value)
+                }
+                className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
               />
+
+              {searchText && (
+                <button
+                  onClick={() =>
+                    setSearchText("")
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition"
+                  aria-label="Effacer la recherche"
+                >
+                  <X size={16} />
+                </button>
+              )}
+
             </div>
 
             {/* Tri */}
-            <div className="relative xl:w-64">
-              <ArrowUpDown className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+
+            <div className="relative lg:w-64">
+
+              <ArrowUpDown
+                size={20}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
 
               <select
-                className="w-full appearance-none pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 cursor-pointer"
                 value={sortOption}
-                onChange={e => setSortOption(e.target.value)}
+                onChange={(e) =>
+                  setSortOption(
+                    e.target.value
+                  )
+                }
+                className="w-full appearance-none pl-12 pr-4 py-3.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition cursor-pointer"
               >
-                <option value="nom-asc">Nom A → Z</option>
-                <option value="nom-desc">Nom Z → A</option>
-                <option value="max-joueurs-asc">Joueurs max ↑</option>
-                <option value="max-joueurs-desc">Joueurs max ↓</option>
-                <option value="fav-desc">Favoris ↓</option>
-                <option value="fav-asc">Favoris ↑</option>
-                <option value="note-desc">Note ↓</option>
-                <option value="note-asc">Note ↑</option>
-                <option value="poids-desc">Poids ↓</option>
-                <option value="poids-asc">Poids ↑</option>
+                <option value="nom-asc">
+                  Nom A → Z
+                </option>
+
+                <option value="nom-desc">
+                  Nom Z → A
+                </option>
+
+                <option value="max-joueurs-asc">
+                  Joueurs max ↑
+                </option>
+
+                <option value="max-joueurs-desc">
+                  Joueurs max ↓
+                </option>
+
+                <option value="fav-desc">
+                  Favoris ↓
+                </option>
+
+                <option value="fav-asc">
+                  Favoris ↑
+                </option>
+
+                <option value="note-desc">
+                  Note ↓
+                </option>
+
+                <option value="note-asc">
+                  Note ↑
+                </option>
+
+                <option value="poids-desc">
+                  Poids ↓
+                </option>
+
+                <option value="poids-asc">
+                  Poids ↑
+                </option>
               </select>
+
             </div>
 
             {/* Ajouter */}
+
             {user &&
-              (userRole === "admin" ||
+              (
+                userRole === "admin" ||
                 userRole === "ludoplus" ||
-                userRole === "ludo") && (
+                userRole === "ludo"
+              ) && (
                 <button
-                  onClick={() => setAddingJeu(true)}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold shadow-lg shadow-indigo-900/20 hover:from-indigo-700 hover:to-purple-700 hover:-translate-y-0.5 transition"
+                  onClick={() => {
+                    setErrorMsg("");
+                    setAddingJeu(true);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus size={20} />
                   Ajouter un jeu
                 </button>
               )}
+
           </div>
 
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500 px-1">
+          <div className="mt-3 px-1 flex items-center justify-between text-xs text-gray-500">
+
             <span>
-              {filteredJeux.length} jeu{filteredJeux.length > 1 ? "x" : ""} correspondant
-              {filteredJeux.length > 1 ? "s" : ""}
+              {filteredJeux.length} jeu
+              {filteredJeux.length > 1
+                ? "x"
+                : ""}{" "}
+              correspondant
+              {filteredJeux.length > 1
+                ? "s"
+                : ""}
             </span>
 
             {searchText && (
               <button
-                onClick={() => setSearchText("")}
-                className="font-semibold text-indigo-600 hover:text-indigo-800 transition"
+                onClick={() =>
+                  setSearchText("")
+                }
+                className="font-bold text-purple-600 hover:text-purple-800 transition"
               >
                 Effacer la recherche
               </button>
             )}
+
           </div>
+
         </div>
 
-        {/* =====================================================
-            LISTE DES JEUX
-        ====================================================== */}
-        {filteredJeux.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-            {filteredJeux.map(j => {
+      </div>
 
-              const proprietaireNom =
-                profils.find(
-                  p => String(p.id) === String(j.proprietaire)
-                )?.nom || "?";
+      {/* ========================================================
+          TITRE RESULTATS
+      ======================================================== */}
 
-              return (
-                <div
-                  key={j.id}
-                  className="group relative overflow-hidden rounded-3xl bg-white shadow-xl border border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
-                >
+      <div className="max-w-7xl mx-auto mt-8 mb-4">
 
-                  {/* =================================================
-                      IMAGE
-                  ================================================== */}
-                  <div className="relative bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-100 h-56 overflow-hidden">
+        <h2 className="text-xl md:text-2xl font-black text-gray-900">
+          Jeux de la ludothèque
+        </h2>
 
-                    {/* Image */}
-                    {j.couverture_url ? (
-                      j.bgg_api ? (
+        <p className="text-sm text-gray-500 mt-1">
+          {filteredJeux.length} jeu
+          {filteredJeux.length > 1
+            ? "x"
+            : ""}{" "}
+          disponible
+          {filteredJeux.length > 1
+            ? "s"
+            : ""}
+        </p>
+
+      </div>
+
+      {/* ========================================================
+          LISTE DES JEUX
+      ======================================================== */}
+
+      {filteredJeux.length > 0 ? (
+
+        <div className="max-w-7xl mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+
+          {filteredJeux.map((j) => {
+
+            const proprietaireNom =
+              profils.find(
+                (p) =>
+                  String(p.id) ===
+                  String(j.proprietaire)
+              )?.nom || "?";
+
+            return (
+
+              <div
+                key={j.id}
+                className="group relative bg-white rounded-[1.5rem] shadow-lg border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+              >
+
+                {/* ==================================================
+                    BADGES
+                ================================================== */}
+
+                <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1.5">
+
+                  {j.fav > 0 && (
+                    <span className="inline-flex items-center gap-1 bg-red-600 text-white text-xs font-black rounded-full px-2.5 py-1 shadow-lg">
+                      <Heart
+                        size={12}
+                        fill="currentColor"
+                      />
+                      {j.fav}
+                    </span>
+                  )}
+
+                  {j.note &&
+                    j.note > 0 && (
+                      <span className="inline-flex items-center gap-1 bg-yellow-400 text-gray-900 text-xs font-black px-2.5 py-1 rounded-full shadow-lg">
+                        <Star
+                          size={12}
+                          fill="currentColor"
+                        />
+                        {parseFloat(
+                          j.note
+                        ).toFixed(1)}
+                      </span>
+                    )}
+
+                  {j.poids &&
+                    j.poids > 0 && (
+                      <span className="inline-flex items-center gap-1 bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
+                        <Scale size={12} />
+                        {parseFloat(
+                          j.poids
+                        ).toFixed(2)}
+                      </span>
+                    )}
+
+                  {j.bestScore &&
+                    j.bestScore > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg cursor-pointer hover:scale-105 transition"
+                        title={
+                          j.bestUsers?.join(
+                            ", "
+                          )
+                        }
+                        onClick={() =>
+                          alert(
+                            `Meilleur score par ${j.bestUsers.join(
+                              ", "
+                            )}`
+                          )
+                        }
+                      >
+                        <Trophy size={12} />
+                        {j.bestScore}
+                      </span>
+                    )}
+
+                </div>
+
+                {/* ==================================================
+                    IMAGE
+                ================================================== */}
+
+                <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+
+                  {j.couverture_url ? (
+
+                    <>
+                      {j.bgg_api ? (
                         <a
                           href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block w-full h-full"
+                          className="block"
                         >
                           <img
-                            src={j.couverture_url}
+                            src={
+                              j.couverture_url
+                            }
                             alt={j.nom}
-                            className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-48 object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
                           />
                         </a>
                       ) : (
                         <img
-                          src={j.couverture_url}
-                          alt={j.nom}
-                          className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
-                        />
-                      )
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
-                        <Library className="w-14 h-14 mb-2" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">
-                          Pas de couverture
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Voile léger au survol */}
-                    <div className="absolute inset-0 bg-indigo-950/0 group-hover:bg-indigo-950/5 transition pointer-events-none" />
-
-                    {/* =================================================
-                        BADGES
-                    ================================================== */}
-                    <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5 z-10">
-
-                      {j.fav > 0 && (
-                        <span className="inline-flex items-center gap-1 bg-red-600 text-white text-xs font-bold rounded-full px-2.5 py-1 shadow-lg">
-                          <Heart className="w-3.5 h-3.5 fill-current" />
-                          {j.fav}
-                        </span>
-                      )}
-
-                      {j.note && j.note > 0 && (
-                        <span className="inline-flex items-center gap-1 bg-amber-400 text-slate-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
-                          <Star className="w-3.5 h-3.5 fill-current" />
-                          {parseFloat(j.note).toFixed(1)} / 10
-                        </span>
-                      )}
-
-                      {j.poids && j.poids > 0 && (
-                        <span className="inline-flex items-center gap-1 bg-blue-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg">
-                          <Scale className="w-3.5 h-3.5" />
-                          {parseFloat(j.poids).toFixed(2)} / 5
-                        </span>
-                      )}
-
-                      {j.bestScore && j.bestScore > 0 && (
-                        <span
-                          className="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg cursor-pointer hover:bg-emerald-700 transition"
-                          title={j.bestUsers.join(", ")}
-                          onClick={() =>
-                            alert(
-                              `Meilleur score par ${j.bestUsers.join(", ")}`
-                            )
+                          src={
+                            j.couverture_url
                           }
+                          alt={j.nom}
+                          className="w-full h-48 object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
+                        />
+                      )}
+
+                      {/* Règles */}
+
+                      {j.regle_youtube && (
+                        <a
+                          href={
+                            j.regle_youtube
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute bottom-5 right-5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition"
                         >
-                          <Trophy className="w-3.5 h-3.5" />
-                          {j.bestScore}
-                        </span>
+                          <Play
+                            size={14}
+                            fill="currentColor"
+                          />
+                          Règles
+                        </a>
                       )}
+
+                    </>
+
+                  ) : (
+
+                    <div className="h-48 flex flex-col items-center justify-center text-gray-300">
+
+                      <Library size={48} />
+
+                      <span className="mt-2 text-sm font-semibold">
+                        Pas d'image
+                      </span>
+
                     </div>
 
-                    {/* =================================================
-                        BOUTON RÈGLES YOUTUBE
-                    ================================================== */}
-                    {j.regle_youtube && (
-                      <a
-                        href={j.regle_youtube}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition z-10"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        Règles
-                      </a>
-                    )}
+                  )}
 
-                    {/* BGG */}
-                    {j.bgg_api && (
-                      <a
-                        href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/90 backdrop-blur text-slate-700 text-xs font-bold rounded-xl shadow hover:bg-white transition z-10"
-                      >
-                        BGG
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
+                  {/* BGG */}
 
-                  {/* =================================================
-                      CONTENU
-                  ================================================== */}
-                  <div className="p-4">
+                  {j.bgg_api && (
+                    <a
+                      href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-5 left-5 inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/90 backdrop-blur text-gray-700 text-xs font-bold rounded-xl shadow hover:bg-white transition"
+                    >
+                      BGG
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
 
-                    <div className="mb-3">
-                      <h2 className="text-lg font-black text-slate-900 leading-tight line-clamp-2">
-                        {j.nom}
-                      </h2>
-
-                      {j.type && (
-                        <span className="inline-flex mt-2 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
-                          {j.type}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Infos */}
-                    <div className="space-y-2 text-sm">
-
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Users className="w-4 h-4 text-indigo-500 shrink-0" />
-                        <span>
-                          <strong className="text-slate-800">
-                            {j.min_joueurs} à {j.max_joueurs}
-                          </strong>{" "}
-                          joueurs
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Clock3 className="w-4 h-4 text-indigo-500 shrink-0" />
-                        <span>
-                          <strong className="text-slate-800">
-                            {j.duree || "?"}
-                          </strong>{" "}
-                          minutes
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <UserRound className="w-4 h-4 text-indigo-500 shrink-0" />
-                        <span className="truncate">
-                          {proprietaireNom}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* =================================================
-                        ACTIONS
-                    ================================================== */}
-                    {user && (
-                      <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-100">
-
-                        {(j.utilisateur_id === user.id ||
-                          userRole === "admin" ||
-                          userRole === "ludoplus") && (
-                          <button
-                            onClick={() => setEditingJeu(j)}
-                            className="inline-flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-bold shadow-sm hover:bg-amber-600 hover:-translate-y-0.5 transition"
-                          >
-                            <Pencil className="w-4 h-4" />
-                            Modifier
-                          </button>
-                        )}
-
-                        {(userRole === "admin" ||
-                          userRole === "ludoplus" ||
-                          userRole === "ludo" ||
-                          userRole === "membre") && (
-                          <button
-                            onClick={() => setSelectedJeu(j)}
-                            className="inline-flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-sm hover:from-indigo-700 hover:to-purple-700 hover:-translate-y-0.5 transition"
-                          >
-                            <Plus className="w-4 h-4" />
-                            Créer partie
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          /* =====================================================
-             AUCUN RÉSULTAT
-          ====================================================== */
-          <div className="rounded-3xl bg-white/95 shadow-xl p-10 sm:p-14 text-center">
-            <div className="mx-auto w-20 h-20 rounded-3xl bg-indigo-50 flex items-center justify-center mb-5">
-              <Search className="w-9 h-9 text-indigo-500" />
+
+                {/* ==================================================
+                    CONTENU
+                ================================================== */}
+
+                <div className="p-5">
+
+                  {/* Nom */}
+
+                  <div className="text-center">
+
+                    <h3 className="text-xl font-black text-gray-900 leading-tight">
+                      {j.nom}
+                    </h3>
+
+                    {j.type && (
+                      <span className="inline-flex mt-2 px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold">
+                        {j.type}
+                      </span>
+                    )}
+
+                  </div>
+
+                  {/* Joueurs */}
+
+                  <div className="mt-4 flex items-center gap-3 bg-purple-50 rounded-xl px-3 py-2.5">
+
+                    <div className="w-9 h-9 rounded-lg bg-purple-600 text-white flex items-center justify-center flex-shrink-0">
+                      <Users size={18} />
+                    </div>
+
+                    <div className="min-w-0">
+
+                      <p className="text-xs font-bold uppercase tracking-wide text-purple-500">
+                        Joueurs
+                      </p>
+
+                      <p className="text-sm font-black text-gray-800">
+                        {j.min_joueurs} à{" "}
+                        {j.max_joueurs}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  {/* Durée + type */}
+
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
+
+                      <Clock3
+                        size={17}
+                        className="text-indigo-600 flex-shrink-0"
+                      />
+
+                      <div>
+
+                        <p className="text-[10px] uppercase font-bold text-gray-400">
+                          Durée
+                        </p>
+
+                        <p className="text-sm font-black text-gray-800">
+                          {j.duree
+                            ? `${j.duree} min`
+                            : "—"}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
+
+                      <UserRound
+                        size={17}
+                        className="text-purple-600 flex-shrink-0"
+                      />
+
+                      <div className="min-w-0">
+
+                        <p className="text-[10px] uppercase font-bold text-gray-400">
+                          Propriétaire
+                        </p>
+
+                        <p className="text-sm font-black text-gray-800 truncate">
+                          {proprietaireNom}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  {/* ==================================================
+                      ACTIONS
+                  ================================================== */}
+
+                  {user && (
+                    <div className="mt-4 space-y-2 pt-1">
+
+                      {(j.utilisateur_id ===
+                        user.id ||
+                        userRole ===
+                          "admin" ||
+                        userRole ===
+                          "ludoplus") && (
+
+                        <button
+                          onClick={() =>
+                            setEditingJeu(j)
+                          }
+                          className="w-full inline-flex items-center justify-center gap-2 bg-amber-500 text-white px-3 py-2.5 rounded-xl font-bold hover:bg-amber-600 hover:-translate-y-0.5 transition"
+                        >
+                          <Pencil size={16} />
+                          Modifier
+                        </button>
+
+                      )}
+
+                      {(userRole ===
+                        "admin" ||
+                        userRole ===
+                          "ludoplus" ||
+                        userRole ===
+                          "ludo" ||
+                        userRole ===
+                          "membre") && (
+
+                        <button
+                          onClick={() =>
+                            setSelectedJeu(j)
+                          }
+                          className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-2.5 rounded-xl font-black shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                        >
+                          <Plus size={17} />
+                          Créer une partie
+                        </button>
+
+                      )}
+
+                    </div>
+                  )}
+
+                </div>
+
+              </div>
+
+            );
+          })}
+
+        </div>
+
+      ) : (
+
+        /* ========================================================
+           AUCUN RÉSULTAT
+        ======================================================== */
+
+        <div className="max-w-2xl mx-auto mt-10 mb-12">
+
+          <div className="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-10 text-center">
+
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center">
+
+              <Gamepad2 size={32} />
+
             </div>
 
-            <h2 className="text-xl font-black text-slate-900">
-              Aucun jeu trouvé
-            </h2>
+            <h3 className="mt-5 text-xl font-black text-gray-900">
 
-            <p className="mt-2 text-slate-500">
-              Aucun jeu ne correspond à votre recherche.
+              Aucun jeu trouvé
+
+            </h3>
+
+            <p className="mt-2 text-gray-500">
+
+              {searchText
+                ? "Aucun jeu ne correspond à votre recherche."
+                : "La ludothèque ne contient actuellement aucun jeu."}
+
             </p>
 
             {searchText && (
               <button
-                onClick={() => setSearchText("")}
-                className="mt-5 inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition"
+                onClick={() =>
+                  setSearchText("")
+                }
+                className="mt-5 px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition"
               >
-                Réinitialiser la recherche
+                Effacer la recherche
               </button>
             )}
-          </div>
-        )}
-      </div>
 
-      {/* =========================================================
+          </div>
+
+        </div>
+
+      )}
+
+      {/* ========================================================
           MODAL ÉDITION
-      ========================================================== */}
+      ======================================================== */}
+
       {editingJeu && (
         <EditJeu
           jeu={editingJeu}
-          onClose={() => setEditingJeu(null)}
+          onClose={() =>
+            setEditingJeu(null)
+          }
           onUpdate={(updatedJeu) => {
             if (!updatedJeu?.id) return;
 
-            setJeux(prev =>
-              prev.map(j =>
-                String(j.id) === String(updatedJeu.id)
+            setJeux((prev) =>
+              prev.map((j) =>
+                String(j.id) ===
+                String(updatedJeu.id)
                   ? updatedJeu
                   : j
               )
@@ -790,139 +1257,274 @@ export default function Catalogue({ user }) {
         />
       )}
 
-      {/* =========================================================
+      {/* ========================================================
           MODAL AJOUT
-      ========================================================== */}
+      ======================================================== */}
+
       {addingJeu && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex justify-center items-center z-50 p-4">
 
-          <div className="bg-white p-6 sm:p-7 rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-center p-4"
+          onMouseDown={(e) => {
+            if (
+              e.target ===
+              e.currentTarget
+            ) {
+              setAddingJeu(false);
+            }
+          }}
+        >
 
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-11 h-11 rounded-2xl bg-indigo-100 flex items-center justify-center">
-                <Plus className="w-6 h-6 text-indigo-600" />
+          <div className="relative z-[101] bg-white rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden">
+
+            {/* Header */}
+
+            <div
+              className={`relative bg-gradient-to-br ${couleurCatalogue} px-6 py-6 text-white`}
+            >
+
+              <button
+                onClick={() =>
+                  setAddingJeu(false)
+                }
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+              >
+                <X size={19} />
+              </button>
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+                  <Plus size={25} />
+                </div>
+
+                <div>
+
+                  <p className="text-purple-200 text-xs uppercase tracking-widest font-bold">
+                    La Loi des Cartes
+                  </p>
+
+                  <h2 className="text-2xl font-black">
+                    Ajouter un jeu
+                  </h2>
+
+                </div>
+
               </div>
 
-              <div>
-                <h2 className="text-xl font-black text-slate-900">
-                  Ajouter un jeu
-                </h2>
-
-                <p className="text-xs text-slate-500">
-                  Ajouter un nouveau jeu à la ludothèque
-                </p>
-              </div>
             </div>
 
-            {errorMsg && (
-              <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-700">
-                {errorMsg}
-              </div>
-            )}
+            {/* Formulaire */}
 
-            <div className="space-y-3">
+            <div className="p-6 max-h-[75vh] overflow-y-auto">
+
+              {errorMsg && (
+                <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-medium text-red-700">
+                  {errorMsg}
+                </div>
+              )}
+
+              {/* Nom */}
+
+              <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                Nom du jeu
+              </label>
 
               <input
-                className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                placeholder="Nom du jeu"
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Ex. Ark Nova"
                 value={nom}
-                onChange={e => setNom(e.target.value)}
+                onChange={(e) =>
+                  setNom(e.target.value)
+                }
               />
 
+              {/* Règles */}
+
+              <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                Règles YouTube
+              </label>
+
               <input
-                className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                placeholder="Lien règles YouTube"
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Lien vers la vidéo YouTube"
                 value={regleYoutube}
-                onChange={e => setRegleYoutube(e.target.value)}
+                onChange={(e) =>
+                  setRegleYoutube(
+                    e.target.value
+                  )
+                }
               />
+
+              {/* Joueurs */}
 
               <div className="grid grid-cols-2 gap-3">
-                <input
-                  className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                  placeholder="Joueurs min"
-                  value={minJoueurs}
-                  onChange={e => setMinJoueurs(e.target.value)}
-                />
 
-                <input
-                  className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                  placeholder="Joueurs max"
-                  value={maxJoueurs}
-                  onChange={e => setMaxJoueurs(e.target.value)}
-                />
+                <div>
+
+                  <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                    Joueurs min
+                  </label>
+
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="2"
+                    value={minJoueurs}
+                    onChange={(e) =>
+                      setMinJoueurs(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                </div>
+
+                <div>
+
+                  <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                    Joueurs max
+                  </label>
+
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="4"
+                    value={maxJoueurs}
+                    onChange={(e) =>
+                      setMaxJoueurs(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                </div>
+
               </div>
 
-              <input
-                className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                placeholder="Type de jeu"
-                value={type}
-                onChange={e => setType(e.target.value)}
-              />
+              {/* Type */}
+
+              <label className="block mt-4 mb-1.5 text-sm font-bold text-gray-700">
+                Type de jeu
+              </label>
 
               <input
-                className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                placeholder="Durée"
-                value={duree}
-                onChange={e => setDuree(e.target.value)}
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Ex. Expert, familial..."
+                value={type}
+                onChange={(e) =>
+                  setType(e.target.value)
+                }
               />
+
+              {/* Durée */}
+
+              <label className="block mt-4 mb-1.5 text-sm font-bold text-gray-700">
+                Durée
+              </label>
+
+              <input
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Ex. 90"
+                value={duree}
+                onChange={(e) =>
+                  setDuree(e.target.value)
+                }
+              />
+
+              {/* Propriétaire */}
+
+              <label className="block mt-4 mb-1.5 text-sm font-bold text-gray-700">
+                Propriétaire
+              </label>
 
               <select
-                className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={proprietaire}
-                onChange={e => setProprietaire(e.target.value)}
+                onChange={(e) =>
+                  setProprietaire(
+                    e.target.value
+                  )
+                }
               >
-                {profils.map(p => (
-                  <option key={p.id} value={p.id}>
+
+                {profils.map((p) => (
+                  <option
+                    key={p.id}
+                    value={p.id}
+                  >
                     {p.nom}
-                    {p.id === user.id ? " (moi)" : ""}
+                    {String(p.id) ===
+                    String(user.id)
+                      ? " (moi)"
+                      : ""}
                   </option>
                 ))}
+
               </select>
 
+              {/* BGG */}
+
+              <label className="block mt-4 mb-1.5 text-sm font-bold text-gray-700">
+                ID BGG
+              </label>
+
               <input
-                className="w-full border border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                placeholder="ID BGG (Numéro dans l'URL)"
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Numéro présent dans l'URL BoardGameGeek"
                 value={bggId}
-                onChange={e => setBggId(e.target.value)}
+                onChange={(e) =>
+                  setBggId(e.target.value)
+                }
               />
+
+              {/* Boutons */}
+
+              <div className="flex gap-3 mt-6">
+
+                <button
+                  onClick={() =>
+                    setAddingJeu(false)
+                  }
+                  className="flex-1 px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition"
+                >
+                  Annuler
+                </button>
+
+                <button
+                  onClick={addJeu}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                >
+                  <Plus size={18} />
+                  Ajouter le jeu
+                </button>
+
+              </div>
+
             </div>
 
-            <div className="flex justify-end gap-2 mt-6">
-
-              <button
-                onClick={() => setAddingJeu(false)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition"
-              >
-                Annuler
-              </button>
-
-              <button
-                onClick={addJeu}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold shadow-lg hover:from-indigo-700 hover:to-purple-700 transition"
-              >
-                <Plus className="w-4 h-4" />
-                Ajouter
-              </button>
-
-            </div>
           </div>
+
         </div>
+
       )}
 
-      {/* =========================================================
+      {/* ========================================================
           MODALE CRÉATION PARTIE
-      ========================================================== */}
+      ======================================================== */}
+
       {selectedJeu && (
         <CreatePartieModal
           user={user}
           jeu={selectedJeu}
-          onClose={() => setSelectedJeu(null)}
+          onClose={() =>
+            setSelectedJeu(null)
+          }
           onCreated={() => {
             setSelectedJeu(null);
             alert("Partie créée !");
           }}
         />
       )}
+
     </div>
   );
 }
