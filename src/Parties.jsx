@@ -1070,7 +1070,7 @@ export default function Parties({ user, authUser }) {
 
                 <div className="mt-4 space-y-2">
 
-                  {/* Inscription */}
+                  {/* Inscription — NE PAS MODIFIER */}
                   <button
                     onClick={() => toggleInscription(p)}
                     disabled={
@@ -1100,30 +1100,39 @@ export default function Parties({ user, authUser }) {
                     )}
                   </button>
 
-                  {/* WhatsApp */}
-                  <button
-                    onClick={() => shareOnWhatsApp(p)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold flex items-center justify-center gap-2 shadow-md transition-all hover:-translate-y-0.5"
-                  >
-                    <Share2 size={17} />
-                    Partager sur WhatsApp
-                  </button>
+                  {/* ==================================================
+                      ACTIONS SECONDAIRES
+                      ================================================== */}
 
-                  {/* Administration */}
                   {(p.utilisateur_id === currentUser.id ||
-                    userRole === "admin") && (
+                    userRole === "admin") ? (
+
+                    /* Créateur / organisateur / admin */
                     <div className="flex gap-2 pt-1">
 
+                      {/* WhatsApp */}
+                      <button
+                        onClick={() => shareOnWhatsApp(p)}
+                        className="flex-1 h-10 rounded-xl bg-green-500 hover:bg-green-600 text-white flex items-center justify-center shadow-md transition-all hover:-translate-y-0.5"
+                        title="Partager sur WhatsApp"
+                        aria-label="Partager sur WhatsApp"
+                      >
+                        <Share2 size={18} />
+                      </button>
+
+                      {/* Modifier */}
                       <button
                         onClick={() =>
                           setEditingPartie(p)
                         }
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 bg-amber-500 text-white px-3 py-2.5 rounded-xl font-bold hover:bg-amber-600 transition"
+                        className="flex-1 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md hover:bg-amber-600 transition"
+                        title="Modifier"
+                        aria-label="Modifier"
                       >
-                        <Pencil size={16} />
-                        Modifier
+                        <Pencil size={17} />
                       </button>
 
+                      {/* Supprimer */}
                       <button
                         onClick={async () => {
                           if (
@@ -1141,13 +1150,26 @@ export default function Parties({ user, authUser }) {
 
                           fetchParties();
                         }}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 bg-red-600 text-white px-3 py-2.5 rounded-xl font-bold hover:bg-red-700 transition"
+                        className="flex-1 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shadow-md hover:bg-red-700 transition"
+                        title="Supprimer"
+                        aria-label="Supprimer"
                       >
-                        <Trash2 size={16} />
-                        Supprimer
+                        <Trash2 size={17} />
                       </button>
 
                     </div>
+
+                  ) : (
+
+                    /* Utilisateur normal */
+                    <button
+                      onClick={() => shareOnWhatsApp(p)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold flex items-center justify-center gap-2 shadow-md transition-all hover:-translate-y-0.5"
+                    >
+                      <Share2 size={17} />
+                      Partager sur WhatsApp
+                    </button>
+
                   )}
 
                 </div>
