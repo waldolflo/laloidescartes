@@ -510,7 +510,7 @@ export default function Statistiques({ user }) {
             (a, b) =>
               b[1] - a[1]
           )
-          .slice(0, 5)
+          .slice(0, 10)
           .map(
             ([jeuId, count]) => {
               const jeu =
@@ -824,158 +824,6 @@ export default function Statistiques({ user }) {
       </section>
 
       {/* ========================================================
-          FILTRES ADMIN
-      ======================================================== */}
-
-      {userRole === "admin" && (
-        <div className="max-w-7xl mx-auto mt-6">
-
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3">
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
-
-              {/* Lieu */}
-
-              <div>
-
-                <label className="block mb-1.5 text-sm font-bold text-gray-700">
-                  Lieu
-                </label>
-
-                <div className="relative">
-
-                  <MapPin
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
-
-                  <select
-                    value={selectedLieu}
-                    onChange={(e) =>
-                      setSelectedLieu(
-                        e.target.value
-                      )
-                    }
-                    className="appearance-none w-full pl-10 pr-3 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition cursor-pointer"
-                  >
-                    {lieux.map(
-                      (lieu) => (
-                        <option
-                          key={lieu}
-                          value={lieu}
-                        >
-                          {lieu}
-                        </option>
-                      )
-                    )}
-                  </select>
-
-                </div>
-
-              </div>
-
-              {/* Mois */}
-
-              <div>
-
-                <label className="block mb-1.5 text-sm font-bold text-gray-700">
-                  Mois
-                </label>
-
-                <div className="relative">
-
-                  <CalendarDays
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
-
-                  <select
-                    value={selectedMonth}
-                    onChange={(e) =>
-                      setSelectedMonth(
-                        parseInt(
-                          e.target.value
-                        )
-                      )
-                    }
-                    className="appearance-none w-full pl-10 pr-3 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition cursor-pointer"
-                  >
-                    {months.map(
-                      (m, i) => (
-                        <option
-                          key={i + 1}
-                          value={i + 1}
-                        >
-                          {m}
-                        </option>
-                      )
-                    )}
-                  </select>
-
-                </div>
-
-              </div>
-
-              {/* Année */}
-
-              <div>
-
-                <label className="block mb-1.5 text-sm font-bold text-gray-700">
-                  Année
-                </label>
-
-                <div className="relative">
-
-                  <CalendarDays
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
-
-                  <select
-                    value={selectedYear}
-                    onChange={(e) =>
-                      setSelectedYear(
-                        parseInt(
-                          e.target.value
-                        )
-                      )
-                    }
-                    className="appearance-none w-full pl-10 pr-3 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition cursor-pointer"
-                  >
-                    {years.map(
-                      (y) => (
-                        <option
-                          key={y}
-                          value={y}
-                        >
-                          {y}
-                        </option>
-                      )
-                    )}
-                  </select>
-
-                </div>
-
-              </div>
-
-              {/* Reset */}
-
-              <button
-                onClick={resetFilters}
-                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition"
-              >
-                <RotateCcw size={18} />
-                Réinitialiser
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================
           STATISTIQUES GÉNÉRALES
       ======================================================== */}
 
@@ -1287,6 +1135,157 @@ export default function Statistiques({ user }) {
         </div>
 
       </div>
+      {/* ========================================================
+          FILTRES ADMIN
+      ======================================================== */}
+
+      {userRole === "admin" && (
+        <div className="max-w-7xl mx-auto mt-6">
+
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+
+              {/* Lieu */}
+
+              <div>
+
+                <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                  Lieu
+                </label>
+
+                <div className="relative">
+
+                  <MapPin
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+
+                  <select
+                    value={selectedLieu}
+                    onChange={(e) =>
+                      setSelectedLieu(
+                        e.target.value
+                      )
+                    }
+                    className="appearance-none w-full pl-10 pr-3 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition cursor-pointer"
+                  >
+                    {lieux.map(
+                      (lieu) => (
+                        <option
+                          key={lieu}
+                          value={lieu}
+                        >
+                          {lieu}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                </div>
+
+              </div>
+
+              {/* Mois */}
+
+              <div>
+
+                <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                  Mois
+                </label>
+
+                <div className="relative">
+
+                  <CalendarDays
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) =>
+                      setSelectedMonth(
+                        parseInt(
+                          e.target.value
+                        )
+                      )
+                    }
+                    className="appearance-none w-full pl-10 pr-3 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition cursor-pointer"
+                  >
+                    {months.map(
+                      (m, i) => (
+                        <option
+                          key={i + 1}
+                          value={i + 1}
+                        >
+                          {m}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                </div>
+
+              </div>
+
+              {/* Année */}
+
+              <div>
+
+                <label className="block mb-1.5 text-sm font-bold text-gray-700">
+                  Année
+                </label>
+
+                <div className="relative">
+
+                  <CalendarDays
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+
+                  <select
+                    value={selectedYear}
+                    onChange={(e) =>
+                      setSelectedYear(
+                        parseInt(
+                          e.target.value
+                        )
+                      )
+                    }
+                    className="appearance-none w-full pl-10 pr-3 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition cursor-pointer"
+                  >
+                    {years.map(
+                      (y) => (
+                        <option
+                          key={y}
+                          value={y}
+                        >
+                          {y}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                </div>
+
+              </div>
+
+              {/* Reset */}
+
+              <button
+                onClick={resetFilters}
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition"
+              >
+                <RotateCcw size={18} />
+                Réinitialiser
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
 
     </div>
   );
