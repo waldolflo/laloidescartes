@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom"; 
 import { supabase } from "./supabaseClient";
 import { Navigate } from "react-router-dom";
@@ -15,6 +15,8 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [allUsers, setAllUsers] = useState([]);
   const [allJoueurs, setAllJoueurs] = useState([]);
   const [datesEvenements, setDatesEvenements] = useState([]);
+
+  const formulaireDateRef = useRef(null);
 
   const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
 
@@ -303,10 +305,13 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     setTexteEvenement(date.texte || "");
     setDateEvenementEnEdition(date.id);
 
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: "smooth",
-    });
+    // Remonte automatiquement jusqu'au formulaire
+    setTimeout(() => {
+      formulaireDateRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 100);
   };
 
   const toggleDateEvenement = async (date) => {
@@ -1627,7 +1632,7 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
           {/* FORMULAIRE */}
 
-          <div className="bg-white border rounded-lg p-4 shadow-sm">
+          <div ref={formulaireDateRef} className="bg-white border rounded-lg p-4 shadow-sm">
 
             <h4 className="font-semibold mb-4">
               {dateEvenementEnEdition
