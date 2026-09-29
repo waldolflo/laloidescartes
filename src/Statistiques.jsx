@@ -907,7 +907,7 @@ export default function Statistiques({ user }) {
               <div>
 
                 <h3 className="text-lg font-black text-gray-900">
-                  Top 5 jeux les plus joués
+                  Top 10 jeux les plus joués
                 </h3>
 
                 <p className="text-sm text-gray-500">
