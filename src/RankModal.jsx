@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
+import {
+  Trophy,
+  X,
+  UserPlus,
+  Users,
+  UserRound,
+  Gamepad2,
+  Plus,
+  Trash2,
+  Crown,
+  Medal,
+  Save,
+  UserRoundPlus,
+  Loader2,
+} from "lucide-react";
 
 export default function RankModal({ partie, onClose, fetchParties }) {
   const [inscrits, setInscrits] = useState([]);
@@ -20,7 +35,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
       setLoading(true);
 
       try {
-        // Charger les inscriptions de la partie
         const { data: inscriptions, error: inscriptionsError } =
           await supabase
             .from("inscriptions")
@@ -55,7 +69,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
         setInscrits(initial);
 
-        // Charger tous les utilisateurs
         const { data: users, error: usersError } = await supabase
           .from("profils")
           .select("id, nom")
@@ -65,7 +78,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
         setAllUsers(users || []);
 
-        // Charger tous les joueurs sans compte actifs
         const { data: joueurs, error: joueursError } = await supabase
           .from("joueurs")
           .select("id, nom, actif")
@@ -94,7 +106,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
     const gagnants = players.filter((p) => p.gagnant);
     const nonGagnants = players.filter((p) => !p.gagnant);
 
-    // Tout le monde à 0 et aucun gagnant
     const allZeroAndNoWinner =
       gagnants.length === 0 &&
       nonGagnants.length > 0 &&
@@ -107,10 +118,8 @@ export default function RankModal({ partie, onClose, fetchParties }) {
       }));
     }
 
-    // Tri par score décroissant
     nonGagnants.sort((a, b) => b.score - a.score);
 
-    // Les gagnants sont rang 1
     gagnants.forEach((p) => {
       p.rank = 1;
     });
@@ -187,7 +196,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
     try {
       const [type, value] = newParticipant.split(":");
 
-      // Vérifier si déjà présent
       const alreadyExists =
         type === "user"
           ? inscrits.some((i) => i.utilisateur_id === value)
@@ -200,10 +208,7 @@ export default function RankModal({ partie, onClose, fetchParties }) {
         return;
       }
 
-      // ========================================================
       // UTILISATEUR AVEC COMPTE
-      // ========================================================
-
       if (type === "user") {
         const { data: inscriptionId, error } = await supabase.rpc(
           "ajouter_utilisateur_partie",
@@ -215,7 +220,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
         if (error) throw error;
 
-        // Récupérer l'inscription créée
         const { data: inscription, error: fetchError } =
           await supabase
             .from("inscriptions")
@@ -248,10 +252,7 @@ export default function RankModal({ partie, onClose, fetchParties }) {
         ]);
       }
 
-      // ========================================================
       // JOUEUR SANS COMPTE EXISTANT
-      // ========================================================
-
       if (type === "player") {
         const { data: inscriptionId, error } = await supabase.rpc(
           "ajouter_joueur_existant_partie",
@@ -263,7 +264,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
         if (error) throw error;
 
-        // Récupérer l'inscription créée
         const { data: inscription, error: fetchError } =
           await supabase
             .from("inscriptions")
@@ -297,7 +297,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
       }
 
       setNewParticipant("");
-
     } catch (err) {
       console.error("Erreur ajout participant :", err);
 
@@ -326,7 +325,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
     setLoading(true);
 
     try {
-      // Le RPC retourne maintenant l'ID de l'inscription
       const { data: inscriptionId, error } = await supabase.rpc(
         "ajouter_joueur_partie",
         {
@@ -337,7 +335,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
       if (error) throw error;
 
-      // Récupérer l'inscription créée avec le joueur
       const { data: inscription, error: fetchError } =
         await supabase
           .from("inscriptions")
@@ -359,7 +356,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
       if (fetchError) throw fetchError;
 
-      // Ajouter le joueur à la liste générale
       if (inscription.joueurs) {
         setAllJoueurs((prev) =>
           [...prev, inscription.joueurs].sort((a, b) =>
@@ -368,7 +364,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
         );
       }
 
-      // Ajouter l'inscription à l'affichage
       setInscrits((prev) => [
         ...prev,
         {
@@ -382,7 +377,6 @@ export default function RankModal({ partie, onClose, fetchParties }) {
       setNewPlayerName("");
 
       alert(`${nom} a été ajouté à la partie.`);
-
     } catch (err) {
       console.error(
         "Erreur lors de la création du joueur :",
@@ -463,14 +457,43 @@ export default function RankModal({ partie, onClose, fetchParties }) {
   };
 
   // ============================================================
-  // Couleur selon le rang
+  // Couleur / style selon le rang
   // ============================================================
 
-  const rankColor = (rank) => {
-    if (rank === 1) return "bg-yellow-200";
-    if (rank === 2) return "bg-gray-200";
-    if (rank === 3) return "bg-orange-200";
-    return "";
+  const rankStyle = (rank) => {
+    if (rank === 1) {
+      return {
+        card: "bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200",
+        badge: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      };
+    }
+
+    if (rank === 2) {
+      return {
+        card: "bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200",
+        badge: "bg-gray-100 text-gray-600 border-gray-200",
+      };
+    }
+
+    if (rank === 3) {
+      return {
+        card: "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200",
+        badge: "bg-orange-100 text-orange-700 border-orange-200",
+      };
+    }
+
+    return {
+      card: "bg-white border-gray-200",
+      badge: "bg-gray-100 text-gray-500 border-gray-200",
+    };
+  };
+
+  const getRankIcon = (rank) => {
+    if (rank === 1) return <Trophy size={16} />;
+    if (rank === 2) return <Medal size={16} />;
+    if (rank === 3) return <Medal size={16} />;
+
+    return null;
   };
 
   // ============================================================
@@ -478,243 +501,449 @@ export default function RankModal({ partie, onClose, fetchParties }) {
   // ============================================================
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-[480px] max-h-[90vh] overflow-y-auto">
-
-        <h2 className="text-xl font-bold mb-4 text-center">
-          🏆 Classement — {partie.jeux?.nom}
-        </h2>
-
+    <div
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-center p-3 sm:p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="relative z-[101] bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[94vh] overflow-hidden flex flex-col"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         {/* =====================================================
-            Liste des inscrits
+            HEADER
         ====================================================== */}
 
-        {inscrits.map((i) => {
-          const nomParticipant =
-            i.profil?.nom ||
-            i.profils?.nom ||
-            i.joueur?.nom ||
-            i.joueurs?.nom ||
-            i.utilisateur_id ||
-            "Joueur";
+        <div className="relative bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-950 px-5 sm:px-6 py-5 sm:py-6 text-white overflow-hidden flex-shrink-0">
+          {/* Décorations */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-24 -right-20 w-60 h-60 rounded-full bg-indigo-500/20 blur-3xl" />
+            <div className="absolute -bottom-32 -left-20 w-64 h-64 rounded-full bg-purple-500/20 blur-3xl" />
 
-          const estJoueurSansCompte =
-            i.joueur_id !== null &&
-            i.joueur_id !== undefined;
+            <Trophy
+              size={190}
+              className="absolute -right-8 -bottom-20 text-white opacity-[0.035] rotate-12"
+            />
+          </div>
 
-          return (
-            <div
-              key={i.id}
-              className={`flex justify-between items-center mb-3 border-b pb-1 p-1 ${rankColor(
-                i.rank
-              )}`}
-            >
-              <div className="flex flex-col">
-                <span className="font-medium">
-                  {estJoueurSansCompte ? "🎭 " : "👤 "}
-                  {nomParticipant}
-                </span>
+          {/* Fermeture */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition z-10"
+            aria-label="Fermer"
+          >
+            <X size={19} />
+          </button>
 
-                <div className="text-sm text-gray-500">
-                  {i.rank
-                    ? `Rang : ${i.rank}`
-                    : "—"}
-                </div>
-              </div>
+          {/* Titre */}
+          <div className="relative flex items-center gap-3 pr-10">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
+              <Trophy size={23} />
+            </div>
 
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <p className="text-indigo-200 text-xs uppercase tracking-widest font-bold">
+                Résultats de la partie
+              </p>
 
-                <input
-                  type="number"
-                  className="w-16 border rounded p-1 text-center"
-                  value={i.score}
-                  onChange={(e) =>
-                    handleScoreChange(
-                      i.id,
-                      e.target.value
-                    )
-                  }
-                  placeholder="Score"
+              <h2 className="text-xl sm:text-2xl font-black truncate">
+                {partie.jeux?.nom || "Classement"}
+              </h2>
+
+              {partie.date_partie && (
+                <p className="text-indigo-200 text-sm mt-0.5">
+                  Classement des joueurs
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* =====================================================
+            CONTENU
+        ====================================================== */}
+
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+
+          {/* Résumé */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-black text-gray-800">
+                Joueurs
+              </h3>
+
+              <p className="text-sm text-gray-500">
+                {inscrits.length} joueur
+                {inscrits.length > 1 ? "s" : ""} inscrit
+                {inscrits.length > 1 ? "s" : ""}
+              </p>
+            </div>
+
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Users size={19} />
+            </div>
+          </div>
+
+          {/* ===================================================
+              LISTE DES INSCRITS
+          ==================================================== */}
+
+          <div className="space-y-2.5">
+            {inscrits.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                <Users
+                  size={34}
+                  className="mx-auto text-gray-300 mb-2"
                 />
 
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={i.gagnant}
-                    onChange={() =>
-                      handleWinnerToggle(i.id)
-                    }
-                  />
-                  🥇
-                </label>
+                <p className="font-semibold text-gray-500">
+                  Aucun joueur inscrit
+                </p>
 
-                <button
-                  onClick={() =>
-                    removeInscrit(i.id)
-                  }
-                  disabled={loading}
-                  className="text-red-600 hover:text-red-800 text-sm"
-                  title="Retirer ce joueur"
-                >
-                  ❌
-                </button>
+                <p className="text-sm text-gray-400 mt-1">
+                  Ajoutez des joueurs ci-dessous.
+                </p>
+              </div>
+            ) : (
+              inscrits.map((i) => {
+                const nomParticipant =
+                  i.profil?.nom ||
+                  i.profils?.nom ||
+                  i.joueur?.nom ||
+                  i.joueurs?.nom ||
+                  i.utilisateur_id ||
+                  "Joueur";
 
+                const estJoueurSansCompte =
+                  i.joueur_id !== null &&
+                  i.joueur_id !== undefined;
+
+                const style = rankStyle(i.rank);
+
+                return (
+                  <div
+                    key={i.id}
+                    className={`border rounded-2xl p-3 sm:p-3.5 transition-all ${style.card}`}
+                  >
+                    <div className="flex items-center gap-3">
+
+                      {/* Rang */}
+                      <div
+                        className={`w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0 font-black ${style.badge}`}
+                      >
+                        {getRankIcon(i.rank) || (
+                          <span className="text-sm">
+                            {i.rank || "—"}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Nom */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          {estJoueurSansCompte ? (
+                            <span
+                              className="text-purple-500"
+                              title="Joueur sans compte"
+                            >
+                              <UserRound size={15} />
+                            </span>
+                          ) : (
+                            <span
+                              className="text-indigo-500"
+                              title="Utilisateur"
+                            >
+                              <UserRound size={15} />
+                            </span>
+                          )}
+
+                          <span className="font-bold text-gray-800 truncate">
+                            {nomParticipant}
+                          </span>
+
+                          {i.gagnant && (
+                            <Crown
+                              size={15}
+                              className="text-yellow-500 flex-shrink-0"
+                            />
+                          )}
+                        </div>
+
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {i.rank
+                            ? `Rang ${i.rank}`
+                            : "Rang non défini"}
+                        </div>
+                      </div>
+
+                      {/* Score */}
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            className="w-[72px] sm:w-[80px] border border-gray-200 bg-white rounded-xl px-2 py-2.5 text-center font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            value={i.score}
+                            onChange={(e) =>
+                              handleScoreChange(
+                                i.id,
+                                e.target.value
+                              )
+                            }
+                            placeholder="Score"
+                            aria-label={`Score de ${nomParticipant}`}
+                          />
+                        </div>
+
+                        {/* Gagnant */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleWinnerToggle(i.id)
+                          }
+                          className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${
+                            i.gagnant
+                              ? "bg-yellow-100 border-yellow-300 text-yellow-600 shadow-sm"
+                              : "bg-white border-gray-200 text-gray-300 hover:text-yellow-500 hover:border-yellow-200"
+                          }`}
+                          title={
+                            i.gagnant
+                              ? "Retirer le statut de gagnant"
+                              : "Définir comme gagnant"
+                          }
+                          aria-label={
+                            i.gagnant
+                              ? "Retirer le statut de gagnant"
+                              : "Définir comme gagnant"
+                          }
+                        >
+                          <Trophy size={17} />
+                        </button>
+
+                        {/* Supprimer */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeInscrit(i.id)
+                          }
+                          disabled={loading}
+                          className="w-10 h-10 rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition disabled:opacity-50"
+                          title="Retirer ce joueur"
+                          aria-label="Retirer ce joueur"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* ===================================================
+              AJOUTER UN JOUEUR EXISTANT
+          ==================================================== */}
+
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                <UserPlus size={18} />
+              </div>
+
+              <div>
+                <h3 className="font-black text-gray-800">
+                  Ajouter un joueur
+                </h3>
+
+                <p className="text-xs text-gray-500">
+                  Utilisateur ou joueur déjà enregistré
+                </p>
               </div>
             </div>
-          );
-        })}
 
-        {/* =====================================================
-            Ajouter un utilisateur ou joueur existant
-        ====================================================== */}
-
-        <div className="border-t pt-3 mt-4">
-
-          <h3 className="font-semibold mb-2 text-center">
-            ➕ Ajouter un joueur
-          </h3>
-
-          <div className="flex gap-2">
-
-            <select
-              className="border rounded p-1 flex-1"
-              value={newParticipant}
-              onChange={(e) =>
-                setNewParticipant(e.target.value)
-              }
-            >
-              <option value="">
-                Sélectionner un joueur
-              </option>
-
-              <optgroup label="👤 Utilisateurs">
-
-                {allUsers
-                  .filter(
-                    (u) =>
-                      !inscrits.some(
-                        (i) =>
-                          i.utilisateur_id === u.id
-                      )
-                  )
-                  .map((u) => (
-                    <option
-                      key={`user-${u.id}`}
-                      value={`user:${u.id}`}
-                    >
-                      {u.nom}
-                    </option>
-                  ))}
-
-              </optgroup>
-
-              <optgroup label="🎭 Joueurs sans compte">
-
-                {allJoueurs
-                  .filter(
-                    (j) =>
-                      !inscrits.some(
-                        (i) =>
-                          Number(i.joueur_id) ===
-                          Number(j.id)
-                      )
-                  )
-                  .map((j) => (
-                    <option
-                      key={`player-${j.id}`}
-                      value={`player:${j.id}`}
-                    >
-                      {j.nom}
-                    </option>
-                  ))}
-
-              </optgroup>
-
-            </select>
-
-            <button
-              onClick={addParticipant}
-              disabled={loading || !newParticipant}
-              className={`px-3 py-1 rounded ${
-                loading || !newParticipant
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700"
-              } text-white`}
-            >
-              Ajouter
-            </button>
-
-          </div>
-        </div>
-
-        {/* =====================================================
-            Créer un nouveau joueur
-        ====================================================== */}
-
-        <div className="border-t pt-3 mt-4">
-
-          <h3 className="font-semibold mb-2 text-center">
-            🎭 Nouveau joueur sans compte
-          </h3>
-
-          <div className="flex gap-2">
-
-            <input
-              type="text"
-              className="border rounded p-1 flex-1"
-              placeholder="Nom du joueur"
-              value={newPlayerName}
-              onChange={(e) =>
-                setNewPlayerName(e.target.value)
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  createNewPlayer();
+            <div className="flex flex-col sm:flex-row gap-2">
+              <select
+                className="flex-1 appearance-none border border-gray-200 bg-white px-3 py-3 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={newParticipant}
+                onChange={(e) =>
+                  setNewParticipant(e.target.value)
                 }
-              }}
-            />
+              >
+                <option value="">
+                  Sélectionner un joueur…
+                </option>
 
-            <button
-              onClick={createNewPlayer}
-              disabled={loading || !newPlayerName.trim()}
-              className={`px-3 py-1 rounded ${
-                loading || !newPlayerName.trim()
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-purple-600 hover:bg-purple-700"
-              } text-white`}
-            >
-              Créer
-            </button>
+                <optgroup label="👤 Utilisateurs">
+                  {allUsers
+                    .filter(
+                      (u) =>
+                        !inscrits.some(
+                          (i) =>
+                            i.utilisateur_id === u.id
+                        )
+                    )
+                    .map((u) => (
+                      <option
+                        key={`user-${u.id}`}
+                        value={`user:${u.id}`}
+                      >
+                        {u.nom}
+                      </option>
+                    ))}
+                </optgroup>
 
+                <optgroup label="🎭 Joueurs sans compte">
+                  {allJoueurs
+                    .filter(
+                      (j) =>
+                        !inscrits.some(
+                          (i) =>
+                            Number(i.joueur_id) ===
+                            Number(j.id)
+                        )
+                    )
+                    .map((j) => (
+                      <option
+                        key={`player-${j.id}`}
+                        value={`player:${j.id}`}
+                      >
+                        {j.nom}
+                      </option>
+                    ))}
+                </optgroup>
+              </select>
+
+              <button
+                type="button"
+                onClick={addParticipant}
+                disabled={loading || !newParticipant}
+                className={`sm:w-auto px-5 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${
+                  loading || !newParticipant
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg hover:-translate-y-0.5"
+                }`}
+              >
+                {loading ? (
+                  <Loader2
+                    size={17}
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Plus size={17} />
+                )}
+
+                Ajouter
+              </button>
+            </div>
           </div>
 
+          {/* ===================================================
+              CRÉER UN NOUVEAU JOUEUR
+          ==================================================== */}
+
+          <div className="mt-3 rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                <UserRoundPlus size={18} />
+              </div>
+
+              <div>
+                <h3 className="font-black text-gray-800">
+                  Nouveau joueur sans compte
+                </h3>
+
+                <p className="text-xs text-gray-500">
+                  Créer un joueur invité pour cette partie
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                className="flex-1 border border-purple-100 bg-white px-3 py-3 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Nom du joueur"
+                value={newPlayerName}
+                onChange={(e) =>
+                  setNewPlayerName(e.target.value)
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    createNewPlayer();
+                  }
+                }}
+              />
+
+              <button
+                type="button"
+                onClick={createNewPlayer}
+                disabled={
+                  loading || !newPlayerName.trim()
+                }
+                className={`sm:w-auto px-5 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${
+                  loading || !newPlayerName.trim()
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-purple-600 hover:bg-purple-700 hover:shadow-lg"
+                }`}
+              >
+                {loading ? (
+                  <Loader2
+                    size={17}
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Plus size={17} />
+                )}
+
+                Créer
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* =====================================================
-            Boutons d'action
+            FOOTER
         ====================================================== */}
 
-        <div className="flex justify-end gap-2 mt-5">
-
+        <div className="flex flex-col-reverse sm:flex-row gap-3 border-t border-gray-100 bg-gray-50/90 px-4 sm:px-6 py-4 flex-shrink-0">
           <button
+            type="button"
             onClick={onClose}
-            className="px-3 py-1 rounded bg-gray-300 hover:bg-gray-400"
+            className="flex-1 px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition"
           >
-            Annuler
+            <span className="inline-flex items-center justify-center gap-2">
+              <X size={17} />
+              Annuler
+            </span>
           </button>
 
           <button
+            type="button"
             onClick={saveRanks}
             disabled={loading}
-            className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:hover:translate-y-0"
           >
-            {loading
-              ? "Enregistrement..."
-              : "Enregistrer"}
+            <span className="inline-flex items-center justify-center gap-2">
+              {loading ? (
+                <Loader2
+                  size={17}
+                  className="animate-spin"
+                />
+              ) : (
+                <Save size={17} />
+              )}
+
+              {loading
+                ? "Enregistrement..."
+                : "Enregistrer le classement"}
+            </span>
           </button>
-
         </div>
-
       </div>
     </div>
   );
