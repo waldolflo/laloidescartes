@@ -1,14 +1,45 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom"; 
+import { Link, Navigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
-import { Navigate } from "react-router-dom";
 import {
   enablePushForDevice,
   disablePushForDevice,
 } from "./push";
 import RecapJeuxShareableStyle from "./RecapJeuxShareableStyle";
 
-export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, setUser }) {
+import {
+  User,
+  Bell,
+  Gamepad2,
+  ShieldCheck,
+  Users,
+  CalendarDays,
+  Images,
+  Settings,
+  Megaphone,
+  Trash2,
+  Link2,
+  Unlink2,
+  RefreshCw,
+  Send,
+  Save,
+  Pencil,
+  Power,
+  Eye,
+  Smartphone,
+  X,
+  Info,
+  Check,
+  Trophy,
+} from "lucide-react";
+
+export default function Profils({
+  authUser,
+  user,
+  setProfilGlobal,
+  setAuthUser,
+  setUser,
+}) {
   const [profil, setProfil] = useState(null);
   const [nom, setNom] = useState("");
   const [jeux, setJeux] = useState([]);
@@ -18,14 +49,18 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
   const formulaireDateRef = useRef(null);
 
-  const SUPABASE_URL = "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
+  const SUPABASE_URL =
+    "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/delete-user";
 
   const [globalImageUrl, setGlobalImageUrl] = useState("");
   const [globalTexte, setGlobalTexte] = useState("");
   const [globalAnnonce, setGlobalAnnonce] = useState("");
-  const [globalcountFollowersFB, setGlobalcountFollowersFB] = useState("");
-  const [globalcountAdherentTotal, setGlobalcountAdherentTotal] = useState("");
-  const [globalcountSeanceavantdouzeS, setGlobalcountSeanceavantdouzeS] = useState("");
+  const [globalcountFollowersFB, setGlobalcountFollowersFB] =
+    useState("");
+  const [globalcountAdherentTotal, setGlobalcountAdherentTotal] =
+    useState("");
+  const [globalcountSeanceavantdouzeS, setGlobalcountSeanceavantdouzeS] =
+    useState("");
   const [zoomOpen, setZoomOpen] = useState(false);
 
   const [notifSettings, setNotifSettings] = useState({
@@ -47,15 +82,18 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const [typeEvenement, setTypeEvenement] = useState("soiree");
   const [heureDebut, setHeureDebut] = useState("20:00");
   const [heureFin, setHeureFin] = useState("23:00");
-  const [dateEvenementEnEdition, setDateEvenementEnEdition] = useState(null);
+  const [dateEvenementEnEdition, setDateEvenementEnEdition] =
+    useState(null);
   const [chargementDates, setChargementDates] = useState(false);
   const [texteEvenement, setTexteEvenement] = useState("");
 
-  // Type personnalisé
   const [emojiEvenement, setEmojiEvenement] = useState("🎲");
   const [nomTypePersonnalise, setNomTypePersonnalise] = useState("");
 
-  // Préremplissage selon le jour choisi
+  // =========================================================
+  // 🎨 TYPES D'ÉVÉNEMENTS
+  // =========================================================
+
   const getDefaultsFromDate = (date) => {
     if (!date) {
       return {
@@ -65,10 +103,8 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       };
     }
 
-    // On utilise midi pour éviter les problèmes de décalage horaire
     const jour = new Date(`${date}T12:00:00`).getDay();
 
-    // 0 = dimanche / 6 = samedi
     if (jour === 0 || jour === 6) {
       return {
         type_evenement: "apres_midi",
@@ -84,35 +120,26 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     };
   };
 
-  // =========================================================
-  // 🎨 TYPES D'ÉVÉNEMENTS PERSONNALISÉS
-  // =========================================================
-
-  // Transforme un type personnalisé en valeur stockable
   const creerTypePersonnalise = (emoji, nom) => {
     return `custom|${emoji}|${nom}`;
   };
 
-  // Permet de savoir si un type est personnalisé
   const estTypePersonnalise = (type) => {
     return typeof type === "string" && type.startsWith("custom|");
   };
 
-  // Récupère l'emoji d'un type personnalisé
   const getEmojiTypePersonnalise = (type) => {
     if (!estTypePersonnalise(type)) return "";
     const morceaux = type.split("|");
     return morceaux[1] || "";
   };
 
-  // Récupère le nom d'un type personnalisé
   const getNomTypePersonnalise = (type) => {
     if (!estTypePersonnalise(type)) return "";
     const morceaux = type.split("|");
     return morceaux.slice(2).join("|") || "";
   };
 
-  // Récupère tous les types personnalisés déjà utilisés
   const getTypesPersonnalises = () => {
     const types = datesEvenements
       .filter((date) => estTypePersonnalise(date.type_evenement))
@@ -121,8 +148,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     return [...new Set(types)];
   };
 
-  // Quand on choisit une nouvelle date, on applique les horaires par défaut.
-  // En mode modification, on conserve les horaires existants.
   const handleDateEvenementChange = (nouvelleDate) => {
     setDateEvenement(nouvelleDate);
 
@@ -153,7 +178,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
     const { data, error } = await supabase
       .from("dates_evenements")
-      .select("id, date_evenement, type_evenement, heure_debut, heure_fin, texte, actif, created_at")
+      .select(
+        "id, date_evenement, type_evenement, heure_debut, heure_fin, texte, actif, created_at"
+      )
       .order("date_evenement", { ascending: true })
       .order("heure_debut", { ascending: true });
 
@@ -274,38 +301,27 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
   const modifierDateEvenement = (date) => {
     setDateEvenement(date.date_evenement);
-
     setTypeEvenement(date.type_evenement);
 
     if (estTypePersonnalise(date.type_evenement)) {
-      setEmojiEvenement(
-        getEmojiTypePersonnalise(date.type_evenement)
-      );
-
-      setNomTypePersonnalise(
-        getNomTypePersonnalise(date.type_evenement)
-      );
+      setEmojiEvenement(getEmojiTypePersonnalise(date.type_evenement));
+      setNomTypePersonnalise(getNomTypePersonnalise(date.type_evenement));
     } else {
       setEmojiEvenement("🎲");
       setNomTypePersonnalise("");
     }
 
     setHeureDebut(
-      date.heure_debut
-        ? date.heure_debut.slice(0, 5)
-        : ""
+      date.heure_debut ? date.heure_debut.slice(0, 5) : ""
     );
 
     setHeureFin(
-      date.heure_fin
-        ? date.heure_fin.slice(0, 5)
-        : ""
+      date.heure_fin ? date.heure_fin.slice(0, 5) : ""
     );
 
     setTexteEvenement(date.texte || "");
     setDateEvenementEnEdition(date.id);
 
-    // Remonte automatiquement jusqu'au formulaire
     setTimeout(() => {
       formulaireDateRef.current?.scrollIntoView({
         behavior: "smooth",
@@ -406,24 +422,27 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     }
   };
 
-  // Détecte si on est sur iOS
   const isIOS = () => {
     if (typeof window === "undefined") return false;
 
     const iOSDevice =
       /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      (navigator.platform === "MacIntel" &&
+        navigator.maxTouchPoints > 1);
 
     return iOSDevice;
   };
 
-  // Détecte si on est en PWA
   const isPWA = () => {
     if (typeof window === "undefined") return false;
 
     if (window.navigator.standalone) return true;
 
-    if (window.matchMedia("(display-mode: standalone)").matches) return true;
+    if (
+      window.matchMedia("(display-mode: standalone)").matches
+    ) {
+      return true;
+    }
 
     return false;
   };
@@ -444,8 +463,11 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   const fetchNotifSettings = async () => {
     if (!authUser) return;
 
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
+    const registration =
+      await navigator.serviceWorker.ready;
+
+    const subscription =
+      await registration.pushManager.getSubscription();
 
     if (!subscription) {
       setNotifSettings({
@@ -514,7 +536,6 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       if (!error && data) {
         let updatedData = data;
 
-        // Génération d’un pseudo fun si nom vide
         if (!data.nom) {
           const adjectives = [
             "Rapide",
@@ -539,21 +560,28 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           ];
 
           const randomAdj =
-            adjectives[Math.floor(Math.random() * adjectives.length)];
+            adjectives[
+              Math.floor(Math.random() * adjectives.length)
+            ];
 
           const randomCreature =
-            creatures[Math.floor(Math.random() * creatures.length)];
+            creatures[
+              Math.floor(Math.random() * creatures.length)
+            ];
 
-          const randomNum = Math.floor(100 + Math.random() * 900);
+          const randomNum =
+            Math.floor(100 + Math.random() * 900);
 
-          const defaultName = `${randomAdj}${randomCreature}${randomNum}`;
+          const defaultName =
+            `${randomAdj}${randomCreature}${randomNum}`;
 
-          const { data: newData, error: updateError } = await supabase
-            .from("profils")
-            .update({ nom: defaultName })
-            .eq("id", authUser.id)
-            .select()
-            .single();
+          const { data: newData, error: updateError } =
+            await supabase
+              .from("profils")
+              .update({ nom: defaultName })
+              .eq("id", authUser.id)
+              .select()
+              .single();
 
           if (!updateError) updatedData = newData;
         }
@@ -563,27 +591,26 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         setProfilGlobal?.(updatedData);
 
         if (updatedData.role === "admin") {
-          // 👤 Vrais utilisateurs
-          const { data: usersData, error: usersError } = await supabase
-            .from("profils")
-            .select("id, nom, role")
-            .order("nom", { ascending: true });
+          const { data: usersData, error: usersError } =
+            await supabase
+              .from("profils")
+              .select("id, nom, role")
+              .order("nom", { ascending: true });
 
           if (!usersError && usersData) {
             setAllUsers(usersData);
           }
 
-          // 👤 Faux comptes / joueurs
-          const { data: joueursData, error: joueursError } = await supabase
-            .from("joueurs")
-            .select("id, nom, actif, utilisateur_id")
-            .order("nom", { ascending: true });
+          const { data: joueursData, error: joueursError } =
+            await supabase
+              .from("joueurs")
+              .select("id, nom, actif, utilisateur_id")
+              .order("nom", { ascending: true });
 
           if (!joueursError && joueursData) {
             setAllJoueurs(joueursData);
           }
 
-          // 📅 Dates des événements
           await fetchDatesEvenements();
         }
       }
@@ -642,7 +669,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         .single();
 
       if (!error && data) {
-        setGlobalcountFollowersFB(data.global_image_url || "");
+        setGlobalcountFollowersFB(
+          data.global_image_url || ""
+        );
       }
     };
 
@@ -654,7 +683,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         .single();
 
       if (!error && data) {
-        setGlobalcountAdherentTotal(data.global_image_url || "");
+        setGlobalcountAdherentTotal(
+          data.global_image_url || ""
+        );
       }
     };
 
@@ -666,7 +697,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
         .single();
 
       if (!error && data) {
-        setGlobalcountSeanceavantdouzeS(data.global_image_url || "");
+        setGlobalcountSeanceavantdouzeS(
+          data.global_image_url || ""
+        );
       }
     };
 
@@ -690,12 +723,16 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     try {
       setTestingNotif(true);
 
-      const registration = await navigator.serviceWorker.ready;
+      const registration =
+        await navigator.serviceWorker.ready;
+
       const subscription =
         await registration.pushManager.getSubscription();
 
       if (!subscription) {
-        alert("❌ Les notifications ne sont pas activées sur cet appareil");
+        alert(
+          "❌ Les notifications ne sont pas activées sur cet appareil"
+        );
         return;
       }
 
@@ -776,7 +813,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       if (oldJeu) {
         await supabase
           .from("jeux")
-          .update({ fav: Math.max((oldJeu.fav || 0) - 1, 0) })
+          .update({
+            fav: Math.max((oldJeu.fav || 0) - 1, 0),
+          })
           .eq("id", ancienFavori);
       }
     }
@@ -791,7 +830,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       if (newJeu) {
         await supabase
           .from("jeux")
-          .update({ fav: (newJeu.fav || 0) + 1 })
+          .update({
+            fav: (newJeu.fav || 0) + 1,
+          })
           .eq("id", nouveauFavori);
       }
     }
@@ -815,10 +856,15 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
     }
   };
 
-  const updateJoueurUtilisateur = async (joueurId, utilisateurId) => {
+  const updateJoueurUtilisateur = async (
+    joueurId,
+    utilisateurId
+  ) => {
     const nouveauUtilisateurId = utilisateurId || null;
 
-    const joueur = allJoueurs.find((j) => j.id === joueurId);
+    const joueur = allJoueurs.find(
+      (j) => j.id === joueurId
+    );
 
     if (!joueur) return;
 
@@ -830,13 +876,16 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           j.utilisateur_id === nouveauUtilisateurId
       )
     ) {
-      alert("❌ Ce vrai compte est déjà lié à un faux compte.");
+      alert(
+        "❌ Ce vrai compte est déjà lié à un faux compte."
+      );
       return;
     }
 
     const nomUtilisateur =
-      allUsers.find((u) => u.id === nouveauUtilisateurId)?.nom ||
-      "";
+      allUsers.find(
+        (u) => u.id === nouveauUtilisateurId
+      )?.nom || "";
 
     const message = nouveauUtilisateurId
       ? `Lier le faux compte "${joueur.nom}" au compte "${nomUtilisateur}" ?\n\nSes anciennes parties et statistiques seront rattachées à ce compte.`
@@ -856,8 +905,13 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       .single();
 
     if (error) {
-      console.error("Erreur liaison faux compte :", error);
-      alert(`❌ Impossible de modifier la liaison : ${error.message}`);
+      console.error(
+        "Erreur liaison faux compte :",
+        error
+      );
+      alert(
+        `❌ Impossible de modifier la liaison : ${error.message}`
+      );
       return;
     }
 
@@ -875,7 +929,12 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("⚠️ Voulez-vous vraiment supprimer votre compte ?")) return;
+    if (
+      !window.confirm(
+        "⚠️ Voulez-vous vraiment supprimer votre compte ?"
+      )
+    )
+      return;
 
     try {
       const {
@@ -883,7 +942,9 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        alert("❌ Impossible de récupérer la session utilisateur");
+        alert(
+          "❌ Impossible de récupérer la session utilisateur"
+        );
         return;
       }
 
@@ -893,13 +954,17 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ userId: authUser.id }),
+        body: JSON.stringify({
+          userId: authUser.id,
+        }),
       });
 
       if (!res.ok) {
         const err = await res.text();
         console.error("Erreur suppression :", err);
-        alert("❌ Une erreur est survenue lors de la suppression du compte");
+        alert(
+          "❌ Une erreur est survenue lors de la suppression du compte"
+        );
         return;
       }
 
@@ -923,1564 +988,1707 @@ export default function Profils({ authUser, user, setProfilGlobal, setAuthUser, 
 
   if (!profil) {
     return (
-      <div className="text-center mt-10">
-        Chargement du profil...
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 px-8 py-6 text-center">
+          <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin text-indigo-600" />
+          <p className="font-semibold text-slate-700">
+            Chargement du profil...
+          </p>
+        </div>
       </div>
     );
   }
 
+  const couleursCatalogue = [
+    "from-violet-950 via-purple-900 to-indigo-950",
+    "from-indigo-950 via-blue-900 to-violet-950",
+    "from-purple-950 via-fuchsia-900 to-indigo-950",
+    "from-slate-950 via-violet-900 to-purple-950",
+    "from-indigo-950 via-purple-900 to-fuchsia-950",
+    "from-violet-950 via-indigo-900 to-blue-950",
+    "from-purple-950 via-indigo-900 to-slate-950",
+    "from-fuchsia-950 via-purple-900 to-indigo-950",
+    "from-blue-950 via-indigo-900 to-purple-950",
+    "from-indigo-950 via-violet-900 to-fuchsia-950",
+  ];
+
+  const jourDuMois = new Date().getDate();
+
+  const couleurProfil =
+    couleursCatalogue[
+      (jourDuMois - 1) % couleursCatalogue.length
+    ];
+
+  const notificationItems = [
+    {
+      key: "notif_parties",
+      label: "Nouvelles parties",
+      description: "Être prévenu lorsqu'une nouvelle partie est créée",
+      icon: "🎲",
+    },
+    {
+      key: "notif_jeux",
+      label: "Nouveaux jeux",
+      description: "Nouveaux jeux ajoutés à la ludothèque",
+      icon: "🆕",
+    },
+    {
+      key: "notif_annonces",
+      label: "Annonces importantes",
+      description: "Annonces importantes du président",
+      icon: "📢",
+    },
+    {
+      key: "notif_ping",
+      label: "Ping",
+      description: "Lorsqu'un message du tchat vous mentionne",
+      icon: "🔔",
+    },
+    {
+      key: "notif_chat",
+      label: "Tous les messages du tchat",
+      description: "Recevoir tous les nouveaux messages",
+      icon: "💬",
+    },
+  ];
+
   return (
-    <div className="p-4 max-w-2xl mx-auto">
+    <div className="min-h-screen px-4 py-6 md:px-6">
+      <div className="max-w-7xl mx-auto space-y-6">
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+        {/* ===================================================== */}
+        {/* HERO */}
+        {/* ===================================================== */}
 
-        {/* Bloc Nom + Rôle */}
-        <div className="flex-1">
+        <section
+          className={`relative overflow-hidden rounded-[2rem] bg-gradient-to-br ${couleurProfil} shadow-2xl`}
+        >
+          <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-fuchsia-500/10 blur-3xl" />
 
-          <h2 className="text-2xl font-bold mb-2">
-            Mon profil
-          </h2>
+          <div className="relative p-6 md:p-8 lg:p-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 
-          {/* Prénom */}
-          <div className="mb-3">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-white/15 border border-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
+                  <User className="w-9 h-9 md:w-11 md:h-11 text-white" />
+                </div>
 
-            <label className="block font-medium mb-1">
-              Prénom :
+                <div>
+                  <p className="text-white/70 text-sm font-semibold uppercase tracking-[0.2em]">
+                    Espace personnel
+                  </p>
+
+                  <h1 className="text-3xl md:text-4xl font-black text-white mt-1">
+                    Mon profil
+                  </h1>
+
+                  <p className="text-white/75 mt-1">
+                    Gère ton profil, tes notifications et tes préférences
+                  </p>
+                </div>
+              </div>
+
+              <div className="self-start md:self-auto">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 border border-white/20 text-white font-semibold backdrop-blur-sm">
+                  <ShieldCheck className="w-4 h-4" />
+                  {profil.role}
+                </span>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ===================================================== */}
+        {/* PROFIL */}
+        {/* ===================================================== */}
+
+        <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-violet-50">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg">
+                <User className="w-5 h-5 text-white" />
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Informations personnelles
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Personnalise les informations affichées sur l'application
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Prénom / pseudo
             </label>
 
-            <div className="flex gap-2">
-
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 value={nom}
                 onChange={(e) => setNom(e.target.value)}
-                className="border p-2 rounded w-full"
+                className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none transition"
                 placeholder="Entrez votre prénom"
               />
 
               <button
                 onClick={updateNom}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                type="button"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition"
               >
+                <Check className="w-4 h-4" />
                 Valider
               </button>
+            </div>
 
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-50 text-violet-700 text-sm font-semibold">
+              <ShieldCheck className="w-4 h-4" />
+              Rôle : {profil.role}
+            </div>
+          </div>
+        </section>
+
+        {/* ===================================================== */}
+        {/* NOTIFICATIONS */}
+        {/* ===================================================== */}
+
+        <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg">
+                <Bell className="w-5 h-5 text-white" />
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Notifications
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Choisis les notifications que tu souhaites recevoir
+                </p>
+              </div>
             </div>
           </div>
 
-          <p className="font-medium mt-1">
-            <strong>Rôle :</strong> {profil.role}
-          </p>
-
-        </div>
-      </div>
-
-      {/* Notifications */}
-      <div className="mt-6 p-4 border rounded bg-gray-50">
-
-        <h3 className="text-lg font-semibold mb-3">
-          🔔 Notifications
-        </h3>
-
-        {/* 🍎 CAS iOS */}
-        {isIOS() ? (
-          <>
-
-            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-
-              🍎 <strong>Notifications sur iPhone</strong>
-
-              <br />
-
-              Les notifications fonctionnent uniquement si l’application est
-              ajoutée à l’écran d’accueil.
-
-              <ul className="list-disc ml-4 mt-2">
-
-                <li>Ouvrez Safari</li>
-                <li>Ajoutez l’app à l’écran d’accueil</li>
-                <li>Ouvrez l’app installée</li>
-
-              </ul>
-
-            </div>
-
-            {notifPermission !== "granted" ? (
-
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-
-                <p className="text-sm mb-2">
-                  🔔 Active les notifications sur cet appareil
-                </p>
-
-                <button
-                  onClick={async () => {
-                    try {
-
-                      alert("CLICK OK");
-
-                      if (!("Notification" in window)) {
-                        alert("Notifications non supportées");
-                        return;
-                      }
-
-                      const permission = await new Promise((resolve) => {
-                        Notification.requestPermission(resolve);
-                      });
-
-                      alert("Permission = " + permission);
-
-                      if (permission !== "granted") {
-                        alert("Notifications refusées");
-                        return;
-                      }
-
-                      alert("Avant enablePush");
-
-                      await enablePushForDevice(
-                        authUser.id,
-                        "notif_parties"
-                      );
-
-                      alert("Après enablePush");
-
-                      await disablePushForDevice(
-                        "notif_parties"
-                      );
-
-                      fetchNotifSettings();
-                      fetchPushDevicesCount();
-
-                      alert("FIN OK");
-
-                    } catch (err) {
-
-                      console.error(err);
-                      alert("ERREUR JS (voir console)");
-
-                    }
-                  }}
-                  className="
-                    relative z-50
-                    bg-blue-600 text-white
-                    px-6 py-3
-                    rounded-lg
-                    transform translate-z-0
-                    active:scale-95
-                  "
-                >
-                  Activer les notifications
-                </button>
-
-              </div>
-
-            ) : (
-
-              <p className="text-sm text-green-700 mb-2">
-                ✅ Notifications activées sur cet appareil
-              </p>
-
-            )}
-
-          </>
-
-        ) : (
-
-          <>
-
-            {[
-
-              {
-                key: "notif_parties",
-                label: "🎲 Nouvelles parties"
-              },
-
-              {
-                key: "notif_jeux",
-                label: "🆕 Nouveaux jeux ajoutés à la ludothèque"
-              },
-
-              {
-                key: "notif_annonces",
-                label: "📢 Annonces importantes (du président)"
-              },
-
-              {
-                key: "notif_ping",
-                label: "🔔 Ping (Message du tchat @votrepseudo)"
-              },
-
-              {
-                key: "notif_chat",
-                label: "💬 Tous les Messages du tchat"
-              },
-
-            ].map(({ key, label }) => (
-
-              <label
-                key={key}
-                className="flex items-center justify-between py-2 cursor-pointer"
-              >
-
-                <span>{label}</span>
-
-                <input
-                  type="checkbox"
-                  checked={!!notifSettings[key]}
-                  disabled={
-                    (isIOS() && notifPermission !== "granted") ||
-                    (key === "notif_ping" &&
-                      notifSettings.notif_chat)
-                  }
-                  onChange={(e) => {
-
-                    const checked = e.target.checked;
-
-                    if (
-                      key === "notif_chat" &&
-                      checked
-                    ) {
-
-                      toggleNotif(
-                        "notif_chat",
-                        true
-                      );
-
-                      toggleNotif(
-                        "notif_ping",
-                        false
-                      );
-
-                    } else {
-
-                      toggleNotif(
-                        key,
-                        checked
-                      );
-
-                    }
-
-                  }}
-                  className="w-5 h-5"
-                />
-
-              </label>
-
-            ))}
-
-            <p className="text-sm text-gray-600 mt-3">
-
-              {pushDevicesCount} device
-              {pushDevicesCount > 1 ? "s" : ""}
-              {" "}actif
-              {pushDevicesCount > 1 ? "s" : ""}.
-
-              <br />
-
-              Chaque appareil peut avoir ses propres préférences.
-
-            </p>
-
-            <button
-              onClick={testNotification}
-              disabled={
-                testingNotif ||
-                (
-                  !notifSettings.notif_parties &&
-                  !notifSettings.notif_chat &&
-                  !notifSettings.notif_annonces &&
-                  !notifSettings.notif_jeux &&
-                  !notifSettings.notif_ping
-                )
-              }
-              className={`mt-3 px-4 py-2 rounded text-white ${
-                testingNotif ||
-                (
-                  !notifSettings.notif_parties &&
-                  !notifSettings.notif_chat &&
-                  !notifSettings.notif_annonces &&
-                  !notifSettings.notif_jeux &&
-                  !notifSettings.notif_ping
-                )
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-            >
-              {testingNotif
-                ? "Envoi en cours..."
-                : "Tester la notification"}
-            </button>
-
-          </>
-
-        )}
-
-      </div>
-
-      {profil.role === "user" && (
-        <p>
-          <strong>
-            N'hésitez pas à vous manifester dans le tchat de l'accueil ou sur messenger
-            si vous souhaitez obtenir des droits supplémentaire sur l'application comme
-            ceux d'organiser des parties ou d'ajouter des jeux à la ludothèque
-          </strong>
-        </p>
-      )}
-
-      {/* Récapitulatif des jeux joués */}
-      <h3 className="text-xl font-semibold mt-6 mb-2">
-        🎲 Le récap' partageable de mes parties
-      </h3>
-
-      <RecapJeuxShareableStyle userId={profil.id} />
-
-      {/* Jeux favoris */}
-      <h3 className="text-xl font-semibold mt-6 mb-2">
-        🎲 Les jeux auxquels j'aimerais jouer
-      </h3>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-
-        {[1, 2].map((n) => {
-
-          const selectedId = profil[`jeufavoris${n}`];
-          const jeu = jeux.find((j) => j.id === selectedId);
-
-          return (
-
-            <div key={n}>
-
-              <label className="block font-medium mb-1">
-                Jeu favori {n} :
-              </label>
-
-              <select
-                value={selectedId || ""}
-                onChange={(e) =>
-                  updateFavoris(
-                    `jeufavoris${n}`,
-                    e.target.value
-                  )
-                }
-                className="border p-2 rounded w-full"
-              >
-
-                <option value="">
-                  -- Choisir un jeu --
-                </option>
-
-                {jeux.map((j) => (
-
-                  <option
-                    key={j.id}
-                    value={j.id}
-                  >
-                    {j.nom}
-                  </option>
-
-                ))}
-
-              </select>
-
-              {jeu && (
-
-                <div className="mt-2 border rounded p-2 bg-white shadow sm:col-span-2">
-
-                  <p className="font-semibold">
-                    {jeu.nom}
-                  </p>
-
-                  {jeu.couverture_url && (
-
-                    <img
-                      src={jeu.couverture_url}
-                      alt={jeu.nom}
-                      className="w-full h-32 object-contain mt-2"
-                    />
-
-                  )}
-
+          <div className="p-6">
+
+            {isIOS() ? (
+              <>
+                <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">🍎</div>
+
+                    <div>
+                      <p className="font-bold">
+                        Notifications sur iPhone
+                      </p>
+
+                      <p className="text-sm mt-1">
+                        Les notifications fonctionnent uniquement si
+                        l’application est ajoutée à l’écran d’accueil.
+                      </p>
+
+                      <ul className="list-disc ml-5 mt-3 text-sm space-y-1">
+                        <li>Ouvrez Safari</li>
+                        <li>Ajoutez l'app à l'écran d'accueil</li>
+                        <li>Ouvrez l'app installée</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
 
-              )}
+                {notifPermission !== "granted" ? (
+                  <div className="mt-5 p-5 rounded-2xl bg-blue-50 border border-blue-200">
+                    <p className="font-semibold text-blue-900 mb-3">
+                      🔔 Active les notifications sur cet appareil
+                    </p>
 
-            </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          alert("CLICK OK");
 
-          );
+                          if (!("Notification" in window)) {
+                            alert("Notifications non supportées");
+                            return;
+                          }
 
-        })}
+                          const permission = await new Promise(
+                            (resolve) => {
+                              Notification.requestPermission(resolve);
+                            }
+                          );
 
-      </div>
+                          alert("Permission = " + permission);
 
-      {/* ========================================================= */}
-      {/* 👥 GESTION DES UTILISATEURS POUR ADMIN */}
-      {/* ========================================================= */}
+                          if (permission !== "granted") {
+                            alert("Notifications refusées");
+                            return;
+                          }
 
-      {profil.role === "admin" && (
+                          alert("Avant enablePush");
 
-        <div className="mt-10">
+                          await enablePushForDevice(
+                            authUser.id,
+                            "notif_parties"
+                          );
 
-          <h3 className="text-xl font-semibold mb-4">
-            Gestion des utilisateurs
-          </h3>
+                          alert("Après enablePush");
 
-          <table className="w-full border-collapse border border-gray-300">
+                          await disablePushForDevice(
+                            "notif_parties"
+                          );
 
-            <thead className="bg-gray-100">
+                          fetchNotifSettings();
+                          fetchPushDevicesCount();
 
-              <tr>
+                          alert("FIN OK");
+                        } catch (err) {
+                          console.error(err);
+                          alert("ERREUR JS (voir console)");
+                        }
+                      }}
+                      type="button"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition"
+                    >
+                      <Smartphone className="w-5 h-5" />
+                      Activer les notifications
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-5 flex items-center gap-2 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">
+                    <Check className="w-5 h-5" />
+                    Notifications activées sur cet appareil
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {notificationItems.map(
+                    ({ key, label, description, icon }) => (
+                      <label
+                        key={key}
+                        className={`flex items-center justify-between gap-4 p-4 rounded-2xl border transition ${
+                          notifSettings[key]
+                            ? "bg-violet-50 border-violet-200"
+                            : "bg-slate-50 border-slate-200 hover:bg-white"
+                        } ${
+                          (key === "notif_ping" &&
+                            notifSettings.notif_chat)
+                            ? "opacity-60"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-11 h-11 shrink-0 rounded-xl bg-white shadow-sm flex items-center justify-center text-xl">
+                            {icon}
+                          </div>
 
-                <th className="border border-gray-300 p-2">
-                  Nom
-                </th>
+                          <div>
+                            <p className="font-semibold text-slate-800">
+                              {label}
+                            </p>
 
-                <th className="border border-gray-300 p-2">
-                  Rôle
-                </th>
+                            <p className="text-sm text-slate-500 mt-0.5">
+                              {description}
+                            </p>
+                          </div>
+                        </div>
 
-                <th className="border border-gray-300 p-2">
-                  Lier à un compte
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {/* VRAIS UTILISATEURS */}
-
-              {allUsers.map((u) => {
-
-                const isCurrentAdmin =
-                  u.id === profil.id;
-
-                const isAdminUser =
-                  u.role === "admin";
-
-                const fauxCompteLie =
-                  allJoueurs.find(
-                    (j) => j.utilisateur_id === u.id
-                  );
-
-                return (
-
-                  <tr
-                    key={`user-${u.id}`}
-                    className="text-center"
-                  >
-
-                    <td className="border border-gray-300 p-2">
-                      {u.nom}
-                    </td>
-
-                    <td className="border border-gray-300 p-2">
-
-                      {isCurrentAdmin || isAdminUser ? (
-
-                        <span className="px-2 py-1 bg-gray-200 rounded">
-                          {u.role}
-                        </span>
-
-                      ) : (
-
-                        <select
-                          value={u.role}
+                        <input
+                          type="checkbox"
+                          checked={!!notifSettings[key]}
+                          disabled={
+                            (isIOS() &&
+                              notifPermission !== "granted") ||
+                            (key === "notif_ping" &&
+                              notifSettings.notif_chat)
+                          }
                           onChange={(e) => {
-
-                            const newRole =
-                              e.target.value;
+                            const checked = e.target.checked;
 
                             if (
-                              window.confirm(
-                                `Changer le rôle de ${u.nom} en "${newRole}" ?`
-                              )
+                              key === "notif_chat" &&
+                              checked
                             ) {
-
-                              updateUserRole(
-                                u.id,
-                                newRole
+                              toggleNotif(
+                                "notif_chat",
+                                true
                               );
 
+                              toggleNotif(
+                                "notif_ping",
+                                false
+                              );
+                            } else {
+                              toggleNotif(key, checked);
                             }
-
                           }}
-                          className="border p-1 rounded"
-                        >
-
-                          <option value="user">
-                            user
-                          </option>
-
-                          <option value="membre">
-                            membre
-                          </option>
-
-                          <option value="ludo">
-                            ludo
-                          </option>
-
-                          <option value="ludoplus">
-                            ludoplus
-                          </option>
-
-                          <option value="admin">
-                            admin
-                          </option>
-
-                        </select>
-
-                      )}
-
-                    </td>
-
-                    <td className="border border-gray-300 p-2">
-
-                      {fauxCompteLie ? (
-
-                        <span className="text-sm">
-                          🎭 {fauxCompteLie.nom}
-                        </span>
-
-                      ) : (
-
-                        <span className="text-gray-400">
-                          —
-                        </span>
-
-                      )}
-
-                    </td>
-
-                  </tr>
-
-                );
-
-              })}
-
-              {/* FAUX COMPTES */}
-
-              {allJoueurs.map((joueur) => (
-
-                <tr
-                  key={`joueur-${joueur.id}`}
-                  className="text-center bg-yellow-50"
-                >
-
-                  <td className="border border-gray-300 p-2 font-medium">
-                    🎭 {joueur.nom}
-                  </td>
-
-                  <td className="border border-gray-300 p-2">
-
-                    <span className="px-2 py-1 bg-yellow-200 rounded">
-                      Faux compte
-                    </span>
-
-                  </td>
-
-                  <td className="border border-gray-300 p-2">
-
-                    <select
-                      value={joueur.utilisateur_id || ""}
-                      onChange={(e) =>
-                        updateJoueurUtilisateur(
-                          joueur.id,
-                          e.target.value
-                        )
-                      }
-                      className="border p-1 rounded w-full"
-                    >
-
-                      <option value="">
-                        -- Aucun compte lié --
-                      </option>
-
-                      {allUsers.map((u) => (
-
-                        <option
-                          key={u.id}
-                          value={u.id}
-                          disabled={
-                            allJoueurs.some(
-                              (j) =>
-                                j.id !== joueur.id &&
-                                j.utilisateur_id === u.id
-                            )
-                          }
-                        >
-
-                          {u.nom}
-
-                          {u.id === profil.id
-                            ? " (moi)"
-                            : ""}
-
-                        </option>
-
-                      ))}
-
-                    </select>
-
-                  </td>
-
-                </tr>
-
-              ))}
-
-            </tbody>
-
-          </table>
-
-          <h3 className="text-xl font-semibold mb-4 mt-6">
-            Rôles :
-          </h3>
-
-          <ul className="list-disc pl-5 mt-2">
-
-            <li>
-              <span className="font-bold">User</span> :
-              peut uniquement s'inscrire/se désinscrire à une partie
-            </li>
-
-            <li>
-              <span className="font-bold">Membre</span> :
-              User + peut organiser des parties et{" "}
-              <span className="font-semibold">
-                pour ses propres parties
-              </span>
-              : les modifier & supprimer
-              (pour les parties à venir) et ajouter des inscrits,
-              gérer le classement et les scores
-              (pour les parties archivées)
-            </li>
-
-            <li>
-              <span className="font-bold">Ludo</span> :
-              Membre + peut ajouter des jeux à la Ludothèque et{" "}
-              <span className="font-semibold">
-                pour ses propres jeux
-              </span>
-              : les modifier
-            </li>
-
-            <li>
-              <span className="font-bold">Ludoplus</span> :
-              Ludo + peut modifier tous les jeux de la Ludothèque
-            </li>
-
-            <li>
-              <span className="font-bold">Admin</span> :
-              Ludoplus + peut gérer les rôles des Utilisateurs +
-              peut gérer le classement et les scores de toutes les
-              parties archivées ainsi qu'y ajouter des inscrits
-            </li>
-
-          </ul>
-
-          <p className="mt-2">
-            Tous les utilisateurs peuvent par défaut
-            (en fonction de leurs rôles) :
-          </p>
-
-          <ul className="list-disc pl-5 mt-2">
-
-            <li>
-              Modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque
-            </li>
-
-            <li>
-              Pour les parties qu'ils organisent :
-              Modifier/supprimer les parties
-            </li>
-
-            <li>
-              Pour les parties qu'ils organisent :
-              Ajouter de nouveaux inscrits
-              (une fois la partie archivée)
-            </li>
-
-            <li>
-              Pour les parties qu'ils organisent :
-              Gérer le classement et les scores des inscrits
-              (une fois la partie archivée)
-            </li>
-
-          </ul>
-
-        </div>
-
-      )}
-
-      {/* ========================================================= */}
-      {/* 📅 GESTION DES DATES DE SOIRÉES / APRÈS-MIDI */}
-      {/* ========================================================= */}
-
-      {profil.role === "admin" && (
-
-        <div className="mt-10 p-4 border rounded bg-gray-50">
-
-          <h3 className="text-xl font-semibold mb-2">
-            📅 Prochaines soirées et après-midi jeux
-          </h3>
-
-          <p className="text-sm text-gray-600 mb-4">
-            Ajoute ici les prochaines rencontres de l'association.
-            Le type et les horaires sont automatiquement préremplis
-            selon le jour choisi, mais tu peux tout modifier.
-          </p>
-
-          {/* FORMULAIRE */}
-
-          <div ref={formulaireDateRef} className="bg-white border rounded-lg p-4 shadow-sm">
-
-            <h4 className="font-semibold mb-4">
-              {dateEvenementEnEdition
-                ? "✏️ Modifier l'événement"
-                : "➕ Ajouter une rencontre"}
-            </h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-              {/* DATE */}
-
-              <div>
-
-                <label className="block font-medium mb-1">
-                  Date :
-                </label>
-
-                <input
-                  type="date"
-                  value={dateEvenement}
-                  onChange={(e) =>
-                    handleDateEvenementChange(
-                      e.target.value
+                          className="w-5 h-5 accent-violet-600 shrink-0"
+                        />
+                      </label>
                     )
-                  }
-                  className="border p-2 rounded w-full"
-                />
-
-              </div>
-
-              {/* TYPE */}
-
-              <div>
-
-                <label className="block font-medium mb-1">
-                  Type :
-                </label>
-
-                <select
-                  value={typeEvenement}
-                  onChange={(e) => {
-                    const nouvelleValeur = e.target.value;
-
-                    setTypeEvenement(nouvelleValeur);
-
-                    if (nouvelleValeur === "personnalise") {
-                      setEmojiEvenement("🎲");
-                      setNomTypePersonnalise("");
-                    } else if (estTypePersonnalise(nouvelleValeur)) {
-                      setEmojiEvenement(
-                        getEmojiTypePersonnalise(nouvelleValeur)
-                      );
-
-                      setNomTypePersonnalise(
-                        getNomTypePersonnalise(nouvelleValeur)
-                      );
-                    }
-                  }}
-                  className="border p-2 rounded w-full"
-                >
-
-                  <option value="soiree">
-                    🌙 Soirée
-                  </option>
-
-                  <option value="apres_midi">
-                    ☀️ Après-midi
-                  </option>
-
-                  {getTypesPersonnalises().length > 0 && (
-                    <optgroup label="Types personnalisés">
-
-                      {getTypesPersonnalises().map((type) => (
-                        <option
-                          key={type}
-                          value={type}
-                        >
-                          {getEmojiTypePersonnalise(type)}{" "}
-                          {getNomTypePersonnalise(type)}
-                        </option>
-                      ))}
-
-                    </optgroup>
                   )}
-
-                  <option value="personnalise">
-                    ✨ Créer un nouveau type...
-                  </option>
-
-                </select>
-
-              </div>
-              {/* TYPE PERSONNALISÉ */}
-
-              {typeEvenement === "personnalise" && (
-
-                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-
-                  <div>
-
-                    <label className="block font-medium mb-1">
-                      Emoji :
-                    </label>
-
-                    <input
-                      type="text"
-                      value={emojiEvenement}
-                      onChange={(e) =>
-                        setEmojiEvenement(e.target.value)
-                      }
-                      className="border p-2 rounded w-full text-center text-2xl"
-                      placeholder="🎲"
-                      maxLength={8}
-                    />
-
-                  </div>
-
-                  <div className="md:col-span-2">
-
-                    <label className="block font-medium mb-1">
-                      Nom du type :
-                    </label>
-
-                    <input
-                      type="text"
-                      value={nomTypePersonnalise}
-                      onChange={(e) =>
-                        setNomTypePersonnalise(e.target.value)
-                      }
-                      className="border p-2 rounded w-full"
-                      placeholder="Ex. Tournoi, Halloween, Jeu de rôle..."
-                      maxLength={50}
-                    />
-
-                  </div>
-
                 </div>
 
-              )}
+                <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-slate-500 mt-0.5" />
 
-              {/* HEURE DEBUT */}
-
-              <div>
-
-                <label className="block font-medium mb-1">
-                  Heure de début :
-                </label>
-
-                <input
-                  type="time"
-                  value={heureDebut}
-                  onChange={(e) =>
-                    setHeureDebut(
-                      e.target.value
-                    )
-                  }
-                  className="border p-2 rounded w-full"
-                />
-
-              </div>
-
-              {/* HEURE FIN */}
-
-              <div>
-
-                <label className="block font-medium mb-1">
-                  Heure de fin :
-                </label>
-
-                <input
-                  type="time"
-                  value={heureFin}
-                  onChange={(e) =>
-                    setHeureFin(
-                      e.target.value
-                    )
-                  }
-                  className="border p-2 rounded w-full"
-                />
-
-              </div>
-
-              {/* TEXTE FACULTATIF */}
-
-              <div className="md:col-span-2">
-
-                <label className="block font-medium mb-1">
-                  Texte / précision <span className="text-gray-500 font-normal">(facultatif)</span> :
-                </label>
-
-                <input
-                  type="text"
-                  value={texteEvenement}
-                  onChange={(e) => setTexteEvenement(e.target.value)}
-                  className="border p-2 rounded w-full"
-                  placeholder="Ex. Soirée spéciale Halloween 🎃, tournoi Ark Nova..."
-                  maxLength={200}
-                />
-
-              </div>
-
-            </div>
-
-            {/* BOUTONS */}
-
-            <div className="flex flex-wrap gap-2 mt-4">
-
-              <button
-                onClick={
-                  ajouterOuModifierDateEvenement
-                }
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                {dateEvenementEnEdition
-                  ? "💾 Enregistrer les modifications"
-                  : "➕ Ajouter la rencontre"}
-              </button>
-
-              {dateEvenementEnEdition && (
+                    <p className="text-sm text-slate-600">
+                      <strong>
+                        {pushDevicesCount} device
+                        {pushDevicesCount > 1 ? "s" : ""} actif
+                        {pushDevicesCount > 1 ? "s" : ""}
+                      </strong>
+                      .
+                      <br />
+                      Chaque appareil peut avoir ses propres préférences.
+                    </p>
+                  </div>
+                </div>
 
                 <button
-                  onClick={
-                    resetFormDateEvenement
+                  onClick={testNotification}
+                  disabled={
+                    testingNotif ||
+                    (!notifSettings.notif_parties &&
+                      !notifSettings.notif_chat &&
+                      !notifSettings.notif_annonces &&
+                      !notifSettings.notif_jeux &&
+                      !notifSettings.notif_ping)
                   }
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                  type="button"
+                  className={`mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-white font-semibold shadow-lg transition ${
+                    testingNotif ||
+                    (!notifSettings.notif_parties &&
+                      !notifSettings.notif_chat &&
+                      !notifSettings.notif_annonces &&
+                      !notifSettings.notif_jeux &&
+                      !notifSettings.notif_ping)
+                      ? "bg-slate-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-xl hover:-translate-y-0.5"
+                  }`}
                 >
-                  Annuler
+                  <Send className="w-4 h-4" />
+                  {testingNotif
+                    ? "Envoi en cours..."
+                    : "Tester la notification"}
                 </button>
-
-              )}
-
-            </div>
-
+              </>
+            )}
           </div>
+        </section>
 
-          {/* LISTE DES DATES */}
+        {/* ===================================================== */}
+        {/* MESSAGE USER */}
+        {/* ===================================================== */}
 
-          <div className="mt-6">
-
-            <h4 className="font-semibold mb-3">
-              📋 Rencontres enregistrées
-            </h4>
-
-            {chargementDates ? (
-
-              <p className="text-gray-500">
-                Chargement des dates...
-              </p>
-
-            ) : datesEvenements.length === 0 ? (
-
-              <p className="text-gray-500">
-                Aucune rencontre enregistrée.
-              </p>
-
-            ) : (
-
-              <div className="space-y-3">
-
-                {datesEvenements.map((date) => {
-
-                  const datePasse =
-                    date.date_evenement <
-                    new Date()
-                      .toISOString()
-                      .slice(0, 10);
-
-                  return (
-
-                    <div
-                      key={date.id}
-                      className={`border rounded-lg p-3 ${
-                        date.actif
-                          ? "bg-white"
-                          : "bg-gray-100 opacity-60"
-                      }`}
-                    >
-
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-
-                        {/* INFOS */}
-
-                        <div>
-
-                          <div className="font-semibold">
-
-                            {date.type_evenement === "soiree" && (
-                              <>🌙 Soirée</>
-                            )}
-
-                            {date.type_evenement === "apres_midi" && (
-                              <>☀️ Après-midi</>
-                            )}
-
-                            {estTypePersonnalise(date.type_evenement) && (
-                              <>
-                                {getEmojiTypePersonnalise(date.type_evenement)}{" "}
-                                {getNomTypePersonnalise(date.type_evenement)}
-                              </>
-                            )}
-
-                          </div>
-
-                          <div className="text-sm text-gray-700">
-
-                            📅{" "}
-                            {formatDateEvenement(
-                              date.date_evenement
-                            )}
-
-                          </div>
-
-                          <div className="text-sm text-gray-700">
-
-                            🕐{" "}
-                            {formatHeureEvenement(
-                              date.heure_debut
-                            )}
-                            {" – "}
-                            {formatHeureEvenement(
-                              date.heure_fin
-                            )}
-
-                          </div>
-
-                          {date.texte && (
-                            <div className="text-sm font-medium text-blue-700 mt-1">
-                              ✨ {date.texte}
-                            </div>
-                          )}
-
-                          {datePasse && (
-
-                            <span className="inline-block mt-1 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                              Date passée
-                            </span>
-
-                          )}
-
-                          {!date.actif && (
-
-                            <span className="inline-block mt-1 ml-1 text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
-                              Désactivée
-                            </span>
-
-                          )}
-
-                        </div>
-
-                        {/* ACTIONS */}
-
-                        <div className="flex flex-wrap gap-2">
-
-                          <button
-                            onClick={() =>
-                              modifierDateEvenement(
-                                date
-                              )
-                            }
-                            className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm"
-                          >
-                            ✏️ Modifier
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              toggleDateEvenement(
-                                date
-                              )
-                            }
-                            className={`px-3 py-2 rounded text-sm text-white ${
-                              date.actif
-                                ? "bg-orange-500 hover:bg-orange-600"
-                                : "bg-green-600 hover:bg-green-700"
-                            }`}
-                          >
-                            {date.actif
-                              ? "Désactiver"
-                              : "Activer"}
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              supprimerDateEvenement(
-                                date
-                              )
-                            }
-                            className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm"
-                          >
-                            🗑️ Supprimer
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                  );
-
-                })}
-
+        {profil.role === "user" && (
+          <div className="rounded-[2rem] bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 p-6 shadow-lg">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 shrink-0 rounded-2xl bg-white shadow flex items-center justify-center">
+                <Info className="w-5 h-5 text-violet-600" />
               </div>
 
-            )}
-
-          </div>
-
-        </div>
-
-      )}
-
-      {/* ========================================================= */}
-      {/* 🖼️ GESTION DU DIAPORAMA */}
-      {/* ========================================================= */}
-
-      {profil.role === "admin" && (
-
-        <div className="mt-10 p-4 border rounded bg-gray-50 flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
-
-          <div className="flex items-center justify-between mb-4">
-
-            <h3 className="text-xl font-semibold mb-2">
-              🖼️ Gestion des images du diaporama d'accueil
-            </h3>
-
-            <Link
-              to="/images"
-              className="ml-4 bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300"
-            >
-              Gérer le Diaporama
-            </Link>
-
-          </div>
-
-        </div>
-
-      )}
-
-      {/* Planning */}
-      {profil.role === "admin" && (
-
-        <div className="mt-10 p-4 border rounded bg-gray-50 flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
-
-          <div className="flex-1">
-
-            <h3 className="text-xl font-semibold mb-2">
-              🖼️ Planning des prochaines rencontres
-            </h3>
-
-            <input
-              type="text"
-              className="border p-2 rounded w-full"
-              placeholder="URL de l’image"
-              value={globalImageUrl}
-              onChange={(e) =>
-                setGlobalImageUrl(e.target.value)
-              }
-            />
-
-            <button
-              onClick={async () => {
-
-                const { data, error } =
-                  await supabase
-                    .from("settings")
-                    .update({
-                      global_image_url:
-                        globalImageUrl,
-                      updated_at:
-                        new Date(),
-                    })
-                    .eq("id", 1)
-                    .select()
-                    .single();
-
-                if (!error) {
-                  alert(
-                    "✅ Planning mis à jour !"
-                  );
-                }
-
-              }}
-              className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Mettre à jour
-            </button>
-
-          </div>
-
-          {globalImageUrl && (
-
-            <div className="mt-4 lg:mt-0 lg:ml-6 flex justify-center lg:justify-end">
-
-              <img
-                src={globalImageUrl}
-                alt="Aperçu global"
-                onError={(e) => {
-
-                  if (
-                    !e.currentTarget.dataset
-                      .fallback
-                  ) {
-
-                    e.currentTarget.dataset.fallback =
-                      "true";
-
-                    e.currentTarget.src =
-                      "/qrcode.png";
-
-                  }
-
-                }}
-                className="w-32 h-32 object-contain border rounded shadow"
-              />
-
+              <p className="text-slate-700 leading-relaxed">
+                <strong>
+                  N'hésitez pas à vous manifester dans le tchat de
+                  l'accueil ou sur messenger si vous souhaitez obtenir
+                  des droits supplémentaire sur l'application comme
+                  ceux d'organiser des parties ou d'ajouter des jeux
+                  à la ludothèque
+                </strong>
+              </p>
             </div>
+          </div>
+        )}
 
-          )}
+        {/* ===================================================== */}
+        {/* RECAP */}
+        {/* ===================================================== */}
 
-        </div>
+        <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-violet-50">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-violet-600 flex items-center justify-center shadow-lg">
+                <Trophy className="w-5 h-5 text-white" />
+              </div>
 
-      )}
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Le récap' partageable de mes parties
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Consulte et partage ton historique de parties
+                </p>
+              </div>
+            </div>
+          </div>
 
-      {/* Texte accueil */}
-      {profil.role === "admin" && (
+          <div className="p-6">
+            <RecapJeuxShareableStyle userId={profil.id} />
+          </div>
+        </section>
 
-        <div className="mt-10 p-4 border rounded bg-gray-50">
+        {/* ===================================================== */}
+        {/* JEUX FAVORIS */}
+        {/* ===================================================== */}
 
-          <h3 className="text-xl font-semibold mb-2">
-            🏛️ Texte de la page d'accueil
-          </h3>
+        <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-orange-50 to-violet-50">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500 to-violet-600 flex items-center justify-center shadow-lg">
+                <Gamepad2 className="w-5 h-5 text-white" />
+              </div>
 
-          <input
-            type="text"
-            className="border p-2 rounded w-full"
-            placeholder="Texte de la page d'accueil"
-            value={globalTexte}
-            onChange={(e) =>
-              setGlobalTexte(e.target.value)
-            }
-          />
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Les jeux auxquels j'aimerais jouer
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Sélectionne tes deux jeux favoris
+                </p>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={async () => {
-
-              const { data, error } =
-                await supabase
-                  .from("settings")
-                  .update({
-                    global_image_url:
-                      globalTexte,
-                    updated_at:
-                      new Date(),
-                  })
-                  .eq("id", 2)
-                  .select()
-                  .single();
-
-              if (!error) {
-                alert(
-                  "✅ Texte mis à jour !"
-                );
-              }
-
-            }}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Mettre à jour
-          </button>
-
-        </div>
-
-      )}
-
-      {/* Followers FB */}
-      {profil.role === "admin" && (
-
-        <div className="mt-10 p-4 border rounded bg-gray-50">
-
-          <h3 className="text-xl font-semibold mb-2">
-            ✨ Followers FB
-          </h3>
-
-          <input
-            type="text"
-            className="border p-2 rounded w-full"
-            placeholder="Texte de la page d'accueil"
-            value={globalcountFollowersFB}
-            onChange={(e) =>
-              setGlobalcountFollowersFB(
-                e.target.value
-              )
-            }
-          />
-
-          <button
-            onClick={async () => {
-
-              const { data, error } =
-                await supabase
-                  .from("settings")
-                  .update({
-                    global_image_url:
-                      globalcountFollowersFB,
-                    updated_at:
-                      new Date(),
-                  })
-                  .eq("id", 3)
-                  .select()
-                  .single();
-
-              if (!error) {
-                alert(
-                  "✅ Followers FB mis à jour !"
-                );
-              }
-
-            }}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Mettre à jour
-          </button>
-
-        </div>
-
-      )}
-
-      {/* Nombre adhérents */}
-      {profil.role === "admin" && (
-
-        <div className="mt-10 p-4 border rounded bg-gray-50">
-
-          <h3 className="text-xl font-semibold mb-2">
-            ✨ Nombre d'adhérent au total
-          </h3>
-
-          <input
-            type="text"
-            className="border p-2 rounded w-full"
-            placeholder="Texte de la page d'accueil"
-            value={globalcountAdherentTotal}
-            onChange={(e) =>
-              setGlobalcountAdherentTotal(
-                e.target.value
-              )
-            }
-          />
-
-          <button
-            onClick={async () => {
-
-              const { data, error } =
-                await supabase
-                  .from("settings")
-                  .update({
-                    global_image_url:
-                      globalcountAdherentTotal,
-                    updated_at:
-                      new Date(),
-                  })
-                  .eq("id", 4)
-                  .select()
-                  .single();
-
-              if (!error) {
-                alert(
-                  "✅ Nombre d'adhérent Total mis à jour !"
-                );
-              }
-
-            }}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Mettre à jour
-          </button>
-
-        </div>
-
-      )}
-
-      {/* Séances avant le 12 septembre 2025 */}
-      {profil.role === "admin" && (
-
-        <div className="mt-10 p-4 border rounded bg-gray-50">
-
-          <h3 className="text-xl font-semibold mb-2">
-            ✨ Séances avant le 12 septembre 2025
-          </h3>
-
-          <input
-            type="text"
-            className="border p-2 rounded w-full"
-            placeholder="Texte de la page d'accueil"
-            value={
-              globalcountSeanceavantdouzeS
-            }
-            onChange={(e) =>
-              setGlobalcountSeanceavantdouzeS(
-                e.target.value
-              )
-            }
-          />
-
-          <button
-            onClick={async () => {
-
-              const { data, error } =
-                await supabase
-                  .from("settings")
-                  .update({
-                    global_image_url:
-                      globalcountSeanceavantdouzeS,
-                    updated_at:
-                      new Date(),
-                  })
-                  .eq("id", 5)
-                  .select()
-                  .single();
-
-              if (!error) {
-                alert(
-                  "✅ Nombre de séances totales mis à jour !"
-                );
-              }
-
-            }}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Mettre à jour
-          </button>
-
-        </div>
-
-      )}
-
-      {/* Annonce */}
-      {profil.role === "admin" && (
-
-        <div className="mt-10 p-4 border rounded bg-gray-50">
-
-          <h3 className="text-xl font-semibold mb-2">
-            📢 Envoyer une notification d'annonce importante (du président)
-          </h3>
-
-          <input
-            type="text"
-            className="border p-2 rounded w-full"
-            placeholder="Annonce importante"
-            value={globalAnnonce}
-            onChange={(e) =>
-              setGlobalAnnonce(e.target.value)
-            }
-          />
-
-          <button
-            onClick={async () => {
-
-              const { data, error } =
-                await supabase
-                  .from("settings")
-                  .update({
-                    global_image_url:
-                      globalAnnonce,
-                    updated_at:
-                      new Date(),
-                  })
-                  .eq("id", 6)
-                  .select()
-                  .single();
-
-              if (!error) {
-                alert(
-                  "✅ Annonce envoyée !"
-                );
-              }
-
-              const {
-                data: { session },
-              } =
-                await supabase.auth.getSession();
-
-              await fetch(
-                "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type":
-                      "application/json",
-                    Authorization: `Bearer ${session.access_token}`,
-                  },
-                  body: JSON.stringify({
-                    type: "notif_annonces",
-                    title:
-                      `📢 Nouvelle annonce du Président`,
-                    body: `${globalAnnonce}`,
-                    url: "/parties",
-                  }),
-                }
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2].map((n) => {
+              const selectedId = profil[`jeufavoris${n}`];
+              const jeu = jeux.find(
+                (j) => j.id === selectedId
               );
 
-            }}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Envoyer la notification
-          </button>
+              return (
+                <div
+                  key={n}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                >
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Jeu favori {n}
+                  </label>
 
-        </div>
+                  <select
+                    value={selectedId || ""}
+                    onChange={(e) =>
+                      updateFavoris(
+                        `jeufavoris${n}`,
+                        e.target.value
+                      )
+                    }
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none transition"
+                  >
+                    <option value="">
+                      -- Choisir un jeu --
+                    </option>
 
-      )}
+                    {jeux.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.nom}
+                      </option>
+                    ))}
+                  </select>
 
-      {/* Supprimer mon compte */}
-      <div className="mt-10 border-t pt-6">
+                  {jeu && (
+                    <div className="mt-4 rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+                      <p className="font-bold text-slate-800">
+                        {jeu.nom}
+                      </p>
 
-        <button
-          onClick={handleDeleteAccount}
-          className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        >
-          Supprimer mon compte
-        </button>
+                      {jeu.couverture_url && (
+                        <img
+                          src={jeu.couverture_url}
+                          alt={jeu.nom}
+                          className="w-full h-40 object-contain mt-3 rounded-xl"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ===================================================== */}
+        {/* ADMIN */}
+        {/* ===================================================== */}
+
+        {profil.role === "admin" && (
+          <>
+            {/* ------------------------------------------------- */}
+            {/* UTILISATEURS */}
+            {/* ------------------------------------------------- */}
+
+            <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-violet-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-lg">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">
+                      Gestion des utilisateurs
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                      Comptes réels, faux comptes et rôles
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                  <table className="w-full min-w-[700px]">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="text-left p-4 font-bold text-slate-700">
+                          Nom
+                        </th>
+
+                        <th className="text-left p-4 font-bold text-slate-700">
+                          Rôle
+                        </th>
+
+                        <th className="text-left p-4 font-bold text-slate-700">
+                          Lier à un compte
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {allUsers.map((u) => {
+                        const isCurrentAdmin =
+                          u.id === profil.id;
+
+                        const isAdminUser =
+                          u.role === "admin";
+
+                        const fauxCompteLie =
+                          allJoueurs.find(
+                            (j) =>
+                              j.utilisateur_id === u.id
+                          );
+
+                        return (
+                          <tr
+                            key={`user-${u.id}`}
+                            className="border-t border-slate-200 hover:bg-violet-50/50 transition"
+                          >
+                            <td className="p-4 font-semibold text-slate-800">
+                              {u.nom}
+                            </td>
+
+                            <td className="p-4">
+                              {isCurrentAdmin ||
+                              isAdminUser ? (
+                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-100 text-violet-700 rounded-xl font-semibold text-sm">
+                                  <ShieldCheck className="w-4 h-4" />
+                                  {u.role}
+                                </span>
+                              ) : (
+                                <select
+                                  value={u.role}
+                                  onChange={(e) => {
+                                    const newRole =
+                                      e.target.value;
+
+                                    if (
+                                      window.confirm(
+                                        `Changer le rôle de ${u.nom} en "${newRole}" ?`
+                                      )
+                                    ) {
+                                      updateUserRole(
+                                        u.id,
+                                        newRole
+                                      );
+                                    }
+                                  }}
+                                  className="px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                                >
+                                  <option value="user">
+                                    user
+                                  </option>
+
+                                  <option value="membre">
+                                    membre
+                                  </option>
+
+                                  <option value="ludo">
+                                    ludo
+                                  </option>
+
+                                  <option value="ludoplus">
+                                    ludoplus
+                                  </option>
+
+                                  <option value="admin">
+                                    admin
+                                  </option>
+                                </select>
+                              )}
+                            </td>
+
+                            <td className="p-4">
+                              {fauxCompteLie ? (
+                                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 font-medium text-sm">
+                                  <Link2 className="w-4 h-4" />
+                                  {fauxCompteLie.nom}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                      {allJoueurs.map((joueur) => (
+                        <tr
+                          key={`joueur-${joueur.id}`}
+                          className="border-t border-amber-200 bg-amber-50/70 hover:bg-amber-100/70 transition"
+                        >
+                          <td className="p-4 font-semibold text-amber-900">
+                            <span className="inline-flex items-center gap-2">
+                              🎭 {joueur.nom}
+                            </span>
+                          </td>
+
+                          <td className="p-4">
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-200 text-amber-900 rounded-xl font-semibold text-sm">
+                              Faux compte
+                            </span>
+                          </td>
+
+                          <td className="p-4">
+                            <select
+                              value={
+                                joueur.utilisateur_id || ""
+                              }
+                              onChange={(e) =>
+                                updateJoueurUtilisateur(
+                                  joueur.id,
+                                  e.target.value
+                                )
+                              }
+                              className="w-full px-3 py-2 rounded-xl border border-amber-200 bg-white"
+                            >
+                              <option value="">
+                                -- Aucun compte lié --
+                              </option>
+
+                              {allUsers.map((u) => (
+                                <option
+                                  key={u.id}
+                                  value={u.id}
+                                  disabled={allJoueurs.some(
+                                    (j) =>
+                                      j.id !== joueur.id &&
+                                      j.utilisateur_id ===
+                                        u.id
+                                  )}
+                                >
+                                  {u.nom}
+                                  {u.id === profil.id
+                                    ? " (moi)"
+                                    : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* ROLES */}
+                <div className="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <ShieldCheck className="w-5 h-5 text-violet-600" />
+
+                    <h3 className="font-bold text-lg text-slate-900">
+                      Rôles
+                    </h3>
+                  </div>
+
+                  <ul className="space-y-3 text-sm text-slate-700">
+                    <li>
+                      <strong>User</strong> : peut uniquement
+                      s'inscrire/se désinscrire à une partie
+                    </li>
+
+                    <li>
+                      <strong>Membre</strong> : User + peut
+                      organiser des parties et{" "}
+                      <strong>pour ses propres parties</strong> :
+                      les modifier & supprimer (pour les parties à
+                      venir) et ajouter des inscrits, gérer le
+                      classement et les scores (pour les parties
+                      archivées)
+                    </li>
+
+                    <li>
+                      <strong>Ludo</strong> : Membre + peut ajouter
+                      des jeux à la Ludothèque et{" "}
+                      <strong>pour ses propres jeux</strong> :
+                      les modifier
+                    </li>
+
+                    <li>
+                      <strong>Ludoplus</strong> : Ludo + peut
+                      modifier tous les jeux de la Ludothèque
+                    </li>
+
+                    <li>
+                      <strong>Admin</strong> : Ludoplus + peut
+                      gérer les rôles des Utilisateurs + peut
+                      gérer le classement et les scores de toutes
+                      les parties archivées ainsi qu'y ajouter des
+                      inscrits
+                    </li>
+                  </ul>
+
+                  <p className="mt-5 font-semibold text-slate-800">
+                    Tous les utilisateurs peuvent par défaut
+                    (en fonction de leurs rôles) :
+                  </p>
+
+                  <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-slate-700">
+                    <li>
+                      Modifier les jeux qu'ils ajoutent eux-mêmes
+                      dans la Ludothèque
+                    </li>
+
+                    <li>
+                      Pour les parties qu'ils organisent :
+                      Modifier/supprimer les parties
+                    </li>
+
+                    <li>
+                      Pour les parties qu'ils organisent :
+                      Ajouter de nouveaux inscrits (une fois la
+                      partie archivée)
+                    </li>
+
+                    <li>
+                      Pour les parties qu'ils organisent :
+                      Gérer le classement et les scores des
+                      inscrits (une fois la partie archivée)
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* ------------------------------------------------- */}
+            {/* DATES */}
+            {/* ------------------------------------------------- */}
+
+            <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-indigo-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg">
+                    <CalendarDays className="w-5 h-5 text-white" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">
+                      Prochaines soirées et après-midi jeux
+                    </h2>
+
+                    <p className="text-sm text-slate-500">
+                      Ajoute et gère les prochaines rencontres de
+                      l'association
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <p className="text-sm text-slate-500 mb-5">
+                  Le type et les horaires sont automatiquement
+                  préremplis selon le jour choisi, mais tu peux tout
+                  modifier.
+                </p>
+
+                {/* FORMULAIRE */}
+                <div
+                  ref={formulaireDateRef}
+                  className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-5 md:p-6"
+                >
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-white shadow flex items-center justify-center">
+                      {dateEvenementEnEdition ? (
+                        <Pencil className="w-5 h-5 text-violet-600" />
+                      ) : (
+                        <CalendarDays className="w-5 h-5 text-violet-600" />
+                      )}
+                    </div>
+
+                    <h3 className="font-bold text-lg text-slate-900">
+                      {dateEvenementEnEdition
+                        ? "Modifier l'événement"
+                        : "Ajouter une rencontre"}
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Date
+                      </label>
+
+                      <input
+                        type="date"
+                        value={dateEvenement}
+                        onChange={(e) =>
+                          handleDateEvenementChange(
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Type
+                      </label>
+
+                      <select
+                        value={typeEvenement}
+                        onChange={(e) => {
+                          const nouvelleValeur =
+                            e.target.value;
+
+                          setTypeEvenement(nouvelleValeur);
+
+                          if (
+                            nouvelleValeur ===
+                            "personnalise"
+                          ) {
+                            setEmojiEvenement("🎲");
+                            setNomTypePersonnalise("");
+                          } else if (
+                            estTypePersonnalise(
+                              nouvelleValeur
+                            )
+                          ) {
+                            setEmojiEvenement(
+                              getEmojiTypePersonnalise(
+                                nouvelleValeur
+                              )
+                            );
+
+                            setNomTypePersonnalise(
+                              getNomTypePersonnalise(
+                                nouvelleValeur
+                              )
+                            );
+                          }
+                        }}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none"
+                      >
+                        <option value="soiree">
+                          🌙 Soirée
+                        </option>
+
+                        <option value="apres_midi">
+                          ☀️ Après-midi
+                        </option>
+
+                        {getTypesPersonnalises().length >
+                          0 && (
+                          <optgroup label="Types personnalisés">
+                            {getTypesPersonnalises().map(
+                              (type) => (
+                                <option
+                                  key={type}
+                                  value={type}
+                                >
+                                  {getEmojiTypePersonnalise(
+                                    type
+                                  )}{" "}
+                                  {getNomTypePersonnalise(
+                                    type
+                                  )}
+                                </option>
+                              )
+                            )}
+                          </optgroup>
+                        )}
+
+                        <option value="personnalise">
+                          ✨ Créer un nouveau type...
+                        </option>
+                      </select>
+                    </div>
+
+                    {typeEvenement ===
+                      "personnalise" && (
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-white rounded-2xl border border-purple-200">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Emoji
+                          </label>
+
+                          <input
+                            type="text"
+                            value={emojiEvenement}
+                            onChange={(e) =>
+                              setEmojiEvenement(
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 text-center text-2xl"
+                            placeholder="🎲"
+                            maxLength={8}
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Nom du type
+                          </label>
+
+                          <input
+                            type="text"
+                            value={nomTypePersonnalise}
+                            onChange={(e) =>
+                              setNomTypePersonnalise(
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200"
+                            placeholder="Ex. Tournoi, Halloween, Jeu de rôle..."
+                            maxLength={50}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Heure de début
+                      </label>
+
+                      <input
+                        type="time"
+                        value={heureDebut}
+                        onChange={(e) =>
+                          setHeureDebut(e.target.value)
+                        }
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Heure de fin
+                      </label>
+
+                      <input
+                        type="time"
+                        value={heureFin}
+                        onChange={(e) =>
+                          setHeureFin(e.target.value)
+                        }
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Texte / précision{" "}
+                        <span className="font-normal text-slate-400">
+                          (facultatif)
+                        </span>
+                      </label>
+
+                      <input
+                        type="text"
+                        value={texteEvenement}
+                        onChange={(e) =>
+                          setTexteEvenement(e.target.value)
+                        }
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white"
+                        placeholder="Ex. Soirée spéciale Halloween 🎃, tournoi Ark Nova..."
+                        maxLength={200}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 mt-6">
+                    <button
+                      onClick={
+                        ajouterOuModifierDateEvenement
+                      }
+                      type="button"
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition"
+                    >
+                      <Save className="w-4 h-4" />
+
+                      {dateEvenementEnEdition
+                        ? "Enregistrer les modifications"
+                        : "Ajouter la rencontre"}
+                    </button>
+
+                    {dateEvenementEnEdition && (
+                      <button
+                        onClick={resetFormDateEvenement}
+                        type="button"
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-600 text-white font-semibold hover:bg-slate-700 transition"
+                      >
+                        <X className="w-4 h-4" />
+                        Annuler
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* LISTE */}
+                <div className="mt-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    <CalendarDays className="w-5 h-5 text-violet-600" />
+
+                    <h3 className="font-bold text-lg text-slate-900">
+                      Rencontres enregistrées
+                    </h3>
+                  </div>
+
+                  {chargementDates ? (
+                    <div className="rounded-2xl bg-slate-50 p-6 text-center text-slate-500">
+                      Chargement des dates...
+                    </div>
+                  ) : datesEvenements.length === 0 ? (
+                    <div className="rounded-2xl bg-slate-50 p-6 text-center text-slate-500">
+                      Aucune rencontre enregistrée.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {datesEvenements.map((date) => {
+                        const datePasse =
+                          date.date_evenement <
+                          new Date()
+                            .toISOString()
+                            .slice(0, 10);
+
+                        return (
+                          <div
+                            key={date.id}
+                            className={`rounded-2xl border p-5 transition ${
+                              date.actif
+                                ? "bg-white border-slate-200 shadow-sm hover:shadow-lg"
+                                : "bg-slate-100 border-slate-200 opacity-60"
+                            }`}
+                          >
+                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                              <div>
+                                <div className="font-bold text-lg text-slate-900">
+                                  {date.type_evenement ===
+                                    "soiree" && (
+                                    <>🌙 Soirée</>
+                                  )}
+
+                                  {date.type_evenement ===
+                                    "apres_midi" && (
+                                    <>☀️ Après-midi</>
+                                  )}
+
+                                  {estTypePersonnalise(
+                                    date.type_evenement
+                                  ) && (
+                                    <>
+                                      {getEmojiTypePersonnalise(
+                                        date.type_evenement
+                                      )}{" "}
+                                      {getNomTypePersonnalise(
+                                        date.type_evenement
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+
+                                <div className="mt-2 text-sm text-slate-600">
+                                  📅{" "}
+                                  {formatDateEvenement(
+                                    date.date_evenement
+                                  )}
+                                </div>
+
+                                <div className="text-sm text-slate-600 mt-1">
+                                  🕐{" "}
+                                  {formatHeureEvenement(
+                                    date.heure_debut
+                                  )}{" "}
+                                  –{" "}
+                                  {formatHeureEvenement(
+                                    date.heure_fin
+                                  )}
+                                </div>
+
+                                {date.texte && (
+                                  <div className="text-sm font-semibold text-violet-700 mt-2">
+                                    ✨ {date.texte}
+                                  </div>
+                                )}
+
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                  {datePasse && (
+                                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-200 text-slate-600">
+                                      Date passée
+                                    </span>
+                                  )}
+
+                                  {!date.actif && (
+                                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                      Désactivée
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() =>
+                                    modifierDateEvenement(
+                                      date
+                                    )
+                                  }
+                                  type="button"
+                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                  Modifier
+                                </button>
+
+                                <button
+                                  onClick={() =>
+                                    toggleDateEvenement(
+                                      date
+                                    )
+                                  }
+                                  type="button"
+                                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm transition ${
+                                    date.actif
+                                      ? "bg-orange-500 hover:bg-orange-600"
+                                      : "bg-emerald-600 hover:bg-emerald-700"
+                                  }`}
+                                >
+                                  <Power className="w-4 h-4" />
+
+                                  {date.actif
+                                    ? "Désactiver"
+                                    : "Activer"}
+                                </button>
+
+                                <button
+                                  onClick={() =>
+                                    supprimerDateEvenement(
+                                      date
+                                    )
+                                  }
+                                  type="button"
+                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 text-white font-semibold text-sm hover:bg-red-700 transition"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Supprimer
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* ------------------------------------------------- */}
+            {/* DIAPORAMA */}
+            {/* ------------------------------------------------- */}
+
+            <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-violet-600 flex items-center justify-center shadow-lg">
+                    <Images className="w-6 h-6 text-white" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">
+                      Gestion des images du diaporama d'accueil
+                    </h2>
+
+                    <p className="text-sm text-slate-500">
+                      Gère les images affichées sur la page d'accueil
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  to="/images"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-slate-700 to-slate-900 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition"
+                >
+                  <Images className="w-4 h-4" />
+                  Gérer le Diaporama
+                </Link>
+              </div>
+            </section>
+
+            {/* ------------------------------------------------- */}
+            {/* PARAMÈTRES */}
+            {/* ------------------------------------------------- */}
+
+            <section>
+              <div className="flex items-center gap-3 mb-5 px-1">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-700 to-violet-700 flex items-center justify-center shadow-lg">
+                  <Settings className="w-5 h-5 text-white" />
+                </div>
+
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900">
+                    Paramètres de l'accueil
+                  </h2>
+
+                  <p className="text-sm text-slate-500">
+                    Configure les informations affichées sur la page
+                    d'accueil
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* PLANNING */}
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl p-6">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-violet-100 flex items-center justify-center">
+                      <CalendarDays className="w-5 h-5 text-violet-600" />
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-lg">
+                        Planning des prochaines rencontres
+                      </h3>
+                    </div>
+                  </div>
+
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none"
+                    placeholder="URL de l’image"
+                    value={globalImageUrl}
+                    onChange={(e) =>
+                      setGlobalImageUrl(e.target.value)
+                    }
+                  />
+
+                  <button
+                    onClick={async () => {
+                      const { data, error } =
+                        await supabase
+                          .from("settings")
+                          .update({
+                            global_image_url:
+                              globalImageUrl,
+                            updated_at: new Date(),
+                          })
+                          .eq("id", 1)
+                          .select()
+                          .single();
+
+                      if (!error) {
+                        alert("✅ Planning mis à jour !");
+                      }
+                    }}
+                    type="button"
+                    className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition"
+                  >
+                    <Save className="w-4 h-4" />
+                    Mettre à jour
+                  </button>
+
+                  {globalImageUrl && (
+                    <div className="mt-5 flex justify-center">
+                      <img
+                        src={globalImageUrl}
+                        alt="Aperçu global"
+                        onError={(e) => {
+                          if (
+                            !e.currentTarget.dataset
+                              .fallback
+                          ) {
+                            e.currentTarget.dataset.fallback =
+                              "true";
+
+                            e.currentTarget.src =
+                              "/qrcode.png";
+                          }
+                        }}
+                        className="w-40 h-40 object-contain rounded-2xl border border-slate-200 shadow-lg bg-slate-50"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* TEXTE ACCUEIL */}
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl p-6">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-100 flex items-center justify-center">
+                      <Settings className="w-5 h-5 text-indigo-600" />
+                    </div>
+
+                    <h3 className="font-bold text-lg">
+                      Texte de la page d'accueil
+                    </h3>
+                  </div>
+
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none"
+                    placeholder="Texte de la page d'accueil"
+                    value={globalTexte}
+                    onChange={(e) =>
+                      setGlobalTexte(e.target.value)
+                    }
+                  />
+
+                  <button
+                    onClick={async () => {
+                      const { data, error } =
+                        await supabase
+                          .from("settings")
+                          .update({
+                            global_image_url:
+                              globalTexte,
+                            updated_at: new Date(),
+                          })
+                          .eq("id", 2)
+                          .select()
+                          .single();
+
+                      if (!error) {
+                        alert("✅ Texte mis à jour !");
+                      }
+                    }}
+                    type="button"
+                    className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition"
+                  >
+                    <Save className="w-4 h-4" />
+                    Mettre à jour
+                  </button>
+                </div>
+
+                {/* FACEBOOK */}
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl p-6">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-blue-100 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+
+                    <h3 className="font-bold text-lg">
+                      Followers Facebook
+                    </h3>
+                  </div>
+
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none"
+                    placeholder="Nombre de followers"
+                    value={globalcountFollowersFB}
+                    onChange={(e) =>
+                      setGlobalcountFollowersFB(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                  <button
+                    onClick={async () => {
+                      const { data, error } =
+                        await supabase
+                          .from("settings")
+                          .update({
+                            global_image_url:
+                              globalcountFollowersFB,
+                            updated_at: new Date(),
+                          })
+                          .eq("id", 3)
+                          .select()
+                          .single();
+
+                      if (!error) {
+                        alert(
+                          "✅ Followers FB mis à jour !"
+                        );
+                      }
+                    }}
+                    type="button"
+                    className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition"
+                  >
+                    <Save className="w-4 h-4" />
+                    Mettre à jour
+                  </button>
+                </div>
+
+                {/* ADHERENTS */}
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl p-6">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-100 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-emerald-600" />
+                    </div>
+
+                    <h3 className="font-bold text-lg">
+                      Nombre d'adhérents au total
+                    </h3>
+                  </div>
+
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none"
+                    placeholder="Nombre d'adhérents"
+                    value={globalcountAdherentTotal}
+                    onChange={(e) =>
+                      setGlobalcountAdherentTotal(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                  <button
+                    onClick={async () => {
+                      const { data, error } =
+                        await supabase
+                          .from("settings")
+                          .update({
+                            global_image_url:
+                              globalcountAdherentTotal,
+                            updated_at: new Date(),
+                          })
+                          .eq("id", 4)
+                          .select()
+                          .single();
+
+                      if (!error) {
+                        alert(
+                          "✅ Nombre d'adhérent Total mis à jour !"
+                        );
+                      }
+                    }}
+                    type="button"
+                    className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition"
+                  >
+                    <Save className="w-4 h-4" />
+                    Mettre à jour
+                  </button>
+                </div>
+
+                {/* SEANCES */}
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl p-6">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-orange-100 flex items-center justify-center">
+                      <Gamepad2 className="w-5 h-5 text-orange-600" />
+                    </div>
+
+                    <h3 className="font-bold text-lg">
+                      Séances avant le 12 septembre 2025
+                    </h3>
+                  </div>
+
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none"
+                    placeholder="Nombre de séances"
+                    value={
+                      globalcountSeanceavantdouzeS
+                    }
+                    onChange={(e) =>
+                      setGlobalcountSeanceavantdouzeS(
+                        e.target.value
+                      )
+                    }
+                  />
+
+                  <button
+                    onClick={async () => {
+                      const { data, error } =
+                        await supabase
+                          .from("settings")
+                          .update({
+                            global_image_url:
+                              globalcountSeanceavantdouzeS,
+                            updated_at: new Date(),
+                          })
+                          .eq("id", 5)
+                          .select()
+                          .single();
+
+                      if (!error) {
+                        alert(
+                          "✅ Nombre de séances totales mis à jour !"
+                        );
+                      }
+                    }}
+                    type="button"
+                    className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition"
+                  >
+                    <Save className="w-4 h-4" />
+                    Mettre à jour
+                  </button>
+                </div>
+
+                {/* ANNONCE */}
+                <div className="bg-white rounded-[2rem] border border-red-200 shadow-xl p-6 lg:col-span-2">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-red-100 flex items-center justify-center">
+                      <Megaphone className="w-5 h-5 text-red-600" />
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-lg">
+                        Envoyer une notification d'annonce importante
+                      </h3>
+
+                      <p className="text-sm text-slate-500">
+                        L'annonce sera également envoyée par notification
+                      </p>
+                    </div>
+                  </div>
+
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none"
+                    placeholder="Annonce importante"
+                    value={globalAnnonce}
+                    onChange={(e) =>
+                      setGlobalAnnonce(e.target.value)
+                    }
+                  />
+
+                  <button
+                    onClick={async () => {
+                      const { data, error } =
+                        await supabase
+                          .from("settings")
+                          .update({
+                            global_image_url:
+                              globalAnnonce,
+                            updated_at: new Date(),
+                          })
+                          .eq("id", 6)
+                          .select()
+                          .single();
+
+                      if (!error) {
+                        alert("✅ Annonce envoyée !");
+                      }
+
+                      const {
+                        data: { session },
+                      } =
+                        await supabase.auth.getSession();
+
+                      await fetch(
+                        "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game",
+                        {
+                          method: "POST",
+                          headers: {
+                            "Content-Type":
+                              "application/json",
+                            Authorization: `Bearer ${session.access_token}`,
+                          },
+                          body: JSON.stringify({
+                            type: "notif_annonces",
+                            title:
+                              "📢 Nouvelle annonce du Président",
+                            body: `${globalAnnonce}`,
+                            url: "/parties",
+                          }),
+                        }
+                      );
+                    }}
+                    type="button"
+                    className="mt-4 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition"
+                  >
+                    <Send className="w-4 h-4" />
+                    Envoyer la notification
+                  </button>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* ===================================================== */}
+        {/* SUPPRESSION COMPTE */}
+        {/* ===================================================== */}
+
+        <section className="rounded-[2rem] border border-red-200 bg-gradient-to-br from-red-50 to-rose-50 p-6 shadow-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-2xl bg-red-100 flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+
+              <div>
+                <h2 className="font-bold text-lg text-red-900">
+                  Supprimer mon compte
+                </h2>
+
+                <p className="text-sm text-red-700 mt-1">
+                  Cette action est définitive.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleDeleteAccount}
+              type="button"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition"
+            >
+              <Trash2 className="w-4 h-4" />
+              Supprimer mon compte
+            </button>
+          </div>
+        </section>
 
       </div>
 
+      {/* ===================================================== */}
+      {/* ZOOM IMAGE */}
+      {/* ===================================================== */}
+
       {zoomOpen && (
-
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-
-          {/* Bouton X pour fermer */}
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-5">
           <button
-            onClick={() =>
-              setZoomOpen(false)
-            }
-            className="absolute top-5 right-5 text-white text-3xl font-bold cursor-pointer hover:scale-110 transition"
+            onClick={() => setZoomOpen(false)}
+            type="button"
+            className="absolute top-5 right-5 w-12 h-12 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center hover:bg-white/20 transition"
           >
-            ×
+            <X className="w-7 h-7" />
           </button>
 
-          {/* Image zoomée */}
           <img
             src={globalImageUrl}
             alt="Zoom"
-            className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg animate-zoom"
+            className="max-w-[90%] max-h-[90%] rounded-2xl shadow-2xl animate-zoom"
           />
-
         </div>
-
       )}
-
     </div>
   );
 }
