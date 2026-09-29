@@ -274,8 +274,8 @@ export default function HomeAssoContent({
           title: "Agenda - La Loi des Cartes",
           text:
             format === "instagram"
-              ? "Les prochaines rencontres de La Loi des Cartes 🎲"
-              : "Agenda des prochaines rencontres de La Loi des Cartes 🎲",
+              ? "Agenda des prochaines parties de 🎲 La Loi des Cartes"
+              : "Agenda des prochaines parties de 🎲 La Loi des Cartes",
           files: [fichier],
         });
 

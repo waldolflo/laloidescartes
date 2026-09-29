@@ -21,7 +21,7 @@ import {
   Heart,
   Scale,
   X,
-  Gamepad2,
+  Dices,
 } from "lucide-react";
 
 export default function Parties({ user, authUser }) {
@@ -418,7 +418,7 @@ export default function Parties({ user, authUser }) {
             <div className="flex-1 text-center lg:text-left">
 
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-purple-200 text-xs md:text-sm font-bold uppercase tracking-[0.18em]">
-                <Gamepad2 size={16} />
+                <Dices size={16} />
                 La Loi des Cartes
               </div>
 
@@ -854,7 +854,7 @@ export default function Parties({ user, authUser }) {
                 ) : (
                   <div className="h-48 flex flex-col items-center justify-center text-gray-300">
 
-                    <Gamepad2 size={48} />
+                    <Dices size={48} />
 
                     <span className="mt-2 text-sm font-semibold">
                       Pas d'image
@@ -1170,7 +1170,7 @@ export default function Parties({ user, authUser }) {
           <div className="bg-white rounded-[2rem] shadow-lg border border-gray-100 p-10 text-center">
 
             <div className="mx-auto w-16 h-16 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center">
-              <Gamepad2 size={32} />
+              <Dices size={32} />
             </div>
 
             <h3 className="mt-5 text-xl font-black text-gray-900">

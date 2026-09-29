@@ -16,7 +16,7 @@ import {
   Heart,
   Play,
   ExternalLink,
-  Gamepad2,
+  Dices,
   Library,
   X,
 } from "lucide-react";
@@ -622,7 +622,7 @@ export default function Catalogue({ user }) {
             <div className="flex-1 text-center lg:text-left">
 
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-purple-200 text-xs md:text-sm font-bold uppercase tracking-[0.18em]">
-                <Gamepad2 size={16} />
+                <Dices size={16} />
                 La Loi des Cartes
               </div>
 
@@ -635,9 +635,7 @@ export default function Catalogue({ user }) {
 
               <p className="mt-3 text-purple-100 text-base md:text-lg">
                 Retrouvez tous les jeux de
-                l'association, leurs informations,
-                leurs scores et les parties
-                auxquelles ils peuvent participer.
+                l'association en détail.
               </p>
 
             </div>
@@ -1197,7 +1195,7 @@ export default function Catalogue({ user }) {
 
             <div className="mx-auto w-16 h-16 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center">
 
-              <Gamepad2 size={32} />
+              <Dices size={32} />
 
             </div>
 
