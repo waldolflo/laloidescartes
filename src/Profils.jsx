@@ -74,6 +74,9 @@ export default function Profils({
   const [pushDevicesCount, setPushDevicesCount] = useState(0);
   const [testingNotif, setTestingNotif] = useState(false);
 
+  const [rechercheUtilisateur, setRechercheUtilisateur] = useState("");
+  const [ongletGestionUsers, setOngletGestionUsers] = useState("utilisateurs");
+
   // =========================================================
   // 📅 GESTION DES DATES D'ÉVÉNEMENTS
   // =========================================================
@@ -1052,6 +1055,22 @@ export default function Profils({
     },
   ];
 
+  const utilisateursFiltres = allUsers.filter((u) =>
+  (u.nom || "")
+    .toLowerCase()
+    .includes(rechercheUtilisateur.toLowerCase())
+  );
+
+  const joueursFiltres = allJoueurs.filter((joueur) =>
+    (joueur.nom || "")
+      .toLowerCase()
+      .includes(rechercheUtilisateur.toLowerCase())
+  );
+
+  const nombreUtilisateursLies = allJoueurs.filter(
+    (j) => j.utilisateur_id
+  ).length;
+
   return (
     <div className="min-h-screen px-4 py-6 md:px-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -1528,44 +1547,227 @@ export default function Profils({
             {/* ------------------------------------------------- */}
 
             <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-violet-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-lg">
-                    <Users className="w-5 h-5 text-white" />
+
+              {/* EN-TÊTE */}
+              <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-blue-50 via-violet-50 to-indigo-50">
+
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+
+                  <div className="flex items-center gap-3">
+
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-lg">
+                      <Users className="w-5 h-5 text-white" />
+                    </div>
+
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">
+                        Gestion des utilisateurs
+                      </h2>
+
+                      <p className="text-sm text-slate-500">
+                        Comptes réels, faux comptes et rôles
+                      </p>
+                    </div>
+
                   </div>
 
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900">
-                      Gestion des utilisateurs
-                    </h2>
-                    <p className="text-sm text-slate-500">
-                      Comptes réels, faux comptes et rôles
-                    </p>
+                  {/* COMPTEURS */}
+                  <div className="flex flex-wrap gap-2">
+
+                    <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-blue-200 text-blue-700 text-sm font-semibold shadow-sm">
+                      <User className="w-4 h-4" />
+                      {allUsers.length} utilisateur{allUsers.length > 1 ? "s" : ""}
+                    </span>
+
+                    <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-amber-200 text-amber-700 text-sm font-semibold shadow-sm">
+                      🎭 {allJoueurs.length} faux compte{allJoueurs.length > 1 ? "s" : ""}
+                    </span>
+
+                    <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-emerald-200 text-emerald-700 text-sm font-semibold shadow-sm">
+                      <Link2 className="w-4 h-4" />
+                      {nombreUtilisateursLies} lié
+                      {nombreUtilisateursLies > 1 ? "s" : ""}
+                    </span>
+
                   </div>
+
                 </div>
+
               </div>
 
               <div className="p-6">
-                <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                  <table className="w-full min-w-[700px]">
-                    <thead className="bg-slate-100">
-                      <tr>
-                        <th className="text-left p-4 font-bold text-slate-700">
-                          Nom
-                        </th>
 
-                        <th className="text-left p-4 font-bold text-slate-700">
-                          Rôle
-                        </th>
+                {/* ------------------------------------------------- */}
+                {/* RECHERCHE */}
+                {/* ------------------------------------------------- */}
 
-                        <th className="text-left p-4 font-bold text-slate-700">
-                          Lier à un compte
-                        </th>
-                      </tr>
-                    </thead>
+                <div className="mb-5">
 
-                    <tbody>
-                      {allUsers.map((u) => {
+                  <div className="relative">
+
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+
+                    <input
+                      type="text"
+                      value={rechercheUtilisateur}
+                      onChange={(e) =>
+                        setRechercheUtilisateur(e.target.value)
+                      }
+                      placeholder="Rechercher un utilisateur ou un faux compte..."
+                      className="
+                        w-full
+                        pl-12 pr-4 py-3.5
+                        rounded-2xl
+                        border border-slate-200
+                        bg-slate-50
+                        focus:bg-white
+                        focus:border-violet-500
+                        focus:ring-4
+                        focus:ring-violet-500/10
+                        outline-none
+                        transition
+                      "
+                    />
+
+                    {rechercheUtilisateur && (
+                      <button
+                        type="button"
+                        onClick={() => setRechercheUtilisateur("")}
+                        className="
+                          absolute right-3 top-1/2 -translate-y-1/2
+                          w-8 h-8
+                          rounded-xl
+                          bg-slate-200
+                          text-slate-500
+                          flex items-center justify-center
+                          hover:bg-slate-300
+                          transition
+                        "
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+
+                  </div>
+
+                </div>
+
+                {/* ------------------------------------------------- */}
+                {/* ONGLETS */}
+                {/* ------------------------------------------------- */}
+
+                <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-2xl mb-6">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOngletGestionUsers("utilisateurs")
+                    }
+                    className={`
+                      flex items-center justify-center gap-2
+                      px-4 py-3
+                      rounded-xl
+                      font-semibold
+                      text-sm
+                      transition
+                      ${
+                        ongletGestionUsers === "utilisateurs"
+                          ? "bg-white text-violet-700 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }
+                    `}
+                  >
+                    <User className="w-4 h-4" />
+
+                    Utilisateurs
+
+                    <span
+                      className={`
+                        px-2 py-0.5 rounded-full text-xs
+                        ${
+                          ongletGestionUsers === "utilisateurs"
+                            ? "bg-violet-100 text-violet-700"
+                            : "bg-slate-200 text-slate-600"
+                        }
+                      `}
+                    >
+                      {allUsers.length}
+                    </span>
+
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOngletGestionUsers("joueurs")
+                    }
+                    className={`
+                      flex items-center justify-center gap-2
+                      px-4 py-3
+                      rounded-xl
+                      font-semibold
+                      text-sm
+                      transition
+                      ${
+                        ongletGestionUsers === "joueurs"
+                          ? "bg-white text-amber-700 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }
+                    `}
+                  >
+                    <span className="text-base">
+                      🎭
+                    </span>
+
+                    Faux comptes
+
+                    <span
+                      className={`
+                        px-2 py-0.5 rounded-full text-xs
+                        ${
+                          ongletGestionUsers === "joueurs"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-slate-200 text-slate-600"
+                        }
+                      `}
+                    >
+                      {allJoueurs.length}
+                    </span>
+
+                  </button>
+
+                </div>
+
+                {/* ================================================= */}
+                {/* ONGLET UTILISATEURS */}
+                {/* ================================================= */}
+
+                {ongletGestionUsers === "utilisateurs" && (
+
+                  <div className="space-y-3">
+
+                    {utilisateursFiltres.length === 0 ? (
+
+                      <div className="rounded-2xl bg-slate-50 border border-slate-200 p-8 text-center">
+
+                        <User className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+
+                        <p className="font-semibold text-slate-600">
+                          Aucun utilisateur trouvé
+                        </p>
+
+                        {rechercheUtilisateur && (
+                          <p className="text-sm text-slate-400 mt-1">
+                            Aucun résultat pour « {rechercheUtilisateur} »
+                          </p>
+                        )}
+
+                      </div>
+
+                    ) : (
+
+                      utilisateursFiltres.map((u) => {
+
                         const isCurrentAdmin =
                           u.id === profil.id;
 
@@ -1574,221 +1776,612 @@ export default function Profils({
 
                         const fauxCompteLie =
                           allJoueurs.find(
-                            (j) =>
-                              j.utilisateur_id === u.id
+                            (j) => j.utilisateur_id === u.id
                           );
 
                         return (
-                          <tr
+
+                          <div
                             key={`user-${u.id}`}
-                            className="border-t border-slate-200 hover:bg-violet-50/50 transition"
+                            className="
+                              group
+                              rounded-2xl
+                              border border-slate-200
+                              bg-white
+                              hover:border-violet-200
+                              hover:shadow-lg
+                              transition
+                              overflow-hidden
+                            "
                           >
-                            <td className="p-4 font-semibold text-slate-800">
-                              {u.nom}
-                            </td>
 
-                            <td className="p-4">
-                              {isCurrentAdmin ||
-                              isAdminUser ? (
-                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-100 text-violet-700 rounded-xl font-semibold text-sm">
-                                  <ShieldCheck className="w-4 h-4" />
-                                  {u.role}
-                                </span>
-                              ) : (
-                                <select
-                                  value={u.role}
-                                  onChange={(e) => {
-                                    const newRole =
-                                      e.target.value;
+                            <div className="p-4 md:p-5">
 
-                                    if (
-                                      window.confirm(
-                                        `Changer le rôle de ${u.nom} en "${newRole}" ?`
-                                      )
-                                    ) {
-                                      updateUserRole(
-                                        u.id,
-                                        newRole
-                                      );
-                                    }
-                                  }}
-                                  className="px-3 py-2 rounded-xl border border-slate-200 bg-white"
-                                >
-                                  <option value="user">
-                                    user
-                                  </option>
+                              <div className="flex flex-col lg:flex-row lg:items-center gap-4">
 
-                                  <option value="membre">
-                                    membre
-                                  </option>
+                                {/* IDENTITÉ */}
+                                <div className="flex items-center gap-4 flex-1 min-w-0">
 
-                                  <option value="ludo">
-                                    ludo
-                                  </option>
+                                  <div className="
+                                    w-12 h-12
+                                    shrink-0
+                                    rounded-2xl
+                                    bg-gradient-to-br from-violet-100 to-indigo-100
+                                    flex items-center justify-center
+                                  ">
+                                    <User className="w-5 h-5 text-violet-600" />
+                                  </div>
 
-                                  <option value="ludoplus">
-                                    ludoplus
-                                  </option>
+                                  <div className="min-w-0">
 
-                                  <option value="admin">
-                                    admin
-                                  </option>
-                                </select>
-                              )}
-                            </td>
+                                    <div className="flex flex-wrap items-center gap-2">
 
-                            <td className="p-4">
-                              {fauxCompteLie ? (
-                                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 font-medium text-sm">
-                                  <Link2 className="w-4 h-4" />
-                                  {fauxCompteLie.nom}
-                                </span>
-                              ) : (
-                                <span className="text-slate-400">
-                                  —
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                                      <p className="font-bold text-slate-900 truncate">
+                                        {u.nom || "Sans nom"}
+                                      </p>
 
-                      {allJoueurs.map((joueur) => (
-                        <tr
-                          key={`joueur-${joueur.id}`}
-                          className="border-t border-amber-200 bg-amber-50/70 hover:bg-amber-100/70 transition"
-                        >
-                          <td className="p-4 font-semibold text-amber-900">
-                            <span className="inline-flex items-center gap-2">
-                              🎭 {joueur.nom}
-                            </span>
-                          </td>
+                                      {isCurrentAdmin && (
+                                        <span className="
+                                          px-2 py-0.5
+                                          rounded-full
+                                          bg-violet-100
+                                          text-violet-700
+                                          text-xs
+                                          font-bold
+                                        ">
+                                          Moi
+                                        </span>
+                                      )}
 
-                          <td className="p-4">
-                            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-200 text-amber-900 rounded-xl font-semibold text-sm">
-                              Faux compte
-                            </span>
-                          </td>
+                                    </div>
 
-                          <td className="p-4">
-                            <select
-                              value={
-                                joueur.utilisateur_id || ""
-                              }
-                              onChange={(e) =>
-                                updateJoueurUtilisateur(
-                                  joueur.id,
-                                  e.target.value
-                                )
-                              }
-                              className="w-full px-3 py-2 rounded-xl border border-amber-200 bg-white"
-                            >
-                              <option value="">
-                                -- Aucun compte lié --
-                              </option>
+                                    <p className="text-xs text-slate-400 mt-0.5 break-all">
+                                      {u.id}
+                                    </p>
 
-                              {allUsers.map((u) => (
-                                <option
-                                  key={u.id}
-                                  value={u.id}
-                                  disabled={allJoueurs.some(
-                                    (j) =>
-                                      j.id !== joueur.id &&
-                                      j.utilisateur_id ===
-                                        u.id
+                                  </div>
+
+                                </div>
+
+                                {/* RÔLE */}
+                                <div className="lg:w-56">
+
+                                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+                                    Rôle
+                                  </label>
+
+                                  {isCurrentAdmin || isAdminUser ? (
+
+                                    <div className="
+                                      inline-flex items-center gap-2
+                                      px-3 py-2
+                                      rounded-xl
+                                      bg-violet-100
+                                      text-violet-700
+                                      font-semibold
+                                      text-sm
+                                    ">
+                                      <ShieldCheck className="w-4 h-4" />
+                                      {u.role}
+                                    </div>
+
+                                  ) : (
+
+                                    <select
+                                      value={u.role}
+                                      onChange={(e) => {
+
+                                        const newRole =
+                                          e.target.value;
+
+                                        if (
+                                          window.confirm(
+                                            `Changer le rôle de ${u.nom} en "${newRole}" ?`
+                                          )
+                                        ) {
+
+                                          updateUserRole(
+                                            u.id,
+                                            newRole
+                                          );
+
+                                        }
+
+                                      }}
+                                      className="
+                                        w-full
+                                        px-3 py-2.5
+                                        rounded-xl
+                                        border border-slate-200
+                                        bg-slate-50
+                                        font-medium
+                                        text-slate-700
+                                        focus:bg-white
+                                        focus:border-violet-500
+                                        focus:ring-4
+                                        focus:ring-violet-500/10
+                                        outline-none
+                                        transition
+                                      "
+                                    >
+
+                                      <option value="user">
+                                        user
+                                      </option>
+
+                                      <option value="membre">
+                                        membre
+                                      </option>
+
+                                      <option value="ludo">
+                                        ludo
+                                      </option>
+
+                                      <option value="ludoplus">
+                                        ludoplus
+                                      </option>
+
+                                      <option value="admin">
+                                        admin
+                                      </option>
+
+                                    </select>
+
                                   )}
-                                >
-                                  {u.nom}
-                                  {u.id === profil.id
-                                    ? " (moi)"
-                                    : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
 
-                {/* ROLES */}
-                <div className="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <ShieldCheck className="w-5 h-5 text-violet-600" />
+                                </div>
 
-                    <h3 className="font-bold text-lg text-slate-900">
-                      Rôles
-                    </h3>
+                                {/* LIAISON */}
+                                <div className="lg:w-64">
+
+                                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+                                    Faux compte lié
+                                  </label>
+
+                                  {fauxCompteLie ? (
+
+                                    <div className="
+                                      flex items-center gap-2
+                                      px-3 py-2.5
+                                      rounded-xl
+                                      bg-emerald-50
+                                      border border-emerald-200
+                                      text-emerald-700
+                                      font-semibold
+                                      text-sm
+                                    ">
+                                      <Link2 className="w-4 h-4 shrink-0" />
+                                      <span className="truncate">
+                                        {fauxCompteLie.nom}
+                                      </span>
+                                    </div>
+
+                                  ) : (
+
+                                    <div className="
+                                      flex items-center gap-2
+                                      px-3 py-2.5
+                                      rounded-xl
+                                      bg-slate-50
+                                      border border-slate-200
+                                      text-slate-400
+                                      text-sm
+                                    ">
+                                      <Unlink2 className="w-4 h-4" />
+                                      Aucun faux compte lié
+                                    </div>
+
+                                  )}
+
+                                </div>
+
+                              </div>
+
+                            </div>
+
+                          </div>
+
+                        );
+
+                      })
+
+                    )}
+
                   </div>
 
-                  <ul className="space-y-3 text-sm text-slate-700">
-                    <li>
-                      <strong>User</strong> : peut uniquement
-                      s'inscrire/se désinscrire à une partie
-                    </li>
+                )}
 
-                    <li>
-                      <strong>Membre</strong> : User + peut
-                      organiser des parties et{" "}
-                      <strong>pour ses propres parties</strong> :
-                      les modifier & supprimer (pour les parties à
-                      venir) et ajouter des inscrits, gérer le
-                      classement et les scores (pour les parties
-                      archivées)
-                    </li>
+                {/* ================================================= */}
+                {/* ONGLET FAUX COMPTES */}
+                {/* ================================================= */}
 
-                    <li>
-                      <strong>Ludo</strong> : Membre + peut ajouter
-                      des jeux à la Ludothèque et{" "}
-                      <strong>pour ses propres jeux</strong> :
-                      les modifier
-                    </li>
+                {ongletGestionUsers === "joueurs" && (
 
-                    <li>
-                      <strong>Ludoplus</strong> : Ludo + peut
-                      modifier tous les jeux de la Ludothèque
-                    </li>
+                  <div className="space-y-3">
 
-                    <li>
-                      <strong>Admin</strong> : Ludoplus + peut
-                      gérer les rôles des Utilisateurs + peut
-                      gérer le classement et les scores de toutes
-                      les parties archivées ainsi qu'y ajouter des
-                      inscrits
-                    </li>
-                  </ul>
+                    {joueursFiltres.length === 0 ? (
 
-                  <p className="mt-5 font-semibold text-slate-800">
-                    Tous les utilisateurs peuvent par défaut
-                    (en fonction de leurs rôles) :
-                  </p>
+                      <div className="rounded-2xl bg-amber-50 border border-amber-200 p-8 text-center">
 
-                  <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-slate-700">
-                    <li>
-                      Modifier les jeux qu'ils ajoutent eux-mêmes
-                      dans la Ludothèque
-                    </li>
+                        <div className="text-4xl mb-3">
+                          🎭
+                        </div>
 
-                    <li>
-                      Pour les parties qu'ils organisent :
-                      Modifier/supprimer les parties
-                    </li>
+                        <p className="font-semibold text-amber-800">
+                          Aucun faux compte trouvé
+                        </p>
 
-                    <li>
-                      Pour les parties qu'ils organisent :
-                      Ajouter de nouveaux inscrits (une fois la
-                      partie archivée)
-                    </li>
+                        {rechercheUtilisateur && (
+                          <p className="text-sm text-amber-600 mt-1">
+                            Aucun résultat pour « {rechercheUtilisateur} »
+                          </p>
+                        )}
 
-                    <li>
-                      Pour les parties qu'ils organisent :
-                      Gérer le classement et les scores des
-                      inscrits (une fois la partie archivée)
-                    </li>
-                  </ul>
+                      </div>
+
+                    ) : (
+
+                      joueursFiltres.map((joueur) => {
+
+                        const compteLie =
+                          allUsers.find(
+                            (u) =>
+                              u.id === joueur.utilisateur_id
+                          );
+
+                        return (
+
+                          <div
+                            key={`joueur-${joueur.id}`}
+                            className="
+                              rounded-2xl
+                              border border-amber-200
+                              bg-gradient-to-r from-amber-50 to-orange-50
+                              overflow-hidden
+                              hover:shadow-lg
+                              transition
+                            "
+                          >
+
+                            <div className="p-4 md:p-5">
+
+                              <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+
+                                {/* IDENTITÉ */}
+                                <div className="flex items-center gap-4 flex-1 min-w-0">
+
+                                  <div className="
+                                    w-12 h-12
+                                    shrink-0
+                                    rounded-2xl
+                                    bg-amber-100
+                                    flex items-center justify-center
+                                    text-xl
+                                  ">
+                                    🎭
+                                  </div>
+
+                                  <div className="min-w-0">
+
+                                    <div className="flex flex-wrap items-center gap-2">
+
+                                      <p className="font-bold text-amber-900 truncate">
+                                        {joueur.nom}
+                                      </p>
+
+                                      <span className="
+                                        px-2 py-0.5
+                                        rounded-full
+                                        bg-amber-200
+                                        text-amber-800
+                                        text-xs
+                                        font-bold
+                                      ">
+                                        Faux compte
+                                      </span>
+
+                                    </div>
+
+                                    <p className="text-xs text-amber-700/70 mt-1">
+                                      ID : {joueur.id}
+                                    </p>
+
+                                    {!joueur.actif && (
+                                      <span className="
+                                        inline-flex
+                                        mt-2
+                                        px-2 py-1
+                                        rounded-full
+                                        bg-red-100
+                                        text-red-700
+                                        text-xs
+                                        font-semibold
+                                      ">
+                                        Inactif
+                                      </span>
+                                    )}
+
+                                  </div>
+
+                                </div>
+
+                                {/* COMPTE LIÉ */}
+                                <div className="lg:w-80">
+
+                                  <label className="block text-xs font-semibold text-amber-800 mb-1.5">
+                                    Compte utilisateur associé
+                                  </label>
+
+                                  <select
+                                    value={
+                                      joueur.utilisateur_id || ""
+                                    }
+                                    onChange={(e) =>
+                                      updateJoueurUtilisateur(
+                                        joueur.id,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="
+                                      w-full
+                                      px-3 py-2.5
+                                      rounded-xl
+                                      border border-amber-200
+                                      bg-white
+                                      text-slate-700
+                                      font-medium
+                                      focus:border-amber-500
+                                      focus:ring-4
+                                      focus:ring-amber-500/10
+                                      outline-none
+                                      transition
+                                    "
+                                  >
+
+                                    <option value="">
+                                      -- Aucun compte lié --
+                                    </option>
+
+                                    {allUsers.map((u) => (
+
+                                      <option
+                                        key={u.id}
+                                        value={u.id}
+                                        disabled={
+                                          allJoueurs.some(
+                                            (j) =>
+                                              j.id !== joueur.id &&
+                                              j.utilisateur_id ===
+                                                u.id
+                                          )
+                                        }
+                                      >
+
+                                        {u.nom}
+
+                                        {u.id === profil.id
+                                          ? " (moi)"
+                                          : ""}
+
+                                        {u.id === joueur.utilisateur_id
+                                          ? " ✓"
+                                          : ""}
+
+                                      </option>
+
+                                    ))}
+
+                                  </select>
+
+                                </div>
+
+                              </div>
+
+                              {/* ÉTAT DE LA LIAISON */}
+                              <div className="mt-4 pt-4 border-t border-amber-200">
+
+                                {compteLie ? (
+
+                                  <div className="
+                                    flex flex-wrap
+                                    items-center
+                                    gap-2
+                                    text-sm
+                                    text-emerald-700
+                                  ">
+
+                                    <span className="
+                                      inline-flex
+                                      items-center
+                                      gap-2
+                                      px-3 py-1.5
+                                      rounded-xl
+                                      bg-emerald-50
+                                      border border-emerald-200
+                                      font-semibold
+                                    ">
+                                      <Link2 className="w-4 h-4" />
+                                      Lié à {compteLie.nom}
+                                    </span>
+
+                                    <span className="text-slate-500">
+                                      Les anciennes parties et statistiques
+                                      sont rattachées à ce compte.
+                                    </span>
+
+                                  </div>
+
+                                ) : (
+
+                                  <div className="
+                                    inline-flex
+                                    items-center
+                                    gap-2
+                                    px-3 py-1.5
+                                    rounded-xl
+                                    bg-white/70
+                                    border border-amber-200
+                                    text-amber-700
+                                    text-sm
+                                    font-medium
+                                  ">
+                                    <Unlink2 className="w-4 h-4" />
+                                    Ce faux compte n'est lié à aucun compte utilisateur
+                                  </div>
+
+                                )}
+
+                              </div>
+
+                            </div>
+
+                          </div>
+
+                        );
+
+                      })
+
+                    )}
+
+                  </div>
+
+                )}
+
+                {/* ================================================= */}
+                {/* ROLES */}
+                {/* ================================================= */}
+
+                <div className="mt-8 rounded-2xl bg-slate-50 border border-slate-200 p-6">
+
+                  <div className="flex items-center gap-3 mb-5">
+
+                    <div className="
+                      w-10 h-10
+                      rounded-xl
+                      bg-violet-100
+                      flex items-center justify-center
+                    ">
+                      <ShieldCheck className="w-5 h-5 text-violet-600" />
+                    </div>
+
+                    <div>
+
+                      <h3 className="font-bold text-lg text-slate-900">
+                        Rôles et permissions
+                      </h3>
+
+                      <p className="text-sm text-slate-500">
+                        Fonctionnement des différents niveaux d'accès
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="space-y-3 text-sm">
+
+                    <div className="p-4 rounded-xl bg-white border border-slate-200">
+                      <strong className="text-slate-900">
+                        User
+                      </strong>
+                      <span className="text-slate-600">
+                        {" "} : peut uniquement s'inscrire/se désinscrire à une partie
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white border border-slate-200">
+                      <strong className="text-slate-900">
+                        Membre
+                      </strong>
+                      <span className="text-slate-600">
+                        {" "} : User + peut organiser des parties et{" "}
+                      </span>
+                      <strong className="text-slate-700">
+                        pour ses propres parties
+                      </strong>
+                      <span className="text-slate-600">
+                        {" "} : les modifier & supprimer (pour les parties à venir)
+                        et ajouter des inscrits, gérer le classement et les scores
+                        (pour les parties archivées)
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white border border-slate-200">
+                      <strong className="text-slate-900">
+                        Ludo
+                      </strong>
+                      <span className="text-slate-600">
+                        {" "} : Membre + peut ajouter des jeux à la Ludothèque et{" "}
+                      </span>
+                      <strong className="text-slate-700">
+                        pour ses propres jeux
+                      </strong>
+                      <span className="text-slate-600">
+                        {" "} : les modifier
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white border border-slate-200">
+                      <strong className="text-slate-900">
+                        Ludoplus
+                      </strong>
+                      <span className="text-slate-600">
+                        {" "} : Ludo + peut modifier tous les jeux de la Ludothèque
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-violet-50 border border-violet-200">
+                      <strong className="text-violet-900">
+                        Admin
+                      </strong>
+                      <span className="text-violet-800">
+                        {" "} : Ludoplus + peut gérer les rôles des Utilisateurs +
+                        peut gérer le classement et les scores de toutes les parties
+                        archivées ainsi qu'y ajouter des inscrits
+                      </span>
+                    </div>
+
+                  </div>
+
+                  <div className="mt-6 pt-5 border-t border-slate-200">
+
+                    <p className="font-semibold text-slate-800 mb-3">
+                      Tous les utilisateurs peuvent par défaut
+                      (en fonction de leurs rôles) :
+                    </p>
+
+                    <ul className="space-y-2 text-sm text-slate-700">
+
+                      <li className="flex gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        Modifier les jeux qu'ils ajoutent eux-mêmes dans la Ludothèque
+                      </li>
+
+                      <li className="flex gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        Pour les parties qu'ils organisent : modifier/supprimer les parties
+                      </li>
+
+                      <li className="flex gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        Pour les parties qu'ils organisent : ajouter de nouveaux inscrits
+                        (une fois la partie archivée)
+                      </li>
+
+                      <li className="flex gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        Pour les parties qu'ils organisent : gérer le classement et les
+                        scores des inscrits (une fois la partie archivée)
+                      </li>
+
+                    </ul>
+
+                  </div>
+
                 </div>
+
               </div>
+
             </section>
 
             {/* ------------------------------------------------- */}
