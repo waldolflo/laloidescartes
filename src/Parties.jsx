@@ -414,7 +414,6 @@ export default function Parties({ user, authUser }) {
       return;
     }
 
-    // Sauvegarde du style avant déplacement
     const ancienStyle = {
       position: element.style.position,
       left: element.style.left,
@@ -448,7 +447,7 @@ export default function Parties({ user, authUser }) {
 
       const dataUrl = await toPng(element, {
         pixelRatio: 2,
-        cacheBust: true,
+        cacheBust: false,
         backgroundColor: "#ffffff",
       });
 
@@ -556,23 +555,29 @@ export default function Parties({ user, authUser }) {
           }}
         >
           {/* ========================================================
-              IMAGE
+              EN-TÊTE
               ======================================================== */}
 
-          <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+          <div
+            className={`bg-gradient-to-br ${couleurParties} px-5 py-5 text-white`}
+          >
+            <div className="flex items-center gap-3">
 
-            {partieAPartager.jeux?.couverture_url ? (
-              <img
-                src={partieAPartager.jeux.couverture_url}
-                alt={partieAPartager.jeux?.nom || "Jeu"}
-                className="w-full h-52 object-contain rounded-xl"
-              />
-            ) : (
-              <div className="h-52 flex items-center justify-center text-gray-300">
-                <Dices size={48} />
+              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
+                <Dices size={27} />
               </div>
-            )}
 
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-purple-200">
+                  La Loi des Cartes
+                </div>
+
+                <div className="text-xl font-black">
+                  NOUVELLE PARTIE
+                </div>
+              </div>
+
+            </div>
           </div>
 
           {/* ========================================================
@@ -617,22 +622,42 @@ export default function Parties({ user, authUser }) {
 
             </div>
 
-            {/* Places */}
+            {/* Durée + places */}
 
-            {partieAPartager.jeux?.max_joueurs > 0 && (
-              <div className="mt-2 bg-emerald-50 rounded-xl px-3 py-2.5">
+            <div className="grid grid-cols-2 gap-2 mt-2">
 
-                <div className="text-[10px] uppercase font-bold text-emerald-600">
-                  👥 Places
+              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
+
+                <div className="text-[10px] uppercase font-bold text-gray-400">
+                  ⏱️ Durée
                 </div>
 
                 <div className="text-sm font-black text-gray-800">
-                  {partieAPartager.inscrits?.length || 0}/
-                  {partieAPartager.jeux.max_joueurs}
+                  {partieAPartager.jeux?.duree
+                    ? `${partieAPartager.jeux.duree} min`
+                    : "—"}
                 </div>
 
               </div>
-            )}
+
+              {partieAPartager.jeux?.max_joueurs > 0 ? (
+                <div className="bg-emerald-50 rounded-xl px-3 py-2.5">
+
+                  <div className="text-[10px] uppercase font-bold text-emerald-600">
+                    👥 Places
+                  </div>
+
+                  <div className="text-sm font-black text-gray-800">
+                    {partieAPartager.inscrits?.length || 0}/
+                    {partieAPartager.jeux.max_joueurs}
+                  </div>
+
+                </div>
+              ) : (
+                <div />
+              )}
+
+            </div>
 
             {/* Lieu */}
 
@@ -664,6 +689,39 @@ export default function Parties({ user, authUser }) {
                   {partieAPartager.description}
                 </div>
 
+              </div>
+            )}
+
+            {/* Statut places */}
+
+            {partieAPartager.jeux?.max_joueurs > 0 && (
+              <div
+                className={`mt-3 text-xs font-bold text-center rounded-lg py-2 ${
+                  (partieAPartager.inscrits?.length || 0) >=
+                  partieAPartager.jeux.max_joueurs
+                    ? "bg-red-50 text-red-600"
+                    : "bg-emerald-50 text-emerald-600"
+                }`}
+              >
+                {(partieAPartager.inscrits?.length || 0) >=
+                partieAPartager.jeux.max_joueurs
+                  ? "🔴 Partie complète"
+                  : `🟢 ${
+                      partieAPartager.jeux.max_joueurs -
+                      (partieAPartager.inscrits?.length || 0)
+                    } place${
+                      partieAPartager.jeux.max_joueurs -
+                        (partieAPartager.inscrits?.length || 0) >
+                      1
+                        ? "s"
+                        : ""
+                    } restante${
+                      partieAPartager.jeux.max_joueurs -
+                        (partieAPartager.inscrits?.length || 0) >
+                      1
+                        ? "s"
+                        : ""
+                    }`}
               </div>
             )}
 
