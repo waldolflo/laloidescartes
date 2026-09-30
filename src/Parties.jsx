@@ -513,8 +513,7 @@ export default function Parties({ user, authUser }) {
       window.open(whatsappUrl, "_blank");
 
     } finally {
-        setPartieAPartager(null);
-      }
+      setPartieAPartager(null);
     }
   };
 
