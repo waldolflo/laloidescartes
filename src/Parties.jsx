@@ -399,7 +399,7 @@ export default function Parties({ user, authUser }) {
 
       {!headerMasque && (
         <section
-          className={`relative max-w-7xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurParties}`}
+          className={`relative max-w-[1600px] mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurParties}`}
         >
 
           {/* Décor */}
@@ -494,7 +494,7 @@ export default function Parties({ user, authUser }) {
           RECHERCHE
           ======================================================== */}
 
-      <div className="max-w-7xl mx-auto mt-6">
+      <div className="max-w-[1600px] mx-auto mt-6">
 
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3">
 
@@ -729,7 +729,7 @@ export default function Parties({ user, authUser }) {
           TITRE RESULTATS
           ======================================================== */}
 
-      <div className="max-w-7xl mx-auto mt-8 mb-4 flex items-center justify-between">
+      <div className="max-w-[1600px] mx-auto mt-8 mb-4 flex items-center justify-between">
 
         <div>
 
@@ -750,7 +750,7 @@ export default function Parties({ user, authUser }) {
           LISTE DES PARTIES
           ======================================================== */}
 
-      <div className="max-w-7xl mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="max-w-[1600px] mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
 
         {filterParties(parties).map((p) => {
 

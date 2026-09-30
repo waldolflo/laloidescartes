@@ -748,7 +748,7 @@ export default function Statistiques({ user }) {
 
       {!headerMasque && (
         <section
-          className={`relative max-w-7xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurStatistiques}`}
+          className={`relative max-w-[1600px] mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurStatistiques}`}
         >
 
           {/* Décor */}
@@ -853,7 +853,7 @@ export default function Statistiques({ user }) {
           STATISTIQUES GÉNÉRALES
       ======================================================== */}
 
-      <div className="max-w-7xl mx-auto mt-8">
+      <div className="max-w-[1600px] mx-auto mt-8">
 
         <div className="mb-4">
 
@@ -1036,7 +1036,7 @@ export default function Statistiques({ user }) {
           CLASSEMENT DU MOIS
       ======================================================== */}
 
-      <div className="max-w-7xl mx-auto mt-8">
+      <div className="max-w-[1600px] mx-auto mt-8">
 
         <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-100 overflow-hidden">
 
@@ -1081,7 +1081,7 @@ export default function Statistiques({ user }) {
           CLASSEMENT ANNUEL
       ======================================================== */}
 
-      <div className="max-w-7xl mx-auto mt-6">
+      <div className="max-w-[1600px] mx-auto mt-6">
 
         <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-100 overflow-hidden">
 
@@ -1123,7 +1123,7 @@ export default function Statistiques({ user }) {
           CLASSEMENT GÉNÉRAL
       ======================================================== */}
 
-      <div className="max-w-7xl mx-auto mt-6 mb-8">
+      <div className="max-w-[1600px] mx-auto mt-6 mb-8">
 
         <div className="bg-white rounded-[1.5rem] shadow-lg border border-gray-100 overflow-hidden">
 
@@ -1166,7 +1166,7 @@ export default function Statistiques({ user }) {
       ======================================================== */}
 
       {userRole === "admin" && (
-        <div className="max-w-7xl mx-auto mt-6">
+        <div className="max-w-[1600px] mx-auto mt-6">
 
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3">
 
