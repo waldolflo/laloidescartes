@@ -1073,7 +1073,7 @@ export default function Profils({
 
   return (
     <div className="min-h-screen px-4 py-6 md:px-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
 
         {/* ===================================================== */}
         {/* HERO */}
