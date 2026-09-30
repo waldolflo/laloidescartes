@@ -357,7 +357,7 @@ export default function Parties({ user, authUser }) {
     const lienPartie = `${window.location.origin}/parties?partie=${partie.id}`;
 
     // ============================================================
-    // TEXTE WHATSAPP
+    // TEXTE WHATSAPP — INCHANGÉ
     // ============================================================
 
     let message = `🎲 *Nouvelle partie — La Loi des Cartes* 🎲\n🎯 *${
@@ -389,12 +389,12 @@ export default function Parties({ user, authUser }) {
     message += `\n\n👉 *S'inscrire / voir la partie :*\n${lienPartie}`;
 
     // ============================================================
-    // PRÉPARATION DE L'IMAGE
+    // PRÉPARATION DE LA CARTE
     // ============================================================
 
     setPartieAPartager(partie);
 
-    // Laisse React rendre le bloc caché
+    // Laisse React afficher la carte
     await new Promise((resolve) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(resolve);
@@ -404,9 +404,8 @@ export default function Parties({ user, authUser }) {
     const element = partagePartieRef.current;
 
     if (!element) {
-      console.error("Élément d'export de la partie introuvable");
+      console.error("Élément de partage introuvable");
 
-      // Fallback : partage WhatsApp classique
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
         message
       )}`;
@@ -415,6 +414,7 @@ export default function Parties({ user, authUser }) {
       return;
     }
 
+    // Sauvegarde du style avant déplacement
     const ancienStyle = {
       position: element.style.position,
       left: element.style.left,
@@ -425,9 +425,13 @@ export default function Parties({ user, authUser }) {
     };
 
     try {
+      // ============================================================
+      // RENDRE LA CARTE CAPTURABLE
+      // ============================================================
+
       element.style.position = "fixed";
-      element.style.left = "0";
-      element.style.top = "0";
+      element.style.left = "20px";
+      element.style.top = "20px";
       element.style.zIndex = "999999";
       element.style.opacity = "1";
       element.style.pointerEvents = "none";
@@ -439,53 +443,21 @@ export default function Parties({ user, authUser }) {
       });
 
       // ============================================================
-      // CAPTURE PNG
+      // CAPTURE DU BLOC
       // ============================================================
 
       const dataUrl = await toPng(element, {
-        width: 1080,
-        height: 1080,
-        pixelRatio: 1,
+        pixelRatio: 2,
         cacheBust: true,
-        backgroundColor: "#111827",
+        backgroundColor: "#ffffff",
       });
 
       // ============================================================
-      // DATA URL → BLOB
+      // DATA URL → FICHIER
       // ============================================================
 
-      const [header, base64] = dataUrl.split(",");
-
-      const mimeMatch = header.match(/data:(.*?);base64/);
-      const mimeType = mimeMatch
-        ? mimeMatch[1]
-        : "image/png";
-
-      const byteCharacters = atob(base64);
-      const byteArrays = [];
-
-      for (
-        let offset = 0;
-        offset < byteCharacters.length;
-        offset += 1024
-      ) {
-        const slice = byteCharacters.slice(
-          offset,
-          offset + 1024
-        );
-
-        const byteNumbers = new Array(slice.length);
-
-        for (let i = 0; i < slice.length; i++) {
-          byteNumbers[i] = slice.charCodeAt(i);
-        }
-
-        byteArrays.push(new Uint8Array(byteNumbers));
-      }
-
-      const blob = new Blob(byteArrays, {
-        type: mimeType,
-      });
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
 
       const fichier = new File(
         [blob],
@@ -516,7 +488,7 @@ export default function Parties({ user, authUser }) {
       }
 
       // ============================================================
-      // FALLBACK : WHATSAPP
+      // FALLBACK WHATSAPP
       // ============================================================
 
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
@@ -531,7 +503,10 @@ export default function Parties({ user, authUser }) {
         error
       );
 
-      // Fallback WhatsApp texte
+      // ============================================================
+      // FALLBACK WHATSAPP TEXTE
+      // ============================================================
+
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
         message
       )}`;
@@ -539,13 +514,18 @@ export default function Parties({ user, authUser }) {
       window.open(whatsappUrl, "_blank");
 
     } finally {
+      // ============================================================
+      // RESTAURATION
+      // ============================================================
+
       if (element) {
         element.style.position = ancienStyle.position;
         element.style.left = ancienStyle.left;
         element.style.top = ancienStyle.top;
         element.style.zIndex = ancienStyle.zIndex;
         element.style.opacity = ancienStyle.opacity;
-        element.style.pointerEvents = ancienStyle.pointerEvents;
+        element.style.pointerEvents =
+          ancienStyle.pointerEvents;
       }
 
       setPartieAPartager(null);
@@ -559,9 +539,9 @@ export default function Parties({ user, authUser }) {
   return (
     <>
       {/* ============================================================
-        IMAGE DE PARTAGE D'UNE PARTIE
-        1080 × 1080
-        ============================================================ */}
+          CARTE UTILISÉE POUR LE PARTAGE
+          ============================================================ */}
+
       {partieAPartager && (
         <div
           ref={partagePartieRef}
@@ -569,260 +549,139 @@ export default function Parties({ user, authUser }) {
             position: "fixed",
             left: "-10000px",
             top: "0",
-            width: "1080px",
-            height: "1080px",
+            width: "420px",
             overflow: "hidden",
+            borderRadius: "24px",
+            background: "#ffffff",
           }}
         >
+          {/* ========================================================
+              IMAGE
+              ======================================================== */}
 
-          <div
-            className={`relative w-full h-full bg-gradient-to-br ${couleurParties} text-white`}
-          >
+          <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4">
 
-            {/* ========================================================
-                DÉCOR
-                ======================================================== */}
-
-            <div className="absolute inset-0 overflow-hidden">
-
+            {partieAPartager.jeux?.couverture_url ? (
               <img
-                src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
-                alt=""
-                crossOrigin="anonymous"
-                className="absolute -right-32 top-1/3 w-[600px] opacity-[0.035] rotate-[-12deg]"
+                src={partieAPartager.jeux.couverture_url}
+                alt={partieAPartager.jeux?.nom || "Jeu"}
+                className="w-full h-52 object-contain rounded-xl"
               />
+            ) : (
+              <div className="h-52 flex items-center justify-center text-gray-300">
+                <Dices size={48} />
+              </div>
+            )}
 
-              <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-3xl" />
+          </div>
 
-              <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-3xl" />
+          {/* ========================================================
+              CONTENU
+              ======================================================== */}
 
-              <div className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-fuchsia-500/10 blur-3xl" />
+          <div className="p-5">
+
+            {/* Jeu */}
+
+            <h2 className="text-2xl font-black text-gray-900 text-center leading-tight">
+              {partieAPartager.jeux?.nom || "Jeu"}
+            </h2>
+
+            {/* Date + heure */}
+
+            <div className="grid grid-cols-2 gap-2 mt-4">
+
+              <div className="bg-purple-50 rounded-xl px-3 py-2.5">
+
+                <div className="text-[10px] uppercase font-bold text-purple-500">
+                  📅 Date
+                </div>
+
+                <div className="text-sm font-black text-gray-800 capitalize">
+                  {formatDate(partieAPartager.date_partie)}
+                </div>
+
+              </div>
+
+              <div className="bg-indigo-50 rounded-xl px-3 py-2.5">
+
+                <div className="text-[10px] uppercase font-bold text-indigo-500">
+                  🕐 Heure
+                </div>
+
+                <div className="text-sm font-black text-gray-800">
+                  {formatHeure(partieAPartager.heure_partie)}
+                </div>
+
+              </div>
 
             </div>
 
+            {/* Places */}
 
-            {/* ========================================================
-                CONTENU
-                ======================================================== */}
+            {partieAPartager.jeux?.max_joueurs > 0 && (
+              <div className="mt-2 bg-emerald-50 rounded-xl px-3 py-2.5">
 
-            <div className="relative h-full flex flex-col px-12 py-10">
+                <div className="text-[10px] uppercase font-bold text-emerald-600">
+                  👥 Places
+                </div>
 
-              {/* ======================================================
-                  LOGO
-                  ====================================================== */}
-
-              <div className="flex justify-center">
-
-                <div className="bg-white rounded-3xl px-8 py-4 shadow-2xl">
-
-                  <img
-                    src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
-                    alt="La Loi des Cartes"
-                    crossOrigin="anonymous"
-                    className="h-24 w-auto object-contain"
-                  />
-
+                <div className="text-sm font-black text-gray-800">
+                  {partieAPartager.inscrits?.length || 0}/
+                  {partieAPartager.jeux.max_joueurs}
                 </div>
 
               </div>
+            )}
 
+            {/* Lieu */}
 
-              {/* ======================================================
-                  TITRE
-                  ====================================================== */}
+            {partieAPartager.lieu && (
+              <div className="mt-2 flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
 
-              <div className="text-center mt-7">
+                <MapPin
+                  size={16}
+                  className="text-purple-600 flex-shrink-0"
+                />
 
-                <div className="text-purple-200 text-xl font-bold uppercase tracking-[0.25em]">
-                  🎲 La Loi des Cartes
+                <span className="text-sm font-bold text-gray-700">
+                  {partieAPartager.lieu}
+                </span>
+
+              </div>
+            )}
+
+            {/* Description */}
+
+            {partieAPartager.description && (
+              <div className="mt-2 bg-gray-50 rounded-xl px-3 py-2.5">
+
+                <div className="text-[10px] uppercase font-bold text-gray-400">
+                  📝 Description
                 </div>
 
-                <div className="text-6xl font-black leading-none mt-3">
-                  NOUVELLE PARTIE
+                <div className="text-sm font-semibold text-gray-700 mt-0.5">
+                  {partieAPartager.description}
                 </div>
 
               </div>
+            )}
 
+            {/* Signature */}
 
-              {/* ======================================================
-                  BLOC PRINCIPAL
-                  ====================================================== */}
+            <div className="mt-4 pt-3 border-t border-gray-100 text-center">
 
-              <div className="mt-8 bg-white rounded-[2rem] shadow-2xl overflow-hidden text-gray-900">
-
-                {/* IMAGE DU JEU */}
-
-                <div className="relative h-[300px] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
-
-                  {partieAPartager.jeux?.couverture_url ? (
-                    <img
-                      src={partieAPartager.jeux.couverture_url}
-                      alt={partieAPartager.jeux?.nom || "Jeu"}
-                      crossOrigin="anonymous"
-                      className="max-h-full max-w-full object-contain rounded-2xl"
-                    />
-                  ) : (
-                    <div className="text-gray-300 text-7xl">
-                      🎲
-                    </div>
-                  )}
-
-                </div>
-
-
-                {/* INFORMATIONS */}
-
-                <div className="px-7 pt-4 pb-6">
-
-                  <h2 className="text-4xl font-black text-center leading-tight">
-                    {partieAPartager.jeux?.nom || "Jeu"}
-                  </h2>
-
-
-                  {/* DATE + HEURE */}
-
-                  <div className="grid grid-cols-2 gap-4 mt-6">
-
-                    <div className="rounded-2xl bg-purple-50 p-4">
-
-                      <div className="text-sm uppercase tracking-wide font-bold text-purple-500">
-                        📅 Date
-                      </div>
-
-                      <div className="text-xl font-black mt-1 capitalize">
-                        {formatDate(
-                          partieAPartager.date_partie
-                        )}
-                      </div>
-
-                    </div>
-
-
-                    <div className="rounded-2xl bg-indigo-50 p-4">
-
-                      <div className="text-sm uppercase tracking-wide font-bold text-indigo-500">
-                        🕐 Heure
-                      </div>
-
-                      <div className="text-xl font-black mt-1">
-                        {formatHeure(
-                          partieAPartager.heure_partie
-                        )}
-                      </div>
-
-                    </div>
-
-                  </div>
-
-
-                  {/* DURÉE + PLACES */}
-
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-
-                    <div className="rounded-2xl bg-gray-50 p-4">
-
-                      <div className="text-sm uppercase tracking-wide font-bold text-gray-400">
-                        ⏱️ Durée
-                      </div>
-
-                      <div className="text-xl font-black mt-1">
-                        {partieAPartager.jeux?.duree
-                          ? `${partieAPartager.jeux.duree} min`
-                          : "—"}
-                      </div>
-
-                    </div>
-
-
-                    <div className="rounded-2xl bg-emerald-50 p-4">
-
-                      <div className="text-sm uppercase tracking-wide font-bold text-emerald-600">
-                        👥 Places
-                      </div>
-
-                      <div className="text-xl font-black mt-1">
-
-                        {partieAPartager.jeux?.max_joueurs
-                          ? `${partieAPartager.inscrits?.length || 0}/${partieAPartager.jeux.max_joueurs}`
-                          : "—"}
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-
-                  {/* LIEU */}
-
-                  {partieAPartager.lieu && (
-                    <div className="mt-4 rounded-2xl bg-gray-50 px-5 py-4">
-
-                      <div className="flex items-center gap-3">
-
-                        <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-xl">
-                          📍
-                        </div>
-
-                        <div>
-
-                          <div className="text-xs uppercase tracking-wide font-bold text-gray-400">
-                            Lieu
-                          </div>
-
-                          <div className="font-black text-lg">
-                            {partieAPartager.lieu}
-                          </div>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-                  )}
-
-
-                  {/* DESCRIPTION */}
-
-                  {partieAPartager.description && (
-                    <div className="mt-4 rounded-2xl bg-gray-50 px-5 py-4">
-
-                      <div className="text-xs uppercase tracking-wide font-bold text-gray-400">
-                        📝 Description
-                      </div>
-
-                      <div className="mt-1 text-base font-semibold text-gray-700 leading-relaxed">
-                        {partieAPartager.description}
-                      </div>
-
-                    </div>
-                  )}
-
-                </div>
-
+              <div className="text-sm font-black text-indigo-900">
+                🎲 La Loi des Cartes
               </div>
 
-
-              {/* ======================================================
-                  FOOTER
-                  ====================================================== */}
-
-              <div className="mt-auto pt-6 text-center">
-
-                <div className="text-xl font-black">
-                  🎲 La Loi des Cartes
-                </div>
-
-                <div className="text-sm font-semibold text-purple-200 mt-1">
-                  Inscrivez-vous sur laloidescartes.vercel.app
-                </div>
-
+              <div className="text-[10px] text-gray-400 font-semibold">
+                laloidescartes.vercel.app
               </div>
 
             </div>
 
           </div>
-
         </div>
       )}
       <div className="min-h-screen px-4 py-6 md:px-6">
