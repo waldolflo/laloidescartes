@@ -414,40 +414,18 @@ export default function Parties({ user, authUser }) {
       return;
     }
 
-    const ancienStyle = {
-      position: element.style.position,
-      left: element.style.left,
-      top: element.style.top,
-      zIndex: element.style.zIndex,
-      opacity: element.style.opacity,
-      pointerEvents: element.style.pointerEvents,
-    };
-
     try {
-      // ============================================================
-      // RENDRE LA CARTE CAPTURABLE
-      // ============================================================
-
-      element.style.position = "fixed";
-      element.style.left = "20px";
-      element.style.top = "20px";
-      element.style.zIndex = "999999";
-      element.style.opacity = "1";
-      element.style.pointerEvents = "none";
-
       await new Promise((resolve) => {
         requestAnimationFrame(() => {
           requestAnimationFrame(resolve);
         });
       });
 
-      // ============================================================
-      // CAPTURE DU BLOC
-      // ============================================================
-
       const dataUrl = await toPng(element, {
+        width: 420,
+        height: element.scrollHeight,
         pixelRatio: 2,
-        cacheBust: false,
+        cacheBust: true,
         backgroundColor: "#ffffff",
       });
 
@@ -535,21 +513,8 @@ export default function Parties({ user, authUser }) {
       window.open(whatsappUrl, "_blank");
 
     } finally {
-      // ============================================================
-      // RESTAURATION
-      // ============================================================
-
-      if (element) {
-        element.style.position = ancienStyle.position;
-        element.style.left = ancienStyle.left;
-        element.style.top = ancienStyle.top;
-        element.style.zIndex = ancienStyle.zIndex;
-        element.style.opacity = ancienStyle.opacity;
-        element.style.pointerEvents =
-          ancienStyle.pointerEvents;
+        setPartieAPartager(null);
       }
-
-      setPartieAPartager(null);
     }
   };
 
@@ -568,12 +533,16 @@ export default function Parties({ user, authUser }) {
           ref={partagePartieRef}
           style={{
             position: "fixed",
-            left: "-10000px",
+            left: "0",
             top: "0",
             width: "420px",
-            overflow: "hidden",
+            minWidth: "420px",
+            maxWidth: "420px",
+            overflow: "visible",
             borderRadius: "24px",
             background: "#ffffff",
+            zIndex: "-1",
+            pointerEvents: "none",
           }}
         >
           {/* ========================================================
