@@ -452,11 +452,33 @@ export default function Parties({ user, authUser }) {
       });
 
       // ============================================================
-      // DATA URL → FICHIER
+      // DATA URL → BLOB → FICHIER
+      // Sans fetch() pour éviter le blocage CSP
       // ============================================================
 
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
+      const base64 = dataUrl.split(",")[1];
+
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
+
+      for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+        const slice = byteCharacters.slice(
+          offset,
+          offset + 1024
+        );
+
+        const byteNumbers = new Array(slice.length);
+
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+
+        byteArrays.push(new Uint8Array(byteNumbers));
+      }
+
+      const blob = new Blob(byteArrays, {
+        type: "image/png",
+      });
 
       const fichier = new File(
         [blob],
