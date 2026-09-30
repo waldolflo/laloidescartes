@@ -55,6 +55,30 @@ export default function Statistiques({ user }) {
     (_, i) => now.getFullYear() - i
   );
 
+  const [headerMasque, setHeaderMasque] = useState(false);
+
+  // ============================================================
+  // MASQUER LE GRAND BANDEAU AU PREMIER SCROLL
+  // Le bandeau ne réapparaît qu'après un rechargement de la page
+  // ============================================================
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setHeaderMasque(true);
+        window.removeEventListener("scroll", handleScroll);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   // ============================================================
   // COULEUR GÉNÉRALE
   // Même logique que Catalogue / Parties
@@ -722,96 +746,99 @@ export default function Statistiques({ user }) {
           EN-TÊTE
       ======================================================== */}
 
-      <section
-        className={`relative max-w-7xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurStatistiques}`}
-      >
+      {!headerMasque && (
+        <section
+          className={`relative max-w-7xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurStatistiques}`}
+        >
 
-        {/* Décor */}
+          {/* Décor */}
 
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
 
-          <img
-            src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
-            alt=""
-            className="absolute -right-24 top-1/4 w-[500px] opacity-[0.035] rotate-[-12deg]"
-          />
+            <img
+              src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+              alt=""
+              className="absolute -right-24 top-1/4 w-[500px] opacity-[0.035] rotate-[-12deg]"
+            />
 
-          <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-3xl" />
+            <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-3xl" />
 
-          <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-3xl" />
+            <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-3xl" />
 
-          <div className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-fuchsia-500/10 blur-3xl" />
+            <div className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-fuchsia-500/10 blur-3xl" />
 
-        </div>
+          </div>
 
-        <div className="relative px-5 py-7 md:px-10 md:py-9">
+          <div className="relative px-5 py-7 md:px-10 md:py-9">
 
-          <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-6">
 
-            {/* Logo */}
+              {/* Logo */}
 
-            <div className="flex-shrink-0 flex justify-center lg:justify-start">
+              <div className="flex-shrink-0 flex justify-center lg:justify-start">
 
-              <div className="bg-white rounded-2xl px-5 py-3 shadow-2xl">
+                <div className="bg-white rounded-2xl px-5 py-3 shadow-2xl">
 
-                <img
-                  src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
-                  alt="La Loi des Cartes"
-                  className="h-20 md:h-24 w-auto object-contain"
-                />
+                  <img
+                    src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                    alt="La Loi des Cartes"
+                    className="h-20 md:h-24 w-auto object-contain"
+                  />
 
-              </div>
-
-            </div>
-
-            {/* Texte */}
-
-            <div className="flex-1 text-center lg:text-left">
-
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-purple-200 text-xs md:text-sm font-bold uppercase tracking-[0.18em]">
-                <BarChart3 size={16} />
-                La Loi des Cartes
-              </div>
-
-              <h1 className="mt-3 text-4xl md:text-5xl font-black text-white tracking-tight leading-none">
-                STATISTIQUES
-                <span className="block text-purple-300">
-                  DU CLUB
-                </span>
-              </h1>
-
-              <p className="mt-3 text-purple-100 text-base md:text-lg">
-                Retrouvez les classements,
-                les parties jouées et les
-                jeux les plus populaires.
-              </p>
-
-            </div>
-
-            {/* Statistiques */}
-
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
-
-              <div className="inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white text-indigo-900 font-black shadow-xl">
-
-                <Trophy size={20} />
-
-                <span>
-                  {generalStats.totalParties} partie
-                  {generalStats.totalParties > 1
-                    ? "s"
-                    : ""}
-                </span>
+                </div>
 
               </div>
 
-              <div className="inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white/10 border border-white/20 text-white font-bold">
+              {/* Texte */}
 
-                <MapPin size={19} />
+              <div className="flex-1 text-center lg:text-left">
 
-                <span className="truncate max-w-[180px]">
-                  {selectedLieu}
-                </span>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-purple-200 text-xs md:text-sm font-bold uppercase tracking-[0.18em]">
+                  <BarChart3 size={16} />
+                  La Loi des Cartes
+                </div>
+
+                <h1 className="mt-3 text-4xl md:text-5xl font-black text-white tracking-tight leading-none">
+                  STATISTIQUES
+                  <span className="block text-purple-300">
+                    DU CLUB
+                  </span>
+                </h1>
+
+                <p className="mt-3 text-purple-100 text-base md:text-lg">
+                  Retrouvez les classements,
+                  les parties jouées et les
+                  jeux les plus populaires.
+                </p>
+
+              </div>
+
+              {/* Statistiques */}
+
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3">
+
+                <div className="inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white text-indigo-900 font-black shadow-xl">
+
+                  <Trophy size={20} />
+
+                  <span>
+                    {generalStats.totalParties} partie
+                    {generalStats.totalParties > 1
+                      ? "s"
+                      : ""}
+                  </span>
+
+                </div>
+
+                <div className="inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white/10 border border-white/20 text-white font-bold">
+
+                  <MapPin size={19} />
+
+                  <span className="truncate max-w-[180px]">
+                    {selectedLieu}
+                  </span>
+
+                </div>
 
               </div>
 
@@ -819,9 +846,8 @@ export default function Statistiques({ user }) {
 
           </div>
 
-        </div>
-
-      </section>
+        </section>
+      )}
 
       {/* ========================================================
           STATISTIQUES GÉNÉRALES

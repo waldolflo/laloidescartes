@@ -600,7 +600,7 @@ export default function Catalogue({ user }) {
 
       {!headerMasque && (
         <section
-          className={`relative max-w-7xl mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurCatalogue}`}
+          className={`relative max-w-[1600px] mx-auto overflow-hidden rounded-[2rem] shadow-2xl bg-gradient-to-br ${couleurCatalogue}`}
         >
 
           {/* Décor */}
@@ -706,7 +706,7 @@ export default function Catalogue({ user }) {
           RECHERCHE + TRI
       ======================================================== */}
 
-      <div className="max-w-7xl mx-auto mt-6">
+      <div className="max-w-[1600px] mx-auto mt-6">
 
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3">
 
@@ -862,7 +862,7 @@ export default function Catalogue({ user }) {
           TITRE RESULTATS
       ======================================================== */}
 
-      <div className="max-w-7xl mx-auto mt-8 mb-4">
+      <div className="max-w-[1600px] mx-auto mt-8 mb-4">
 
         <h2 className="text-xl md:text-2xl font-black text-gray-900">
           Jeux de la ludothèque
@@ -887,7 +887,7 @@ export default function Catalogue({ user }) {
 
       {filteredJeux.length > 0 ? (
 
-        <div className="max-w-7xl mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="max-w-[1600px] mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
 
           {filteredJeux.map((j) => {
 
