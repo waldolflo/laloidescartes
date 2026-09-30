@@ -415,20 +415,16 @@ export default function Parties({ user, authUser }) {
       return;
     }
 
+    const ancienStyle = {
+      position: element.style.position,
+      left: element.style.left,
+      top: element.style.top,
+      zIndex: element.style.zIndex,
+      opacity: element.style.opacity,
+      pointerEvents: element.style.pointerEvents,
+    };
+
     try {
-      // ============================================================
-      // ON PLACE TEMPORAIREMENT L'IMAGE DANS LA ZONE VISIBLE
-      // ============================================================
-
-      const ancienStyle = {
-        position: element.style.position,
-        left: element.style.left,
-        top: element.style.top,
-        zIndex: element.style.zIndex,
-        opacity: element.style.opacity,
-        pointerEvents: element.style.pointerEvents,
-      };
-
       element.style.position = "fixed";
       element.style.left = "0";
       element.style.top = "0";
@@ -656,7 +652,7 @@ export default function Parties({ user, authUser }) {
 
                 {/* IMAGE DU JEU */}
 
-                <div className="relative h-[350px] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
+                <div className="relative h-[300px] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
 
                   {partieAPartager.jeux?.couverture_url ? (
                     <img
@@ -676,7 +672,7 @@ export default function Parties({ user, authUser }) {
 
                 {/* INFORMATIONS */}
 
-                <div className="p-8">
+                <div className="px-7 pt-4 pb-6">
 
                   <h2 className="text-4xl font-black text-center leading-tight">
                     {partieAPartager.jeux?.nom || "Jeu"}
