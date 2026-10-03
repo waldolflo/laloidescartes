@@ -80,8 +80,9 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
         const { data: joueurs, error: joueursError } = await supabase
           .from("joueurs")
-          .select("id, nom, actif")
+          .select("id, nom, actif, utilisateur_id")
           .eq("actif", true)
+          .is("utilisateur_id", null)
           .order("nom");
 
         if (joueursError) throw joueursError;
@@ -356,7 +357,10 @@ export default function RankModal({ partie, onClose, fetchParties }) {
 
       if (fetchError) throw fetchError;
 
-      if (inscription.joueurs) {
+      if (
+        inscription.joueurs &&
+        !inscription.joueurs.utilisateur_id
+      ) {
         setAllJoueurs((prev) =>
           [...prev, inscription.joueurs].sort((a, b) =>
             a.nom.localeCompare(b.nom, "fr")
