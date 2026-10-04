@@ -21,6 +21,7 @@ import AdminUtilisateurs from "./AdminUtilisateurs";
 import AdminEvenements from "./AdminEvenements";
 import AdminDiaporama from "./AdminDiaporama";
 import AdminParametres from "./AdminParametres";
+import AdminReseaux from "./AdminReseaux";
 import Images from "./Images";
 import Auth from "./Auth";
 import Home from "./Home";
@@ -487,6 +488,22 @@ function AnimatedRoutes({
                 element={
                   user?.role === "admin" ? (
                     <AdminParametres
+                      profil={user}
+                    />
+                  ) : (
+                    <Navigate
+                      to="/profils"
+                      replace
+                    />
+                  )
+                }
+              />
+
+              <Route
+                path="/admin/reseaux"
+                element={
+                  user?.role === "admin" ? (
+                    <AdminReseaux
                       profil={user}
                     />
                   ) : (

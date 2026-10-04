@@ -7,6 +7,7 @@ import {
   Images,
   Settings,
   User,
+  Activity,
 } from "lucide-react";
 
 export default function AdminMenu({ profil }) {
@@ -22,6 +23,11 @@ export default function AdminMenu({ profil }) {
       to: "/admin/evenements",
       label: "Événements",
       icon: CalendarDays,
+    },
+    {
+      to: "/admin/reseaux",
+      label: "Réseaux sociaux",
+      icon: Activity,
     },
     {
       to: "/admin/diaporama",
