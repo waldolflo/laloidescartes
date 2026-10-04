@@ -1040,27 +1040,27 @@ export default function AdminReseaux() {
                   </div>
 
                   {/* COUVERTURES */}
-                  <div className="mx-[70px] mt-[32px]">
-                    <div className="text-[27px] uppercase tracking-[3px] font-black mb-[12px]">
+                  <div className="mx-[70px] mt-[24px]">
+                    <div className="text-[25px] uppercase tracking-[3px] font-black mb-[10px]">
                       Et plein d'autres jeux à découvrir 🎲
                     </div>
 
-                    <div className="grid grid-cols-6 gap-[12px]">
+                    <div className="grid grid-cols-6 gap-[9px]">
                       {jeuxAleatoires.map((jeu) => (
                         <img
                           key={jeu.id}
                           src={jeu.couverture_url}
                           alt=""
                           crossOrigin="anonymous"
-                          className="w-[125px] h-[125px] object-cover rounded-[16px]"
+                          className="w-[120px] h-[120px] object-cover rounded-[14px]"
                         />
                       ))}
                     </div>
                   </div>
 
                   {/* FOOTER */}
-                  <div className="absolute left-0 right-0 bottom-0 px-[70px] pb-[30px]">
-                    <div className="border-t border-white/20 pt-[20px] flex items-center justify-between text-[18px] text-white/75">
+                  <div className="absolute left-0 right-0 bottom-0 px-[70px] pb-[22px]">
+                    <div className="border-t border-white/20 pt-[14px] flex items-center justify-between text-[17px] text-white/75">
                       <div>
                         📍 {ADRESSE}
                       </div>
@@ -1137,7 +1137,7 @@ export default function AdminReseaux() {
                   className={`bg-gradient-to-br ${couleur} text-white overflow-hidden`}
                 >
                   {/* GAUCHE */}
-                  <div className="absolute left-[55px] top-[50px] w-[390px]">
+                  <div className="absolute left-[55px] top-[42px] w-[390px]">
                     <div className="bg-white rounded-[28px] p-[18px] inline-flex">
                       <img
                         src={LOGO_URL}
@@ -1147,30 +1147,30 @@ export default function AdminReseaux() {
                       />
                     </div>
 
-                    <div className="text-[23px] uppercase tracking-[4px] font-bold text-white/70 mt-[25px]">
+                    <div className="text-[21px] uppercase tracking-[4px] font-bold text-white/70 mt-[20px]">
                       La prochaine rencontre
                     </div>
 
-                    <div className="text-[64px] leading-none font-black uppercase mt-[7px]">
+                    <div className="text-[58px] leading-none font-black uppercase mt-[5px]">
                       {dateFormatee?.jour}
                     </div>
 
                     <div className="flex items-end gap-[12px] mt-[5px]">
-                      <div className="text-[100px] leading-none font-black">
+                      <div className="text-[88px] leading-none font-black">
                         {dateFormatee?.numero}
                       </div>
 
-                      <div className="text-[34px] capitalize font-black pb-[12px]">
+                      <div className="text-[30px] capitalize font-black pb-[10px]">
                         {dateFormatee?.mois}
                       </div>
                     </div>
 
-                    <div className="text-[27px] font-bold mt-[14px]">
+                    <div className="text-[24px] font-bold mt-[10px]">
                       {libelleEvenement}
                     </div>
 
                     {evenementPrincipal?.heure_debut && (
-                      <div className="text-[22px] mt-[8px] text-white/80">
+                      <div className="text-[20px] mt-[6px] text-white/80">
                         🕐{" "}
                         {formaterHeure(
                           evenementPrincipal.heure_debut
@@ -1184,7 +1184,7 @@ export default function AdminReseaux() {
                       </div>
                     )}
 
-                    <div className="text-[21px] mt-[5px] text-white/80">
+                    <div className="text-[19px] mt-[4px] text-white/80">
                       📍 Maison des associations
                     </div>
                   </div>
@@ -1284,7 +1284,7 @@ export default function AdminReseaux() {
                   </div>
 
                   {/* FOOTER */}
-                  <div className="absolute left-[55px] right-[55px] bottom-[28px] border-t border-white/20 pt-[15px] flex items-center justify-between text-[17px] text-white/70">
+                  <div className="absolute left-[55px] right-[55px] bottom-[22px] border-t border-white/20 pt-[12px] flex items-center justify-between text-[16px] text-white/70">
                     <div>
                       📍 {ADRESSE_COMPLETE}
                     </div>
