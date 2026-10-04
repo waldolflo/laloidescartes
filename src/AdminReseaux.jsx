@@ -960,7 +960,7 @@ export default function AdminReseaux() {
                   </div>
 
                   {/* PARTIES */}
-                  <div className="mx-[70px] mt-[35px]">
+                  <div className="mx-[70px] mt-[28px]">
                     <div className="text-[30px] uppercase tracking-[4px] font-black mb-[15px]">
                       Au programme
                     </div>
@@ -976,7 +976,7 @@ export default function AdminReseaux() {
                           .map((partie) => (
                             <div
                               key={partie.id}
-                              className="bg-white/10 rounded-[25px] p-[18px] flex gap-[18px] min-h-[150px]"
+                              className="bg-white/10 rounded-[25px] p-[16px] flex gap-[16px] h-[140px]"
                             >
                               {partie.jeux
                                 ?.couverture_url ? (
@@ -987,10 +987,10 @@ export default function AdminReseaux() {
                                   }
                                   alt=""
                                   crossOrigin="anonymous"
-                                  className="w-[115px] h-[115px] object-cover rounded-[18px] flex-shrink-0"
+                                  className="w-[108px] h-[108px] object-cover rounded-[16px] flex-shrink-0"
                                 />
                               ) : (
-                                <div className="w-[115px] h-[115px] rounded-[18px] bg-white/10 flex items-center justify-center flex-shrink-0">
+                                <div className="w-[108px] h-[108px] rounded-[16px] bg-white/10 flex items-center justify-center flex-shrink-0">
                                   <Dices
                                     size={45}
                                   />
@@ -998,7 +998,7 @@ export default function AdminReseaux() {
                               )}
 
                               <div className="min-w-0 pt-[4px]">
-                                <div className="text-[27px] font-black leading-tight line-clamp-2">
+                                <div className="text-[25px] font-black leading-tight line-clamp-2">
                                   {partie.jeux?.nom ||
                                     partie.nom ||
                                     "Partie"}
@@ -1037,26 +1037,26 @@ export default function AdminReseaux() {
                   </div>
 
                   {/* COUVERTURES */}
-                  <div className="mx-[70px] mt-[24px]">
-                    <div className="text-[25px] uppercase tracking-[3px] font-black mb-[10px]">
+                  <div className="mx-[70px] mt-[16px] pb-[70px]">
+                    <div className="text-[24px] uppercase tracking-[3px] font-black mb-[8px]">
                       Et plein d'autres jeux à découvrir 🎲
                     </div>
 
-                    <div className="grid grid-cols-6 gap-[9px]">
-                      {jeuxAleatoires.map((jeu) => (
+                    <div className="grid grid-cols-6 gap-[8px]">
+                      {jeuxAleatoires.slice(0, 12).map((jeu) => (
                         <img
                           key={jeu.id}
                           src={jeu.couverture_url}
                           alt=""
                           crossOrigin="anonymous"
-                          className="w-[120px] h-[120px] object-cover rounded-[14px]"
+                          className="w-[115px] h-[115px] object-cover rounded-[13px]"
                         />
                       ))}
                     </div>
                   </div>
 
                   {/* FOOTER */}
-                  <div className="absolute left-0 right-0 bottom-0 px-[70px] pb-[22px]">
+                  <div className="absolute left-0 right-0 bottom-0 px-[70px] pb-[22px] bg-gradient-to-t from-black/20 via-transparent to-transparent">
                     <div className="border-t border-white/20 pt-[14px] flex items-center justify-between text-[17px] text-white/75">
                       <div>
                         🌐 {ADRESSE_APP}
@@ -1191,7 +1191,7 @@ export default function AdminReseaux() {
                   </div>
 
                   {/* DROITE : PARTIES */}
-                  <div className="absolute right-[45px] top-[50px] w-[700px]">
+                  <div className="absolute right-[45px] top-[50px] w-[700px] pr-[5px]">
                     <div className="text-[25px] uppercase tracking-[3px] font-black mb-[15px]">
                       🎲 Les parties prévues
                     </div>
@@ -1263,13 +1263,12 @@ export default function AdminReseaux() {
                         parties
                       </div>
                     )}
-
                     {/* JEUX */}
-                    <div className="text-[23px] uppercase tracking-[3px] font-black mt-[18px] mb-[10px]">
-                      Encore plein de jeux à découvrir
+                    <div className="text-[22px] uppercase tracking-[3px] font-black mt-[12px] mb-[7px]">
+                      Et plein d'autres jeux à découvrir 🎲
                     </div>
 
-                    <div className="flex gap-[10px] flex-wrap">
+                    <div className="flex gap-[8px] flex-nowrap">
                       {jeuxAleatoires
                         .slice(0, 8)
                         .map((jeu) => (
@@ -1278,7 +1277,7 @@ export default function AdminReseaux() {
                             src={jeu.couverture_url}
                             alt=""
                             crossOrigin="anonymous"
-                            className="w-[72px] h-[72px] object-cover rounded-[12px]"
+                            className="w-[64px] h-[64px] object-cover rounded-[10px] flex-shrink-0"
                           />
                         ))}
                     </div>
