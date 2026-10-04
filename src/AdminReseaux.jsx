@@ -5,7 +5,6 @@ import { supabase } from "./supabaseClient";
 import { toPng } from "html-to-image";
 
 import AdminMenu from "./AdminMenu";
-import { toPng } from "html-to-image";
 import {
   CalendarDays,
   Clock3,
