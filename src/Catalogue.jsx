@@ -297,6 +297,7 @@ export default function Catalogue({ user }) {
     if (!bggId) {
       return {
         couverture_url: null,
+        couverture_bgg_url: null,
         poids: null,
         note: null,
       };
@@ -325,13 +326,21 @@ export default function Catalogue({ user }) {
       }
 
       return {
+        // URL Supabase Storage
         couverture_url:
-          data.image ||
-          data.thumbnail ||
-          null,
-        poids: data.weight || null,
-        note: data.rating || null,
+          data.image || null,
+
+        // URL originale BGG
+        couverture_bgg_url:
+          data.bggImage || null,
+
+        poids:
+          data.weight || null,
+
+        note:
+          data.rating || null,
       };
+
     } catch (err) {
       console.error(
         "Erreur fetchBGGData :",
@@ -340,6 +349,7 @@ export default function Catalogue({ user }) {
 
       return {
         couverture_url: null,
+        couverture_bgg_url: null,
         poids: null,
         note: null,
       };
@@ -374,6 +384,7 @@ export default function Catalogue({ user }) {
           utilisateur_id: user.id,
           bgg_api: bggId,
           couverture_url: null,
+          couverture_bgg_url: null,
           poids: null,
           note: null,
         },
@@ -398,6 +409,8 @@ export default function Catalogue({ user }) {
         .update({
           couverture_url:
             bggData.couverture_url,
+          couverture_bgg_url:
+            bggData.couverture_bgg_url,
           note: bggData.note,
           poids: bggData.poids,
         })

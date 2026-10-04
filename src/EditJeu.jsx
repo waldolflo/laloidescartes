@@ -63,6 +63,7 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
     if (!bggId) {
       return {
         couverture_url: null,
+        couverture_bgg_url: null,
         poids: null,
         note: null,
       };
@@ -91,25 +92,31 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
       }
 
       return {
+        // URL Supabase Storage
         couverture_url:
-          data.image || data.thumbnail || null,
+          data.image || null,
 
-        poids: data.weight
-          ? parseFloat(data.weight)
-          : null,
+        // URL originale BGG
+        couverture_bgg_url:
+          data.bggImage || null,
 
-        note: data.rating
-          ? parseFloat(data.rating)
-          : null,
+        poids:
+          data.weight != null
+            ? parseFloat(data.weight)
+            : null,
+
+        note:
+          data.rating != null
+            ? parseFloat(data.rating)
+            : null,
       };
     } catch (err) {
-      console.error("Erreur fetchBGGData :", err);
+      console.error(
+        "Erreur fetchBGGData :",
+        err
+      );
 
-      return {
-        couverture_url: null,
-        poids: null,
-        note: null,
-      };
+      throw err;
     }
   };
 
@@ -121,61 +128,137 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
     setErrorMsg("");
 
     try {
-      let couverture_url = jeu.couverture_url;
-      let poids = jeu.poids;
-      let note = jeu.note;
+      let couverture_url =
+        jeu.couverture_url || null;
 
-      // Si bgg_api a changé, récupérer nouvelle couverture
-      if (
-        form.bgg_api &&
-        form.bgg_api !== jeu.bgg_api
-      ) {
-        const bggData = await fetchBGGData(
-          form.bgg_api
-        );
+      let couverture_bgg_url =
+        jeu.couverture_bgg_url || null;
 
-        couverture_url =
-          bggData.couverture_url;
+      let poids =
+        jeu.poids ?? null;
+
+      let note =
+        jeu.note ?? null;
+
+      const ancienBggId =
+        jeu.bgg_api
+          ? String(jeu.bgg_api)
+          : "";
+
+      const nouveauBggId =
+        form.bgg_api
+          ? String(form.bgg_api).trim()
+          : "";
+
+      // ========================================================
+      // ID BGG MODIFIÉ
+      // ========================================================
+
+      if (nouveauBggId !== ancienBggId) {
+
+        // ------------------------------------------------------
+        // ID BGG supprimé
+        // ------------------------------------------------------
+
+        if (!nouveauBggId) {
+
+          couverture_url = null;
+          couverture_bgg_url = null;
+          poids = null;
+          note = null;
+
+        }
+
+        // ------------------------------------------------------
+        // Nouvel ID BGG
+        // ------------------------------------------------------
+
+        else {
+
+          const bggData =
+            await fetchBGGData(
+              nouveauBggId
+            );
+
+          couverture_url =
+            bggData.couverture_url;
+
+          couverture_bgg_url =
+            bggData.couverture_bgg_url;
+
+          poids =
+            bggData.poids;
+
+          note =
+            bggData.note;
+        }
       }
 
-      // Récupérer nouvelle couverture dans tous les cas pour mise à jour
-      if (form.bgg_api) {
-        const bggData = await fetchBGGData(
-          form.bgg_api
-        );
+      // ========================================================
+      // SAUVEGARDE
+      // ========================================================
 
-        poids = bggData.poids;
-        note = bggData.note;
-      }
+      const { data, error } =
+        await supabase
+          .from("jeux")
+          .update({
+            nom: form.nom,
+            regle_youtube:
+              form.regle_youtube,
 
-      const { data, error } = await supabase
-        .from("jeux")
-        .update({
-          nom: form.nom,
-          regle_youtube: form.regle_youtube,
-          min_joueurs: form.min_joueurs,
-          max_joueurs: form.max_joueurs,
-          type: form.type,
-          duree: form.duree,
-          proprietaire: form.proprietaire,
-          bgg_api: form.bgg_api,
-          couverture_url,
-          poids,
-          note,
-        })
-        .eq("id", jeu.id)
-        .select("*");
+            min_joueurs:
+              form.min_joueurs,
+
+            max_joueurs:
+              form.max_joueurs,
+
+            type: form.type,
+
+            duree: form.duree,
+
+            proprietaire:
+              form.proprietaire,
+
+            bgg_api:
+              nouveauBggId || null,
+
+            couverture_url,
+
+            couverture_bgg_url,
+
+            poids,
+
+            note,
+          })
+          .eq("id", jeu.id)
+          .select("*");
 
       if (error) {
         setErrorMsg(error.message);
         return;
       }
 
-      // Mise à jour instantanée
-      onUpdate(data[0]);
+      // ========================================================
+      // MISE À JOUR INSTANTANÉE
+      // ========================================================
+
+      if (data?.[0]) {
+        onUpdate(data[0]);
+      }
+
       onClose();
+
     } catch (err) {
-      setErrorMsg(err.message);
+
+      console.error(
+        "Erreur sauvegarde jeu :",
+        err
+      );
+
+      setErrorMsg(
+        err?.message ||
+        "Impossible de récupérer les données BGG."
+      );
     }
   };
 
