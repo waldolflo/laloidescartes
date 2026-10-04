@@ -553,7 +553,18 @@ export default function Parties({ user, authUser }) {
 
           <div className="p-5">
 
-            {/* Jeu */}
+            {/* Jeu + couverture */}
+
+            {partieAPartager.jeux?.couverture_url && (
+              <div className="flex justify-center mb-4">
+                <img
+                  src={partieAPartager.jeux.couverture_url}
+                  alt={partieAPartager.jeux?.nom || "Jeu"}
+                  crossOrigin="anonymous"
+                  className="w-32 h-32 object-contain rounded-2xl shadow-md"
+                />
+              </div>
+            )}
 
             <h2 className="text-2xl font-black text-gray-900 text-center leading-tight">
               {partieAPartager.jeux?.nom || "Jeu"}
