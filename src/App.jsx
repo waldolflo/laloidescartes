@@ -17,6 +17,10 @@ import Archives from "./Archives";
 import Inscriptions from "./Inscriptions";
 import Statistiques from "./Statistiques";
 import Profils from "./Profils";
+import AdminUtilisateurs from "./AdminUtilisateurs";
+import AdminEvenements from "./AdminEvenements";
+import AdminDiaporama from "./AdminDiaporama";
+import AdminParametres from "./AdminParametres";
 import Images from "./Images";
 import Auth from "./Auth";
 import Home from "./Home";
@@ -169,6 +173,49 @@ function AnimatedRoutes({ authUser, user, setAuthUser, setUser, onLogin }) {
                     <Images user={user} authUser={authUser} />
                   ) : (
                     <Navigate to="/" replace />
+                  )
+                }
+              />
+              <Route
+                path="/admin/utilisateurs"
+                element={
+                  user?.role === "admin" ? (
+                    <AdminUtilisateurs profil={user} />
+                  ) : (
+                    <Navigate to="/profils" replace />
+                  )
+                }
+              />
+
+              <Route
+                path="/admin/evenements"
+                element={
+                  user?.role === "admin" ? (
+                    <AdminEvenements profil={user} />
+                  ) : (
+                    <Navigate to="/profils" replace />
+                  )
+                }
+              />
+
+              <Route
+                path="/admin/diaporama"
+                element={
+                  user?.role === "admin" ? (
+                    <AdminDiaporama profil={user} />
+                  ) : (
+                    <Navigate to="/profils" replace />
+                  )
+                }
+              />
+
+              <Route
+                path="/admin/parametres"
+                element={
+                  user?.role === "admin" ? (
+                    <AdminParametres profil={user} />
+                  ) : (
+                    <Navigate to="/profils" replace />
                   )
                 }
               />
