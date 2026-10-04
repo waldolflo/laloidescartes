@@ -19,7 +19,9 @@ const LOGO_URL =
   "https://laloidescartes.vercel.app/logo_loidc_Complet_250.png";
 
 const ADRESSE = "Maison des associations";
-const ADRESSE_COMPLETE = "2 Rue Albert Leroy, 62170 Neuville-sous-Montreuil";
+const ADRESSE_COMPLETE =
+  "2 Rue Albert Leroy, 62170 Neuville-sous-Montreuil";
+const ADRESSE_APP = "laloidescartes.vercel.app";
 const TELEPHONE = "06 44 17 10 82";
 const EMAIL = "laloidescartes@gmail.com";
 
@@ -167,11 +169,8 @@ export default function AdminReseaux() {
         return;
       }
 
-      // La première date trouvée est la prochaine date.
       const dateSuivante = dates[0].date_evenement;
 
-      // Si plusieurs événements existent le même jour,
-      // on les conserve tous.
       const evenementsDuJour = dates.filter(
         (evenement) => evenement.date_evenement === dateSuivante
       );
@@ -215,8 +214,6 @@ export default function AdminReseaux() {
           .filter((id) => id !== null && id !== undefined)
       );
 
-      // On évite de remettre dans les couvertures aléatoires
-      // les jeux déjà présents dans les parties de cette date.
       const jeuxDisponibles = (jeuxData || []).filter(
         (jeu) =>
           jeu.couverture_url &&
@@ -225,7 +222,6 @@ export default function AdminReseaux() {
 
       const jeuxMelanges = melangerTableau(jeuxDisponibles);
 
-      // 12 couvertures aléatoires.
       setJeuxAleatoires(jeuxMelanges.slice(0, 12));
     } catch (error) {
       console.error("Erreur AdminReseaux :", error);
@@ -276,8 +272,10 @@ export default function AdminReseaux() {
 
   const dataUrlVersBlob = (dataUrl) => {
     const partiesData = dataUrl.split(",");
-    const mime = partiesData[0]
-      .match(/:(.*?);/)?.[1] || "image/png";
+
+    const mime =
+      partiesData[0].match(/:(.*?);/)?.[1] ||
+      "image/png";
 
     const binaire = atob(partiesData[1]);
 
@@ -304,8 +302,11 @@ export default function AdminReseaux() {
 
     if (!element) return;
 
-    const largeur = format === "instagram" ? 1080 : 1200;
-    const hauteur = format === "instagram" ? 1350 : 630;
+    const largeur =
+      format === "instagram" ? 1080 : 1200;
+
+    const hauteur =
+      format === "instagram" ? 1350 : 630;
 
     const nomFichier =
       format === "instagram"
@@ -325,8 +326,6 @@ export default function AdminReseaux() {
     };
 
     try {
-      // Le composant est normalement affiché avec un scale
-      // pour servir d'aperçu.
       element.style.position = "fixed";
       element.style.left = "0";
       element.style.top = "0";
@@ -335,14 +334,12 @@ export default function AdminReseaux() {
       element.style.pointerEvents = "none";
       element.style.transform = "none";
 
-      // Laisser le navigateur effectuer le rendu.
       await new Promise((resolve) =>
         requestAnimationFrame(() =>
           requestAnimationFrame(resolve)
         )
       );
 
-      // Très important avec les couvertures Supabase Storage.
       await attendreImages(element);
 
       const dataUrl = await toPng(element, {
@@ -363,10 +360,6 @@ export default function AdminReseaux() {
         }
       );
 
-      // -----------------------------------------------------
-      // PARTAGE NATIF
-      // -----------------------------------------------------
-
       if (
         navigator.share &&
         navigator.canShare &&
@@ -383,10 +376,6 @@ export default function AdminReseaux() {
         return;
       }
 
-      // -----------------------------------------------------
-      // TÉLÉCHARGEMENT SUR PC
-      // -----------------------------------------------------
-
       const url = URL.createObjectURL(blob);
 
       const lien = document.createElement("a");
@@ -402,7 +391,6 @@ export default function AdminReseaux() {
 
       URL.revokeObjectURL(url);
     } catch (error) {
-      // Annulation du partage natif = rien de grave.
       if (error?.name !== "AbortError") {
         console.error(
           `Erreur partage ${format} :`,
@@ -414,7 +402,6 @@ export default function AdminReseaux() {
         );
       }
     } finally {
-      // Restaurer exactement l'affichage de l'aperçu.
       element.style.position = ancienStyle.position;
       element.style.left = ancienStyle.left;
       element.style.top = ancienStyle.top;
@@ -440,9 +427,10 @@ export default function AdminReseaux() {
     evenementPrincipal?.date_evenement
   );
 
-  const libelleEvenement = getLibelleTypeEvenement(
-    evenementPrincipal?.type_evenement
-  );
+  const libelleEvenement =
+    getLibelleTypeEvenement(
+      evenementPrincipal?.type_evenement
+    );
 
   const nombreParties = parties.length;
 
@@ -647,7 +635,7 @@ export default function AdminReseaux() {
                 <MapPin size={18} />
 
                 <span>
-                  Maison des associations
+                  {ADRESSE} — {ADRESSE_COMPLETE}
                 </span>
               </div>
 
@@ -894,70 +882,79 @@ export default function AdminReseaux() {
                     transform: "scale(0.35)",
                     transformOrigin: "top left",
                   }}
-                  className={`bg-gradient-to-br ${couleur} text-white overflow-hidden`}
+                  className={`relative bg-gradient-to-br ${couleur} text-white overflow-hidden`}
                 >
                   {/* HEADER */}
                   <div className="px-[70px] pt-[55px]">
-                    <div className="bg-white rounded-[35px] p-[22px] inline-flex">
-                      <img
-                        src={LOGO_URL}
-                        alt="La Loi des Cartes"
-                        crossOrigin="anonymous"
-                        className="w-[180px] h-auto object-contain"
-                      />
-                    </div>
+                    <div className="flex items-start justify-between gap-[35px]">
+                      {/* GAUCHE : LOGO + TITRE */}
+                      <div className="min-w-0 flex-1">
+                        <div className="bg-white rounded-[35px] p-[22px] inline-flex">
+                          <img
+                            src={LOGO_URL}
+                            alt="La Loi des Cartes"
+                            crossOrigin="anonymous"
+                            className="w-[180px] h-auto object-contain"
+                          />
+                        </div>
 
-                    <div className="mt-[30px]">
-                      <div className="text-[30px] uppercase tracking-[6px] font-bold text-white/70">
-                        La Loi des Cartes
+                        <div className="mt-[25px]">
+                          <div className="text-[30px] uppercase tracking-[6px] font-bold text-white/70">
+                            La Loi des Cartes
+                          </div>
+
+                          <div className="text-[70px] leading-[0.95] font-black uppercase mt-[8px]">
+                            Prochaine
+                            <br />
+                            rencontre
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="text-[70px] leading-[0.95] font-black uppercase mt-[8px]">
-                        Prochaine
-                        <br />
-                        rencontre
-                      </div>
-                    </div>
-                  </div>
+                      {/* DROITE : DATE */}
+                      <div className="bg-white text-gray-900 rounded-[35px] p-[30px] w-[330px] flex-shrink-0 mt-[15px]">
+                        <div className="text-center">
+                          <div className="text-[25px] uppercase font-bold text-gray-500">
+                            {dateFormatee?.jour}
+                          </div>
 
-                  {/* DATE */}
-                  <div className="mx-[70px] mt-[35px] bg-white text-gray-900 rounded-[35px] p-[35px] flex items-center gap-[35px]">
-                    <div className="text-center min-w-[170px]">
-                      <div className="text-[30px] uppercase font-bold text-gray-500">
-                        {dateFormatee?.jour}
-                      </div>
+                          <div className="text-[105px] leading-none font-black">
+                            {dateFormatee?.numero}
+                          </div>
 
-                      <div className="text-[110px] leading-none font-black">
-                        {dateFormatee?.numero}
-                      </div>
+                          <div className="text-[31px] capitalize font-black">
+                            {dateFormatee?.mois}
+                          </div>
+                        </div>
 
-                      <div className="text-[34px] capitalize font-black">
-                        {dateFormatee?.mois}
-                      </div>
-                    </div>
+                        <div className="border-t-4 border-gray-200 mt-[20px] pt-[18px]">
+                          <div className="text-[25px] font-black leading-tight">
+                            {libelleEvenement}
+                          </div>
 
-                    <div className="border-l-4 border-gray-200 pl-[35px]">
-                      <div className="text-[34px] font-black">
-                        {libelleEvenement}
-                      </div>
+                          {evenementPrincipal?.heure_debut && (
+                            <div className="text-[21px] font-bold text-gray-600 mt-[10px]">
+                              🕐{" "}
+                              {formaterHeure(
+                                evenementPrincipal.heure_debut
+                              )}
 
-                      {evenementPrincipal?.heure_debut && (
-                        <div className="text-[28px] font-bold text-gray-600 mt-[12px]">
-                          🕐{" "}
-                          {formaterHeure(
-                            evenementPrincipal.heure_debut
+                              {evenementPrincipal.heure_fin
+                                ? ` – ${formaterHeure(
+                                    evenementPrincipal.heure_fin
+                                  )}`
+                                : ""}
+                            </div>
                           )}
 
-                          {evenementPrincipal.heure_fin
-                            ? ` – ${formaterHeure(
-                                evenementPrincipal.heure_fin
-                              )}`
-                            : ""}
+                          <div className="text-[18px] text-gray-500 mt-[8px] leading-tight">
+                            📍 {ADRESSE}
+                            <br />
+                            <span className="text-[16px]">
+                              {ADRESSE_COMPLETE}
+                            </span>
+                          </div>
                         </div>
-                      )}
-
-                      <div className="text-[24px] text-gray-500 mt-[10px]">
-                        📍 Maison des associations
                       </div>
                     </div>
                   </div>
@@ -1062,7 +1059,7 @@ export default function AdminReseaux() {
                   <div className="absolute left-0 right-0 bottom-0 px-[70px] pb-[22px]">
                     <div className="border-t border-white/20 pt-[14px] flex items-center justify-between text-[17px] text-white/75">
                       <div>
-                        📍 {ADRESSE}
+                        🌐 {ADRESSE_APP}
                       </div>
 
                       <div>
@@ -1134,7 +1131,7 @@ export default function AdminReseaux() {
                     transform: "scale(0.55)",
                     transformOrigin: "top left",
                   }}
-                  className={`bg-gradient-to-br ${couleur} text-white overflow-hidden`}
+                  className={`relative bg-gradient-to-br ${couleur} text-white overflow-hidden`}
                 >
                   {/* GAUCHE */}
                   <div className="absolute left-[55px] top-[42px] w-[390px]">
@@ -1184,8 +1181,12 @@ export default function AdminReseaux() {
                       </div>
                     )}
 
-                    <div className="text-[19px] mt-[4px] text-white/80">
-                      📍 Maison des associations
+                    <div className="text-[19px] mt-[4px] text-white/80 leading-tight">
+                      📍 {ADRESSE}
+                      <br />
+                      <span className="text-[17px]">
+                        {ADRESSE_COMPLETE}
+                      </span>
                     </div>
                   </div>
 
@@ -1264,7 +1265,7 @@ export default function AdminReseaux() {
                     )}
 
                     {/* JEUX */}
-                    <div className="text-[23px] uppercase tracking-[3px] font-black mt-[25px] mb-[10px]">
+                    <div className="text-[23px] uppercase tracking-[3px] font-black mt-[18px] mb-[10px]">
                       Encore plein de jeux à découvrir
                     </div>
 
@@ -1286,7 +1287,7 @@ export default function AdminReseaux() {
                   {/* FOOTER */}
                   <div className="absolute left-[55px] right-[55px] bottom-[22px] border-t border-white/20 pt-[12px] flex items-center justify-between text-[16px] text-white/70">
                     <div>
-                      📍 {ADRESSE_COMPLETE}
+                      🌐 {ADRESSE_APP}
                     </div>
 
                     <div>
