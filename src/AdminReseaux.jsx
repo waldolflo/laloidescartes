@@ -1162,12 +1162,12 @@ export default function AdminReseaux() {
                       </div>
                     </div>
 
-                    <div className="text-[24px] font-bold mt-[10px]">
+                    <div className="text-[23px] font-bold mt-[7px]">
                       {libelleEvenement}
                     </div>
 
                     {evenementPrincipal?.heure_debut && (
-                      <div className="text-[20px] mt-[6px] text-white/80">
+                      <div className="text-[19px] mt-[4px] text-white/80">
                         🕐{" "}
                         {formaterHeure(
                           evenementPrincipal.heure_debut
@@ -1181,10 +1181,10 @@ export default function AdminReseaux() {
                       </div>
                     )}
 
-                    <div className="text-[19px] mt-[4px] text-white/80 leading-tight">
+                    <div className="text-[17px] mt-[2px] text-white/80 leading-tight">
                       📍 {ADRESSE}
                       <br />
-                      <span className="text-[17px]">
+                      <span className="text-[15px]">
                         {ADRESSE_COMPLETE}
                       </span>
                     </div>
