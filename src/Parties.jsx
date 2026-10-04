@@ -551,51 +551,47 @@ export default function Parties({ user, authUser }) {
               CONTENU
               ======================================================== */}
 
-          <div className="p-5">
+          <div className="p-4">
 
             {/* Jeu + couverture */}
 
             {partieAPartager.jeux?.couverture_url && (
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-2">
                 <img
                   src={partieAPartager.jeux.couverture_url}
                   alt={partieAPartager.jeux?.nom || "Jeu"}
                   crossOrigin="anonymous"
-                  className="w-32 h-32 object-contain rounded-2xl shadow-md"
+                  className="w-28 h-28 object-contain rounded-2xl shadow-md"
                 />
               </div>
             )}
 
-            <h2 className="text-2xl font-black text-gray-900 text-center leading-tight">
+            <h2 className="text-xl font-black text-gray-900 text-center leading-tight">
               {partieAPartager.jeux?.nom || "Jeu"}
             </h2>
 
             {/* Date + heure */}
 
-            <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="grid grid-cols-2 gap-2 mt-3">
 
-              <div className="bg-purple-50 rounded-xl px-3 py-2.5">
-
-                <div className="text-[10px] uppercase font-bold text-purple-500">
+              <div className="bg-purple-50 rounded-xl px-3 py-2">
+                <div className="text-[9px] uppercase font-bold text-purple-500">
                   📅 Date
                 </div>
 
-                <div className="text-sm font-black text-gray-800 capitalize">
+                <div className="text-xs font-black text-gray-800 capitalize">
                   {formatDate(partieAPartager.date_partie)}
                 </div>
-
               </div>
 
-              <div className="bg-indigo-50 rounded-xl px-3 py-2.5">
-
-                <div className="text-[10px] uppercase font-bold text-indigo-500">
+              <div className="bg-indigo-50 rounded-xl px-3 py-2">
+                <div className="text-[9px] uppercase font-bold text-indigo-500">
                   🕐 Heure
                 </div>
 
-                <div className="text-sm font-black text-gray-800">
+                <div className="text-xs font-black text-gray-800">
                   {formatHeure(partieAPartager.heure_partie)}
                 </div>
-
               </div>
 
             </div>
@@ -604,32 +600,28 @@ export default function Parties({ user, authUser }) {
 
             <div className="grid grid-cols-2 gap-2 mt-2">
 
-              <div className="bg-gray-50 rounded-xl px-3 py-2.5">
-
-                <div className="text-[10px] uppercase font-bold text-gray-400">
+              <div className="bg-gray-50 rounded-xl px-3 py-2">
+                <div className="text-[9px] uppercase font-bold text-gray-400">
                   ⏱️ Durée
                 </div>
 
-                <div className="text-sm font-black text-gray-800">
+                <div className="text-xs font-black text-gray-800">
                   {partieAPartager.jeux?.duree
                     ? `${partieAPartager.jeux.duree} min`
                     : "—"}
                 </div>
-
               </div>
 
               {partieAPartager.jeux?.max_joueurs > 0 ? (
-                <div className="bg-emerald-50 rounded-xl px-3 py-2.5">
-
-                  <div className="text-[10px] uppercase font-bold text-emerald-600">
+                <div className="bg-emerald-50 rounded-xl px-3 py-2">
+                  <div className="text-[9px] uppercase font-bold text-emerald-600">
                     👥 Places
                   </div>
 
-                  <div className="text-sm font-black text-gray-800">
+                  <div className="text-xs font-black text-gray-800">
                     {partieAPartager.inscrits?.length || 0}/
                     {partieAPartager.jeux.max_joueurs}
                   </div>
-
                 </div>
               ) : (
                 <div />
@@ -640,33 +632,29 @@ export default function Parties({ user, authUser }) {
             {/* Lieu */}
 
             {partieAPartager.lieu && (
-              <div className="mt-2 flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
-
+              <div className="mt-2 flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
                 <MapPin
-                  size={16}
+                  size={15}
                   className="text-purple-600 flex-shrink-0"
                 />
 
-                <span className="text-sm font-bold text-gray-700">
+                <span className="text-xs font-bold text-gray-700">
                   {partieAPartager.lieu}
                 </span>
-
               </div>
             )}
 
             {/* Description */}
 
             {partieAPartager.description && (
-              <div className="mt-2 bg-gray-50 rounded-xl px-3 py-2.5">
-
-                <div className="text-[10px] uppercase font-bold text-gray-400">
+              <div className="mt-2 bg-gray-50 rounded-xl px-3 py-2">
+                <div className="text-[9px] uppercase font-bold text-gray-400">
                   📝 Description
                 </div>
 
-                <div className="text-sm font-semibold text-gray-700 mt-0.5">
+                <div className="text-xs font-semibold text-gray-700 mt-0.5 leading-snug">
                   {partieAPartager.description}
                 </div>
-
               </div>
             )}
 
@@ -674,7 +662,7 @@ export default function Parties({ user, authUser }) {
 
             {partieAPartager.jeux?.max_joueurs > 0 && (
               <div
-                className={`mt-3 text-xs font-bold text-center rounded-lg py-2 ${
+                className={`mt-2 text-[11px] font-bold text-center rounded-lg py-1.5 ${
                   (partieAPartager.inscrits?.length || 0) >=
                   partieAPartager.jeux.max_joueurs
                     ? "bg-red-50 text-red-600"
@@ -705,16 +693,14 @@ export default function Parties({ user, authUser }) {
 
             {/* Signature */}
 
-            <div className="mt-4 pt-3 border-t border-gray-100 text-center">
-
-              <div className="text-sm font-black text-indigo-900">
+            <div className="mt-3 pt-2 border-t border-gray-100 text-center">
+              <div className="text-xs font-black text-indigo-900">
                 🎲 La Loi des Cartes
               </div>
 
-              <div className="text-[10px] text-gray-400 font-semibold">
+              <div className="text-[9px] text-gray-400 font-semibold">
                 laloidescartes.vercel.app
               </div>
-
             </div>
 
           </div>
