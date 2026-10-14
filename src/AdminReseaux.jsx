@@ -371,7 +371,7 @@ export default function AdminReseaux({ profil }) {
       ) {
         await navigator.share({
           title: "La Loi des Cartes",
-          text: "🎲 La prochaine rencontre de La Loi des Cartes !",
+          text: "🎲 Le programme du club !",
           files: [fichier],
         });
 
@@ -918,9 +918,9 @@ export default function AdminReseaux({ profil }) {
                               </div>
 
                               <div className="text-[70px] leading-[0.95] font-black uppercase mt-[8px]">
-                                Prochaine
+                                Programme
                                 <br />
-                                rencontre
+                                <span className="text-purple-300">du club</span>
                               </div>
                             </div>
                           </div>
@@ -976,7 +976,7 @@ export default function AdminReseaux({ profil }) {
                       {/* PARTIES */}
                       <div className="mx-[70px] mt-[28px]">
                         <div className="text-[30px] uppercase tracking-[4px] font-black mb-[15px]">
-                          Au programme
+                          Parties prévues
                         </div>
 
                         {parties.length === 0 ? (
@@ -1159,7 +1159,7 @@ export default function AdminReseaux({ profil }) {
                         </div>
 
                         <div className="text-[21px] uppercase tracking-[4px] font-bold text-white/70 mt-[20px]">
-                          La prochaine rencontre
+                          Programme <span className="text-purple-300">du club</span>
                         </div>
 
                         <div className="text-[58px] leading-none font-black uppercase mt-[5px]">
@@ -1207,7 +1207,7 @@ export default function AdminReseaux({ profil }) {
                       {/* DROITE : PARTIES */}
                       <div className="absolute right-[45px] top-[50px] w-[700px] pr-[5px]">
                         <div className="text-[25px] uppercase tracking-[3px] font-black mb-[15px]">
-                          🎲 Les parties prévues
+                          Parties prévues
                         </div>
 
                         {parties.length === 0 ? (
@@ -1274,7 +1274,7 @@ export default function AdminReseaux({ profil }) {
                         {parties.length > 4 && (
                           <div className="text-[19px] font-bold text-white/70 mt-[8px]">
                             + {parties.length - 4} autres
-                            parties
+                            parties programmées
                           </div>
                         )}
                         {/* JEUX */}
