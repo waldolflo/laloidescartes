@@ -27,6 +27,8 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
 
   const [errorMsg, setErrorMsg] = useState("");
   const [profils, setProfils] = useState([]);
+  const [extensionsBggIds, setExtensionsBggIds] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchProfils = async () => {
@@ -43,7 +45,24 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
   }, []);
 
   useEffect(() => {
-    if (jeu) setForm(jeu);
+    if (!jeu) return;
+
+    setForm({
+      nom: jeu.nom || "",
+      regle_youtube: jeu.regle_youtube || "",
+      min_joueurs: jeu.min_joueurs || "",
+      max_joueurs: jeu.max_joueurs || "",
+      type: jeu.type || "",
+      duree: jeu.duree || "",
+      proprietaire: jeu.proprietaire || "",
+      bgg_api: jeu.bgg_api || "",
+    });
+
+    setExtensionsBggIds(
+      (jeu.extensions || [])
+        .map((extension) => extension.bgg_id)
+        .join("\n")
+    );
   }, [jeu]);
 
   if (!jeu) return null;
@@ -123,142 +142,173 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
   // ============================================================
   // SAUVEGARDE
   // ============================================================
-
+  const parseExtensionsIds = (value) => {
+    return [
+      ...new Set(
+        String(value || "")
+          .split(/[\s,;]+/)
+          .map((id) => id.trim())
+          .filter((id) => /^\d+$/.test(id))
+      ),
+    ];
+  };
+  
   const saveEdit = async () => {
     setErrorMsg("");
+    setSaving(true);
 
     try {
-      let couverture_url =
-        jeu.couverture_url || null;
+      let couverture_url = jeu.couverture_url || null;
+      let couverture_bgg_url = jeu.couverture_bgg_url || null;
+      let poids = jeu.poids ?? null;
+      let note = jeu.note ?? null;
 
-      let couverture_bgg_url =
-        jeu.couverture_bgg_url || null;
+      const ancienBggId = jeu.bgg_api
+        ? String(jeu.bgg_api)
+        : "";
 
-      let poids =
-        jeu.poids ?? null;
+      const nouveauBggId = form.bgg_api
+        ? String(form.bgg_api).trim()
+        : "";
 
-      let note =
-        jeu.note ?? null;
-
-      const ancienBggId =
-        jeu.bgg_api
-          ? String(jeu.bgg_api)
-          : "";
-
-      const nouveauBggId =
-        form.bgg_api
-          ? String(form.bgg_api).trim()
-          : "";
-
-      // ========================================================
-      // ID BGG MODIFIÉ
-      // ========================================================
+      // Mise à jour du jeu principal si son ID BGG a changé
 
       if (nouveauBggId !== ancienBggId) {
-
-        // ------------------------------------------------------
-        // ID BGG supprimé
-        // ------------------------------------------------------
-
         if (!nouveauBggId) {
-
           couverture_url = null;
           couverture_bgg_url = null;
           poids = null;
           note = null;
+        } else {
+          const bggData = await fetchBGGData(nouveauBggId);
 
-        }
-
-        // ------------------------------------------------------
-        // Nouvel ID BGG
-        // ------------------------------------------------------
-
-        else {
-
-          const bggData =
-            await fetchBGGData(
-              nouveauBggId
-            );
-
-          couverture_url =
-            bggData.couverture_url;
-
-          couverture_bgg_url =
-            bggData.couverture_bgg_url;
-
-          poids =
-            bggData.poids;
-
-          note =
-            bggData.note;
+          couverture_url = bggData.couverture_url;
+          couverture_bgg_url = bggData.couverture_bgg_url;
+          poids = bggData.poids;
+          note = bggData.note;
         }
       }
 
-      // ========================================================
-      // SAUVEGARDE
-      // ========================================================
+      // Mise à jour du jeu
 
-      const { data, error } =
+      const { data, error } = await supabase
+        .from("jeux")
+        .update({
+          nom: form.nom,
+          regle_youtube: form.regle_youtube,
+          min_joueurs: form.min_joueurs,
+          max_joueurs: form.max_joueurs,
+          type: form.type,
+          duree: form.duree,
+          proprietaire: form.proprietaire,
+          bgg_api: nouveauBggId || null,
+          couverture_url,
+          couverture_bgg_url,
+          poids,
+          note,
+        })
+        .eq("id", jeu.id)
+        .select("*");
+
+      if (error) throw error;
+
+      if (!data?.[0]) {
+        throw new Error("Le jeu n'a pas pu être récupéré après sa mise à jour.");
+      }
+
+      // Synchronisation des extensions
+
+      const nouveauxIds = parseExtensionsIds(extensionsBggIds);
+
+      const { data: anciennesExtensions, error: fetchExtensionsError } =
         await supabase
-          .from("jeux")
-          .update({
-            nom: form.nom,
-            regle_youtube:
-              form.regle_youtube,
+          .from("extensions_jeux")
+          .select("*")
+          .eq("jeu_id", jeu.id);
 
-            min_joueurs:
-              form.min_joueurs,
+      if (fetchExtensionsError) throw fetchExtensionsError;
 
-            max_joueurs:
-              form.max_joueurs,
+      const anciennes = anciennesExtensions || [];
 
-            type: form.type,
+      const anciennesIds = anciennes.map((ext) =>
+        String(ext.bgg_id)
+      );
 
-            duree: form.duree,
+      // Extensions à supprimer
 
-            proprietaire:
-              form.proprietaire,
+      const extensionsASupprimer = anciennes.filter(
+        (ext) => !nouveauxIds.includes(String(ext.bgg_id))
+      );
 
-            bgg_api:
-              nouveauBggId || null,
+      if (extensionsASupprimer.length) {
+        const idsASupprimer = extensionsASupprimer.map(
+          (ext) => ext.id
+        );
 
-            couverture_url,
+        const { error: deleteError } = await supabase
+          .from("extensions_jeux")
+          .delete()
+          .in("id", idsASupprimer);
 
-            couverture_bgg_url,
+        if (deleteError) throw deleteError;
+      }
 
-            poids,
+      // Extensions à ajouter
 
-            note,
+      const extensionsAAjouter = nouveauxIds.filter(
+        (id) => !anciennesIds.includes(id)
+      );
+
+      if (extensionsAAjouter.length) {
+        const extensionsData = await Promise.all(
+          extensionsAAjouter.map(async (id) => {
+            const bggData = await fetchBGGData(id);
+
+            return {
+              jeu_id: jeu.id,
+              bgg_id: id,
+              nom: bggData.nom,
+              couverture_url: bggData.couverture_url,
+              couverture_bgg_url: bggData.couverture_bgg_url,
+            };
           })
-          .eq("id", jeu.id)
-          .select("*");
+        );
 
-      if (error) {
-        setErrorMsg(error.message);
-        return;
+        const { error: insertError } = await supabase
+          .from("extensions_jeux")
+          .insert(extensionsData);
+
+        if (insertError) throw insertError;
       }
 
-      // ========================================================
-      // MISE À JOUR INSTANTANÉE
-      // ========================================================
+      // Récupération de la liste finale
 
-      if (data?.[0]) {
-        onUpdate(data[0]);
-      }
+      const { data: extensionsFinales, error: finalError } =
+        await supabase
+          .from("extensions_jeux")
+          .select("*")
+          .eq("jeu_id", jeu.id);
+
+      if (finalError) throw finalError;
+
+      // Mise à jour instantanée du catalogue
+
+      onUpdate({
+        ...data[0],
+        extensions: extensionsFinales || [],
+      });
 
       onClose();
 
     } catch (err) {
-
-      console.error(
-        "Erreur sauvegarde jeu :",
-        err
-      );
+      console.error("Erreur sauvegarde jeu :", err);
 
       setErrorMsg(
         err?.message ||
-        "Impossible de récupérer les données BGG."
+          "Impossible d'enregistrer le jeu et ses extensions."
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -622,6 +672,44 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
 
         </div>
 
+        {/* ==================================================
+            EXTENSIONS BGG
+            ================================================== */}
+
+        <div className="mt-5">
+
+          <label className="block mb-1.5 text-sm font-bold text-gray-700">
+            Extensions du jeu
+          </label>
+
+          <div className="relative">
+
+            <Hash
+              size={18}
+              className="absolute left-3 top-4 text-indigo-500"
+            />
+
+            <textarea
+              value={extensionsBggIds}
+              onChange={(e) => setExtensionsBggIds(e.target.value)}
+              rows={4}
+              placeholder={"Identifiants BGG des extensions\nUn identifiant par ligne"}
+              className="w-full border border-gray-200 bg-gray-50 pl-10 pr-3 py-3 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+          </div>
+
+          <p className="mt-2 text-xs text-gray-500">
+            Les extensions déjà enregistrées sont préremplies.
+            Ajoute ou retire simplement les identifiants BGG souhaités.
+          </p>
+
+          <p className="mt-1 text-xs text-indigo-600 font-semibold">
+            {parseExtensionsIds(extensionsBggIds).length} extension(s) sélectionnée(s)
+          </p>
+
+        </div>
+
         {/* ======================================================
             PIED DE MODALE
             ====================================================== */}
@@ -642,11 +730,12 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
           <button
             type="button"
             onClick={saveEdit}
-            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            disabled={saving}
+            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
           >
             <span className="inline-flex items-center justify-center gap-2">
               <Save size={17} />
-              Enregistrer
+              {saving ? "Enregistrement..." : "Enregistrer"}
             </span>
           </button>
 

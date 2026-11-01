@@ -45,6 +45,7 @@ export default function Catalogue({ user }) {
 
   const [profils, setProfils] = useState([]);
   const [profilCourant, setProfilCourant] = useState(null);
+  const [extensionsBggIds, setExtensionsBggIds] = useState("");
 
   // ============================================================
   // COULEUR GÉNÉRALE
@@ -281,12 +282,52 @@ export default function Catalogue({ user }) {
       .select("*")
       .order("nom", { ascending: true });
 
-    if (!error) {
-      setJeux(data || []);
-
-      bestScoresFetched.current = false;
-      bestScoreSynced.current = false;
+    if (error) {
+      console.error("Erreur récupération jeux :", error);
+      return;
     }
+
+    const jeuxData = data || [];
+
+    if (!jeuxData.length) {
+      setJeux([]);
+      return;
+    }
+
+    const jeuIds = jeuxData.map((jeu) => jeu.id);
+
+    const { data: extensions, error: extensionsError } =
+      await supabase
+        .from("extensions_jeux")
+        .select("*")
+        .in("jeu_id", jeuIds);
+
+    if (extensionsError) {
+      console.error(
+        "Erreur récupération extensions :",
+        extensionsError
+      );
+    }
+
+    const extensionsByJeu = {};
+
+    (extensions || []).forEach((extension) => {
+      if (!extensionsByJeu[extension.jeu_id]) {
+        extensionsByJeu[extension.jeu_id] = [];
+      }
+
+      extensionsByJeu[extension.jeu_id].push(extension);
+    });
+
+    const jeuxAvecExtensions = jeuxData.map((jeu) => ({
+      ...jeu,
+      extensions: extensionsByJeu[jeu.id] || [],
+    }));
+
+    setJeux(jeuxAvecExtensions);
+
+    bestScoresFetched.current = false;
+    bestScoreSynced.current = false;
   };
 
   // ============================================================
@@ -326,6 +367,7 @@ export default function Catalogue({ user }) {
       }
 
       return {
+        nom: data.name || data.title || null,
         // URL Supabase Storage
         couverture_url:
           data.image || null,
@@ -348,6 +390,7 @@ export default function Catalogue({ user }) {
       );
 
       return {
+        nom: null,
         couverture_url: null,
         couverture_bgg_url: null,
         poids: null,
@@ -356,19 +399,29 @@ export default function Catalogue({ user }) {
     }
   };
 
+  const parseExtensionsIds = (value) => {
+    return [
+      ...new Set(
+        String(value || "")
+          .split(/[\s,;]+/)
+          .map((id) => id.trim())
+          .filter((id) => /^\d+$/.test(id))
+      ),
+    ];
+  };
   // ============================================================
   // AJOUT JEU
   // ============================================================
 
   const addJeu = async () => {
-    if (!nom) {
-      setErrorMsg(
-        "Le nom du jeu est requis"
-      );
+    if (!nom.trim()) {
+      setErrorMsg("Le nom du jeu est requis");
       return;
     }
 
     setErrorMsg("");
+
+    const extensionIds = parseExtensionsIds(extensionsBggIds);
 
     const { data, error } = await supabase
       .from("jeux")
@@ -396,76 +449,115 @@ export default function Catalogue({ user }) {
       return;
     }
 
-    if (!data || !data[0]) return;
+    if (!data?.[0]) return;
 
     let newJeu = data[0];
 
-    const bggData =
-      await fetchBGGData(bggId);
+    try {
+      // Jeu principal
+      const bggData = await fetchBGGData(bggId);
 
-    const { error: updateError } =
-      await supabase
+      const { error: updateError } = await supabase
         .from("jeux")
         .update({
-          couverture_url:
-            bggData.couverture_url,
-          couverture_bgg_url:
-            bggData.couverture_bgg_url,
+          couverture_url: bggData.couverture_url,
+          couverture_bgg_url: bggData.couverture_bgg_url,
           note: bggData.note,
           poids: bggData.poids,
         })
-        .eq("id", newJeu.id)
-        .select("*");
+        .eq("id", newJeu.id);
 
-    if (updateError) {
-      console.error(
-        "Erreur update couverture :",
-        updateError
-      );
-    }
-
-    newJeu = {
-      ...newJeu,
-      ...bggData,
-    };
-
-    setJeux((prev) => [
-      newJeu,
-      ...prev,
-    ]);
-
-    setAddingJeu(false);
-
-    setNom("");
-    setProprietaire("");
-    setDuree("");
-    setRegleYoutube("");
-    setMinJoueurs("");
-    setMaxJoueurs("");
-    setType("");
-    setBggId("");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    await fetch(
-      "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          type: "notif_jeux",
-          title: `🎲 Nouveau jeu : ${newJeu.nom}`,
-          body: `${newJeu.nom} à été ajouté à la ludothèque c'est un jeu ${newJeu.type} pour ${newJeu.min_joueurs} à ${newJeu.max_joueurs} joueurs d'une durée de ${newJeu.duree} minutes. Cliquez pour plus de détails !`,
-          url: "/catalogue",
-        }),
+      if (updateError) {
+        console.error("Erreur mise à jour jeu :", updateError);
       }
-    );
+
+      newJeu = {
+        ...newJeu,
+        ...bggData,
+      };
+
+      // Extensions
+      let extensionsEnregistrees = [];
+
+      if (extensionIds.length) {
+        const extensionsData = await Promise.all(
+          extensionIds.map(async (id) => {
+            const extensionData = await fetchBGGData(id);
+
+            return {
+              jeu_id: newJeu.id,
+              bgg_id: id,
+              nom: extensionData.nom,
+              couverture_url: extensionData.couverture_url,
+              couverture_bgg_url:
+                extensionData.couverture_bgg_url,
+            };
+          })
+        );
+
+        const { data: insertedExtensions, error: extensionError } =
+          await supabase
+            .from("extensions_jeux")
+            .insert(extensionsData)
+            .select("*");
+
+        if (extensionError) {
+          console.error(
+            "Erreur enregistrement extensions :",
+            extensionError
+          );
+
+          alert(
+            "Le jeu a été créé, mais une erreur est survenue lors de l'enregistrement de ses extensions : " +
+              extensionError.message
+          );
+        } else {
+          extensionsEnregistrees = insertedExtensions || [];
+        }
+      }
+
+      newJeu.extensions = extensionsEnregistrees;
+
+      setJeux((prev) => [newJeu, ...prev]);
+
+      setAddingJeu(false);
+
+      setNom("");
+      setProprietaire("");
+      setDuree("");
+      setRegleYoutube("");
+      setMinJoueurs("");
+      setMaxJoueurs("");
+      setType("");
+      setBggId("");
+      setExtensionsBggIds("");
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        await fetch(
+          "https://jahbkwrftliquqziwwva.supabase.co/functions/v1/notify-game",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              type: "notif_jeux",
+              title: `🎲 Nouveau jeu : ${newJeu.nom}`,
+              body: `${newJeu.nom} à été ajouté à la ludothèque c'est un jeu ${newJeu.type} pour ${newJeu.min_joueurs} à ${newJeu.max_joueurs} joueurs d'une durée de ${newJeu.duree} minutes. Cliquez pour plus de détails !`,
+              url: "/catalogue",
+            }),
+          }
+        );
+      }
+    } catch (err) {
+      console.error("Erreur ajout jeu :", err);
+      setErrorMsg(err.message || "Erreur lors de l'ajout du jeu.");
+    }
   };
 
   // ============================================================
@@ -961,67 +1053,75 @@ export default function Catalogue({ user }) {
 
                 <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4">
 
-                  {j.couverture_url ? (
+                  <div className="relative h-48 flex items-center justify-center">
 
-                    <>
-                      {j.bgg_api ? (
-                        <a
-                          href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          <img
-                            src={
-                              j.couverture_url
-                            }
-                            alt={j.nom}
-                            className="w-full h-48 object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
-                          />
-                        </a>
-                      ) : (
+                    {/* Extensions en arrière-plan */}
+
+                    {(j.extensions || [])
+                      .filter((ext) => ext.couverture_url)
+                      .slice(0, 3)
+                      .map((ext, index) => (
                         <img
-                          src={
-                            j.couverture_url
-                          }
-                          alt={j.nom}
-                          className="w-full h-48 object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
+                          key={ext.id}
+                          src={ext.couverture_url}
+                          alt={ext.nom || `Extension ${ext.bgg_id}`}
+                          title={ext.nom || `Extension BGG ${ext.bgg_id}`}
+                          className="absolute h-40 w-28 object-contain rounded-lg shadow-lg opacity-80"
+                          style={{
+                            transform: `translateX(${(index - 1) * 34}px) translateY(${index % 2 === 0 ? -7 : 7}px) rotate(${(index - 1) * 7}deg)`,
+                            zIndex: index + 1,
+                          }}
                         />
-                      )}
+                      ))}
 
-                      {/* Règles */}
+                    {/* Jeu principal au premier plan */}
 
-                      {j.regle_youtube && (
-                        <a
-                          href={
-                            j.regle_youtube
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="absolute bottom-5 right-5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition"
-                        >
-                          <Play
-                            size={14}
-                            fill="currentColor"
+                    {j.couverture_url ? (
+                      <div className="relative z-10 w-full h-full flex items-center justify-center">
+                        {j.bgg_api ? (
+                          <a
+                            href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full h-full"
+                          >
+                            <img
+                              src={j.couverture_url}
+                              alt={j.nom}
+                              className="w-full h-full object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
+                            />
+                          </a>
+                        ) : (
+                          <img
+                            src={j.couverture_url}
+                            alt={j.nom}
+                            className="w-full h-full object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
                           />
-                          Règles
-                        </a>
-                      )}
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative z-10 h-48 flex flex-col items-center justify-center text-gray-300">
+                        <Library size={48} />
+                        <span className="mt-2 text-sm font-semibold">
+                          Pas d'image
+                        </span>
+                      </div>
+                    )}
 
-                    </>
+                  </div>
 
-                  ) : (
+                  {/* Règles */}
 
-                    <div className="h-48 flex flex-col items-center justify-center text-gray-300">
-
-                      <Library size={48} />
-
-                      <span className="mt-2 text-sm font-semibold">
-                        Pas d'image
-                      </span>
-
-                    </div>
-
+                  {j.regle_youtube && (
+                    <a
+                      href={j.regle_youtube}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-5 right-5 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition"
+                    >
+                      <Play size={14} fill="currentColor" />
+                      Règles
+                    </a>
                   )}
 
                   {/* BGG */}
@@ -1031,11 +1131,20 @@ export default function Catalogue({ user }) {
                       href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="absolute bottom-5 left-5 inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/90 backdrop-blur text-gray-700 text-xs font-bold rounded-xl shadow hover:bg-white transition"
+                      className="absolute bottom-5 left-5 z-20 inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/90 backdrop-blur text-gray-700 text-xs font-bold rounded-xl shadow hover:bg-white transition"
                     >
                       BGG
                       <ExternalLink size={12} />
                     </a>
+                  )}
+
+                  {/* Nombre d'extensions */}
+
+                  {j.extensions?.length > 0 && (
+                    <span className="absolute top-5 left-5 z-20 px-2.5 py-1 rounded-full bg-indigo-600 text-white text-xs font-black shadow-lg">
+                      +{j.extensions.length} extension
+                      {j.extensions.length > 1 ? "s" : ""}
+                    </span>
                   )}
 
                 </div>
@@ -1484,6 +1593,25 @@ export default function Catalogue({ user }) {
                   setBggId(e.target.value)
                 }
               />
+
+              {/* Extensions BGG */}
+
+              <label className="block mt-4 mb-1.5 text-sm font-bold text-gray-700">
+                Extensions BGG
+              </label>
+
+              <textarea
+                className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder={"Identifiants BGG des extensions\nExemple :\n123456\n234567\n345678"}
+                rows={3}
+                value={extensionsBggIds}
+                onChange={(e) => setExtensionsBggIds(e.target.value)}
+              />
+
+              <p className="mt-1 text-xs text-gray-500">
+                Tu peux saisir plusieurs identifiants, séparés par des espaces,
+                des virgules ou des retours à la ligne.
+              </p>
 
               {/* Boutons */}
 

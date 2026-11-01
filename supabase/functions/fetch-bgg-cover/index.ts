@@ -164,6 +164,12 @@ serve(async (req) => {
         "image"
       );
 
+    const name = 
+      extractTagValue(
+        xmlText,
+        "name"
+      );
+
     // ========================================================
     // STATS BGG
     // ========================================================
@@ -188,9 +194,20 @@ serve(async (req) => {
     const weight =
       parseFloat(weightStr);
 
-    if (!thumbnail || !image) {
-      throw new Error(
-        "Impossible de trouver les images dans le XML"
+    if (!image) {
+      return new Response(
+        JSON.stringify({
+          name,
+          thumbnail,
+          image: null,
+          bggImage: null,
+          rating,
+          weight,
+        }),
+        {
+          headers,
+          status: 200,
+        }
       );
     }
 
@@ -309,6 +326,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        name,
         thumbnail,
 
         // Nouvelle URL utilisée par l'application
