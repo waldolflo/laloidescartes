@@ -485,6 +485,8 @@ export default function Catalogue({ user }) {
         const extensionsData = await Promise.all(
           extensionIds.map(async (id) => {
             const extensionData = await fetchBGGData(id);
+            console.log("Extension BGG :", id, extensionData);
+            console.log("Nom récupéré :", extensionData?.nom);
 
             return {
               jeu_id: newJeu.id,
@@ -496,7 +498,7 @@ export default function Catalogue({ user }) {
             };
           })
         );
-
+        console.log("Données envoyées à Supabase :", extensionsData);
         const { data: insertedExtensions, error: extensionError } =
           await supabase
             .from("extensions_jeux")
