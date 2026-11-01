@@ -46,6 +46,7 @@ export default function Catalogue({ user }) {
   const [profils, setProfils] = useState([]);
   const [profilCourant, setProfilCourant] = useState(null);
   const [extensionsBggIds, setExtensionsBggIds] = useState("");
+  const [extensionsOuvertes, setExtensionsOuvertes] = useState(null);
 
   // ============================================================
   // COULEUR GÉNÉRALE
@@ -1094,9 +1095,9 @@ export default function Catalogue({ user }) {
                       .slice(0, 3)
                       .map((ext, index) => {
                         const positions = [
-                          { x: 65, y: 55, rotate: -8 },
-                          { x: 100, y: 55, rotate: 5 },
-                          { x: 135, y: 55, rotate: -5 },
+                          { x: 40, y: 48, rotate: -8 },
+                          { x: 80, y: 48, rotate: 5 },
+                          { x: 120, y: 48, rotate: -5 },
                         ];
 
                         const position = positions[index];
@@ -1107,7 +1108,7 @@ export default function Catalogue({ user }) {
                             src={ext.couverture_url}
                             alt={ext.nom || `Extension ${ext.bgg_id}`}
                             title={ext.nom || `Extension BGG ${ext.bgg_id}`}
-                            className="absolute z-20 h-12 w-9 object-cover rounded-md shadow-lg border-2 border-white transition-transform duration-300 group-hover:scale-110"
+                            className="absolute z-20 h-16 w-12 object-cover rounded-md shadow-lg border-2 border-white transition-transform duration-300 group-hover:scale-110"
                             style={{
                               transform: `translate(${position.x}px, ${position.y}px) rotate(${position.rotate}deg)`,
                             }}
@@ -1118,13 +1119,12 @@ export default function Catalogue({ user }) {
                   </div>
 
                   {/* Règles */}
-
                   {j.regle_youtube && (
                     <a
                       href={j.regle_youtube}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="absolute bottom-5 right-5 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition"
+                      className="absolute bottom-[4.5rem] left-5 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition"
                     >
                       <Play size={14} fill="currentColor" />
                       Règles
@@ -1132,7 +1132,6 @@ export default function Catalogue({ user }) {
                   )}
 
                   {/* BGG */}
-
                   {j.bgg_api && (
                     <a
                       href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
@@ -1146,12 +1145,52 @@ export default function Catalogue({ user }) {
                   )}
 
                   {/* Nombre d'extensions */}
-
                   {j.extensions?.length > 0 && (
-                    <span className="absolute top-5 left-5 z-20 px-2.5 py-1 rounded-full bg-indigo-600 text-white text-xs font-black shadow-lg">
-                      +{j.extensions.length} extension
-                      {j.extensions.length > 1 ? "s" : ""}
-                    </span>
+                    <div className="absolute top-5 left-5 z-30">
+
+                      <button
+                        type="button"
+                        onMouseEnter={() => setExtensionsOuvertes(j.id)}
+                        onMouseLeave={() => setExtensionsOuvertes(null)}
+                        onClick={() =>
+                          setExtensionsOuvertes(
+                            extensionsOuvertes === j.id ? null : j.id
+                          )
+                        }
+                        className="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-xs font-black shadow-lg hover:bg-indigo-700 transition"
+                      >
+                        +{j.extensions.length} extension
+                        {j.extensions.length > 1 ? "s" : ""}
+                      </button>
+
+                      {/* Liste des extensions */}
+                      {extensionsOuvertes === j.id && (
+                        <div
+                          onMouseEnter={() => setExtensionsOuvertes(j.id)}
+                          onMouseLeave={() => setExtensionsOuvertes(null)}
+                          className="absolute top-full left-0 mt-2 w-56 p-3 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-200"
+                        >
+                          <p className="text-xs font-black text-indigo-700 mb-2">
+                            Extensions disponibles
+                          </p>
+
+                          <ul className="space-y-2">
+                            {j.extensions.map((ext) => (
+                              <li
+                                key={ext.id}
+                                className="text-xs font-semibold flex items-start gap-2"
+                              >
+                                <span className="text-indigo-500">◆</span>
+                                <span>
+                                  {ext.nom || `Extension BGG ${ext.bgg_id}`}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                    </div>
                   )}
 
                 </div>
