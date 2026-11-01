@@ -1059,19 +1059,29 @@ export default function Catalogue({ user }) {
                     {(j.extensions || [])
                       .filter((ext) => ext.couverture_url)
                       .slice(0, 3)
-                      .map((ext, index) => (
-                        <img
-                          key={ext.id}
-                          src={ext.couverture_url}
-                          alt={ext.nom || `Extension ${ext.bgg_id}`}
-                          title={ext.nom || `Extension BGG ${ext.bgg_id}`}
-                          className="absolute h-36 w-24 object-contain rounded-lg shadow-lg opacity-90"
-                          style={{
-                            transform: `translateX(${48 + index * 38}px) translateY(${index % 2 === 0 ? -5 : 5}px) rotate(${(index - 1) * 5}deg)`,
-                            zIndex: index + 1,
-                          }}
-                        />
-                      ))}
+                      .map((ext, index) => {
+                        const positions = [
+                          { x: 80, y: -4, rotate: 7 },
+                          { x: 120, y: 5, rotate: -7 },
+                          { x: 160, y: -4, rotate: 10 },
+                        ];
+
+                        const position = positions[index];
+
+                        return (
+                          <img
+                            key={ext.id}
+                            src={ext.couverture_url}
+                            alt={ext.nom || `Extension ${ext.bgg_id}`}
+                            title={ext.nom || `Extension BGG ${ext.bgg_id}`}
+                            className="absolute h-36 w-24 object-contain rounded-lg shadow-lg opacity-90"
+                            style={{
+                              transform: `translateX(${position.x}px) translateY(${position.y}px) rotate(${position.rotate}deg)`,
+                              zIndex: index + 1,
+                            }}
+                          />
+                        );
+                      })}
 
                     {/* Jeu principal au premier plan */}
                     {j.couverture_url ? (
