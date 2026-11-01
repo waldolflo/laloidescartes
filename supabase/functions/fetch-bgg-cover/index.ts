@@ -164,11 +164,13 @@ serve(async (req) => {
         "image"
       );
 
-    const name = 
-      extractTagValue(
-        xmlText,
-        "name"
-      );
+    const nameMatch = xmlText.match(
+      /<name[^>]*type=["']primary["'][^>]*value=["']([^"']+)["']/i
+    );
+
+    const name = nameMatch
+      ? nameMatch[1].trim()
+      : null;
 
     // ========================================================
     // STATS BGG

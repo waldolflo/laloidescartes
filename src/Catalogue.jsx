@@ -362,6 +362,7 @@ export default function Catalogue({ user }) {
       const data = await res.json();
 
       console.log(data);
+      console.log("NOM BGG RÉCUPÉRÉ :", data.name);
 
       if (data.error) {
         throw new Error(data.error);
