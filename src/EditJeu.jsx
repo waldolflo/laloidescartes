@@ -11,6 +11,7 @@ import {
   UserRound,
   Hash,
   Save,
+  Plus,
 } from "lucide-react";
 
 export default function EditJeu({ jeu, onClose, onUpdate }) {
@@ -27,7 +28,9 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
 
   const [errorMsg, setErrorMsg] = useState("");
   const [profils, setProfils] = useState([]);
-  const [extensionsBggIds, setExtensionsBggIds] = useState("");
+  const [extensions, setExtensions] = useState([]);
+  const [nouvelIdExtension, setNouvelIdExtension] = useState("");
+  const [addingExtension, setAddingExtension] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -58,11 +61,8 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
       bgg_api: jeu.bgg_api || "",
     });
 
-    setExtensionsBggIds(
-      (jeu.extensions || [])
-        .map((extension) => extension.bgg_id)
-        .join("\n")
-    );
+    setExtensions(jeu.extensions || []);
+    setNouvelIdExtension("");
   }, [jeu]);
 
   if (!jeu) return null;
@@ -144,15 +144,43 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
   // ============================================================
   // SAUVEGARDE
   // ============================================================
-  const parseExtensionsIds = (value) => {
-    return [
-      ...new Set(
-        String(value || "")
-          .split(/[\s,;]+/)
-          .map((id) => id.trim())
-          .filter((id) => /^\d+$/.test(id))
-      ),
-    ];
+  const ajouterExtension = async () => {
+    const id = nouvelIdExtension.trim();
+
+    if (!/^\d+$/.test(id)) {
+      setErrorMsg("Saisis un identifiant BGG valide.");
+      return;
+    }
+
+    if (extensions.some((ext) => String(ext.bgg_id) === id)) {
+      setErrorMsg("Cette extension est déjà présente.");
+      return;
+    }
+
+    setErrorMsg("");
+    setAddingExtension(true);
+
+    try {
+      const bggData = await fetchBGGData(id);
+
+      setExtensions((prev) => [
+        ...prev,
+        {
+          bgg_id: id,
+          nom: bggData.nom || `Extension BGG #${id}`,
+          couverture_url: bggData.couverture_url,
+          couverture_bgg_url: bggData.couverture_bgg_url,
+        },
+      ]);
+
+      setNouvelIdExtension("");
+    } catch (err) {
+      setErrorMsg(
+        "Impossible de récupérer cette extension depuis BoardGameGeek."
+      );
+    } finally {
+      setAddingExtension(false);
+    }
   };
   
   const saveEdit = async () => {
@@ -220,7 +248,7 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
 
       // Synchronisation des extensions
 
-      const nouveauxIds = parseExtensionsIds(extensionsBggIds);
+      const nouveauxIds = extensions.map((ext) => String(ext.bgg_id));
 
       const { data: anciennesExtensions, error: fetchExtensionsError } =
         await supabase
@@ -257,24 +285,18 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
 
       // Extensions à ajouter
 
-      const extensionsAAjouter = nouveauxIds.filter(
-        (id) => !anciennesIds.includes(id)
+      const extensionsAAjouter = extensions.filter(
+        (ext) => !anciennesIds.includes(String(ext.bgg_id))
       );
 
       if (extensionsAAjouter.length) {
-        const extensionsData = await Promise.all(
-          extensionsAAjouter.map(async (id) => {
-            const bggData = await fetchBGGData(id);
-
-            return {
-              jeu_id: jeu.id,
-              bgg_id: id,
-              nom: bggData.nom,
-              couverture_url: bggData.couverture_url,
-              couverture_bgg_url: bggData.couverture_bgg_url,
-            };
-          })
-        );
+        const extensionsData = extensionsAAjouter.map((ext) => ({
+          jeu_id: jeu.id,
+          bgg_id: String(ext.bgg_id),
+          nom: ext.nom,
+          couverture_url: ext.couverture_url,
+          couverture_bgg_url: ext.couverture_bgg_url,
+        }));
 
         const { error: insertError } = await supabase
           .from("extensions_jeux")
@@ -672,44 +694,157 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
 
           </div>
 
-        </div>
+          {/* ==================================================
+              EXTENSIONS BGG
+              ================================================== */}
 
-        {/* ==================================================
-            EXTENSIONS BGG
-            ================================================== */}
+          <div className="mt-6 pt-5 border-t border-gray-100">
 
-        <div className="mt-4">
+            <div className="mb-3">
+              <label className="block text-sm font-bold text-gray-700">
+                Extensions du jeu
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                Ajoute les extensions à partir de leur identifiant BoardGameGeek.
+              </p>
+            </div>
 
-          <label className="block mb-1.5 text-sm font-bold text-gray-700">
-            Extensions du jeu
-          </label>
+            {/* Liste des extensions */}
 
-          <div className="relative">
+            {extensions.length > 0 && (
+              <div className="space-y-2 mb-4">
 
-            <Hash
-              size={18}
-              className="absolute left-3 top-4 text-indigo-500"
-            />
+                {extensions.map((extension) => (
+                  <div
+                    key={extension.bgg_id}
+                    className="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 bg-gray-50"
+                  >
 
-            <textarea
-              value={extensionsBggIds}
-              onChange={(e) => setExtensionsBggIds(e.target.value)}
-              rows={4}
-              placeholder={"Identifiants BGG des extensions\nUn identifiant par ligne"}
-              className="w-full border border-gray-200 bg-gray-50 pl-10 pr-3 py-3 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+                    {/* Couverture */}
+
+                    <div className="w-12 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center">
+
+                      {extension.couverture_url || extension.couverture_bgg_url ? (
+                        <img
+                          src={
+                            extension.couverture_url ||
+                            extension.couverture_bgg_url
+                          }
+                          alt={extension.nom || "Extension"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Dices size={20} className="text-gray-400" />
+                      )}
+
+                    </div>
+
+                    {/* Nom et ID */}
+
+                    <div className="flex-1 min-w-0">
+
+                      <p className="text-sm font-bold text-gray-800 truncate">
+                        {extension.nom || `Extension BGG #${extension.bgg_id}`}
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        ID BGG : {extension.bgg_id}
+                      </p>
+
+                    </div>
+
+                    {/* Suppression */}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExtensions((prev) =>
+                          prev.filter(
+                            (ext) => String(ext.bgg_id) !== String(extension.bgg_id)
+                          )
+                        )
+                      }
+                      className="w-9 h-9 flex-shrink-0 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
+                      title="Retirer cette extension"
+                    >
+                      <X size={18} />
+                    </button>
+
+                  </div>
+                ))}
+
+              </div>
+            )}
+
+            {/* Aucune extension */}
+
+            {extensions.length === 0 && (
+              <div className="mb-4 p-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 text-center">
+
+                <Dices size={25} className="mx-auto mb-2 text-gray-400" />
+
+                <p className="text-sm font-semibold text-gray-600">
+                  Aucune extension ajoutée
+                </p>
+
+                <p className="text-xs text-gray-400 mt-1">
+                  Ajoute une extension avec son identifiant BGG ci-dessous.
+                </p>
+
+              </div>
+            )}
+
+            {/* Ajout d'une extension */}
+
+            <div className="flex gap-2">
+
+              <div className="relative flex-1">
+
+                <Hash
+                  size={17}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-500"
+                />
+
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={nouvelIdExtension}
+                  onChange={(e) => setNouvelIdExtension(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      ajouterExtension();
+                    }
+                  }}
+                  placeholder="Identifiant BGG"
+                  className="w-full border border-gray-200 bg-gray-50 pl-10 pr-3 py-3 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+
+              </div>
+
+              <button
+                type="button"
+                onClick={ajouterExtension}
+                disabled={addingExtension || !nouvelIdExtension.trim()}
+                className="flex-shrink-0 px-4 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {addingExtension ? (
+                  <span className="text-sm">Chargement...</span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Plus size={18} />
+                    Ajouter
+                  </span>
+                )}
+              </button>
+
+            </div>
+
+            <p className="mt-2 text-xs text-gray-500">
+              {extensions.length} extension(s) sélectionnée(s)
+            </p>
 
           </div>
-
-          <p className="mt-2 text-xs text-gray-500">
-            Les extensions déjà enregistrées sont préremplies.
-            Ajoute ou retire simplement les identifiants BGG souhaités.
-          </p>
-
-          <p className="mt-1 text-xs text-indigo-600 font-semibold">
-            {parseExtensionsIds(extensionsBggIds).length} extension(s) sélectionnée(s)
-          </p>
-
         </div>
 
         {/* ======================================================
