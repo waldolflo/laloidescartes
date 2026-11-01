@@ -47,6 +47,7 @@ export default function Catalogue({ user }) {
   const [profilCourant, setProfilCourant] = useState(null);
   const [extensionsBggIds, setExtensionsBggIds] = useState("");
   const [extensionsOuvertes, setExtensionsOuvertes] = useState(null);
+  const [scoresOuverts, setScoresOuverts] = useState(null);
 
   // ============================================================
   // COULEUR GÉNÉRALE
@@ -485,7 +486,7 @@ export default function Catalogue({ user }) {
         const extensionsData = await Promise.all(
           extensionIds.map(async (id) => {
             const extensionData = await fetchBGGData(id);
-            
+
             console.log("EXTENSION ID :", id);
             console.log("EXTENSION DATA :", extensionData);
             console.log("EXTENSION NOM :", extensionData?.nom);
@@ -1029,27 +1030,59 @@ export default function Catalogue({ user }) {
                       </span>
                     )}
 
-                  {j.bestScore &&
-                    j.bestScore > 0 && (
-                      <span
-                        className="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg cursor-pointer hover:scale-105 transition"
-                        title={
-                          j.bestUsers?.join(
-                            ", "
-                          )
-                        }
+                  {j.bestScore && j.bestScore > 0 && (
+                    <div className="relative">
+
+                      <button
+                        type="button"
+                        onMouseEnter={() => setScoresOuverts(j.id)}
+                        onMouseLeave={() => setScoresOuverts(null)}
                         onClick={() =>
-                          alert(
-                            `Meilleur score par ${j.bestUsers.join(
-                              ", "
-                            )}`
+                          setScoresOuverts(
+                            scoresOuverts === j.id ? null : j.id
                           )
                         }
+                        className="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg cursor-pointer hover:bg-emerald-700 transition"
                       >
                         <Trophy size={12} />
                         {j.bestScore}
-                      </span>
-                    )}
+                      </button>
+
+                      {/* Info-bulle du meilleur score */}
+                      {scoresOuverts === j.id && (
+                        <div
+                          onMouseEnter={() => setScoresOuverts(j.id)}
+                          onMouseLeave={() => setScoresOuverts(null)}
+                          className="absolute top-full right-0 mt-2 w-52 p-3 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-200 z-50"
+                        >
+                          <p className="text-xs font-black text-emerald-700 mb-2">
+                            Meilleur score
+                          </p>
+
+                          <p className="text-sm font-bold">
+                            🏆 {j.bestScore} points
+                          </p>
+
+                          <p className="text-xs text-gray-600 mt-1">
+                            Réalisé par :
+                          </p>
+
+                          <ul className="mt-1 space-y-1">
+                            {(j.bestUsers || []).map((nom, index) => (
+                              <li
+                                key={index}
+                                className="text-xs font-semibold flex items-center gap-2"
+                              >
+                                <span className="text-emerald-500">◆</span>
+                                {nom}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                    </div>
+                  )}
 
                 </div>
 
