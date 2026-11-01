@@ -485,8 +485,10 @@ export default function Catalogue({ user }) {
         const extensionsData = await Promise.all(
           extensionIds.map(async (id) => {
             const extensionData = await fetchBGGData(id);
-            console.log("Extension BGG :", id, extensionData);
-            console.log("Nom récupéré :", extensionData?.nom);
+            
+            console.log("EXTENSION ID :", id);
+            console.log("EXTENSION DATA :", extensionData);
+            console.log("EXTENSION NOM :", extensionData?.nom);
 
             return {
               jeu_id: newJeu.id,
