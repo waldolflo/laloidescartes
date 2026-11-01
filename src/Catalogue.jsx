@@ -1053,10 +1053,9 @@ export default function Catalogue({ user }) {
 
                 <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4">
 
-                  <div className="relative h-48 flex items-center justify-center">
+                  <div className="relative h-48 flex items-center justify-center overflow-hidden">
 
                     {/* Extensions en arrière-plan */}
-
                     {(j.extensions || [])
                       .filter((ext) => ext.couverture_url)
                       .slice(0, 3)
@@ -1066,18 +1065,23 @@ export default function Catalogue({ user }) {
                           src={ext.couverture_url}
                           alt={ext.nom || `Extension ${ext.bgg_id}`}
                           title={ext.nom || `Extension BGG ${ext.bgg_id}`}
-                          className="absolute h-40 w-28 object-contain rounded-lg shadow-lg opacity-80"
+                          className="absolute h-36 w-24 object-contain rounded-lg shadow-lg opacity-90"
                           style={{
-                            transform: `translateX(${(index - 1) * 34}px) translateY(${index % 2 === 0 ? -7 : 7}px) rotate(${(index - 1) * 7}deg)`,
+                            transform: `translateX(${48 + index * 38}px) translateY(${index % 2 === 0 ? -5 : 5}px) rotate(${(index - 1) * 5}deg)`,
                             zIndex: index + 1,
                           }}
                         />
                       ))}
 
                     {/* Jeu principal au premier plan */}
-
                     {j.couverture_url ? (
-                      <div className="relative z-10 w-full h-full flex items-center justify-center">
+                      <div
+                        className={`relative z-10 h-full flex items-center justify-center ${
+                          (j.extensions || []).some((ext) => ext.couverture_url)
+                            ? "w-[72%]"
+                            : "w-full"
+                        }`}
+                      >
                         {j.bgg_api ? (
                           <a
                             href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}

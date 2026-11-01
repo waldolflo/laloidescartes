@@ -676,7 +676,7 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
             EXTENSIONS BGG
             ================================================== */}
 
-        <div className="mt-5">
+        <div className="mt-4">
 
           <label className="block mb-1.5 text-sm font-bold text-gray-700">
             Extensions du jeu
