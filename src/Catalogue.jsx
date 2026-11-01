@@ -1053,45 +1053,11 @@ export default function Catalogue({ user }) {
 
                 <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4">
 
-                  <div className="relative h-48 flex items-center justify-center overflow-hidden">
+                  <div className="relative h-48 flex items-center justify-center">
 
-                    {/* Extensions en arrière-plan */}
-                    {(j.extensions || [])
-                      .filter((ext) => ext.couverture_url)
-                      .slice(0, 3)
-                      .map((ext, index) => {
-                        const positions = [
-                          { x: 80, y: -4, rotate: 7 },
-                          { x: 120, y: 5, rotate: -7 },
-                          { x: 160, y: -4, rotate: 10 },
-                        ];
-
-                        const position = positions[index];
-
-                        return (
-                          <img
-                            key={ext.id}
-                            src={ext.couverture_url}
-                            alt={ext.nom || `Extension ${ext.bgg_id}`}
-                            title={ext.nom || `Extension BGG ${ext.bgg_id}`}
-                            className="absolute h-36 w-24 object-contain rounded-lg shadow-lg opacity-90"
-                            style={{
-                              transform: `translateX(${position.x}px) translateY(${position.y}px) rotate(${position.rotate}deg)`,
-                              zIndex: index + 1,
-                            }}
-                          />
-                        );
-                      })}
-
-                    {/* Jeu principal au premier plan */}
+                    {/* Couverture principale */}
                     {j.couverture_url ? (
-                      <div
-                        className={`relative z-10 h-full flex items-center justify-center ${
-                          (j.extensions || []).some((ext) => ext.couverture_url)
-                            ? "w-[72%]"
-                            : "w-full"
-                        }`}
-                      >
+                      <div className="relative z-10 w-full h-full flex items-center justify-center">
                         {j.bgg_api ? (
                           <a
                             href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
@@ -1121,6 +1087,33 @@ export default function Catalogue({ user }) {
                         </span>
                       </div>
                     )}
+
+                    {/* Extensions au premier plan */}
+                    {(j.extensions || [])
+                      .filter((ext) => ext.couverture_url)
+                      .slice(0, 3)
+                      .map((ext, index) => {
+                        const positions = [
+                          { x: 65, y: 55, rotate: -8 },
+                          { x: 100, y: 55, rotate: 5 },
+                          { x: 135, y: 55, rotate: -5 },
+                        ];
+
+                        const position = positions[index];
+
+                        return (
+                          <img
+                            key={ext.id}
+                            src={ext.couverture_url}
+                            alt={ext.nom || `Extension ${ext.bgg_id}`}
+                            title={ext.nom || `Extension BGG ${ext.bgg_id}`}
+                            className="absolute z-20 h-12 w-9 object-cover rounded-md shadow-lg border-2 border-white transition-transform duration-300 group-hover:scale-110"
+                            style={{
+                              transform: `translate(${position.x}px, ${position.y}px) rotate(${position.rotate}deg)`,
+                            }}
+                          />
+                        );
+                      })}
 
                   </div>
 
