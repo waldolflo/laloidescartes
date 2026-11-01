@@ -1032,7 +1032,7 @@ export default function Catalogue({ user }) {
                     BADGES
                 ================================================== */}
 
-                <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1.5">
+                <div className="absolute top-3 right-3 z-[60] flex flex-col items-end gap-1.5">
 
                   {j.fav > 0 && (
                     <span className="inline-flex items-center gap-1 bg-red-600 text-white text-xs font-black rounded-full px-2.5 py-1 shadow-lg">
@@ -1068,7 +1068,7 @@ export default function Catalogue({ user }) {
                     )}
 
                   {j.bestScore && j.bestScore > 0 && (
-                    <div className="relative">
+                    <div className="relative isolate">
 
                       <button
                         type="button"
