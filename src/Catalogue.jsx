@@ -1021,7 +1021,11 @@ export default function Catalogue({ user }) {
 
               <div
                 key={j.id}
-                className="group relative bg-white rounded-[1.5rem] shadow-lg border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                className={`group relative bg-white rounded-[1.5rem] shadow-lg border border-gray-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+                  scoresOuverts === j.id || extensionsOuvertes === j.id
+                    ? "z-50"
+                    : "z-0"
+                }`}
               >
 
                 {/* ==================================================
@@ -1086,7 +1090,7 @@ export default function Catalogue({ user }) {
                         <div
                           onMouseEnter={() => setScoresOuverts(j.id)}
                           onMouseLeave={() => setScoresOuverts(null)}
-                          className="absolute top-full right-0 mt-2 w-52 p-3 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-200 z-50"
+                          className="absolute top-full right-0 mt-2 w-52 p-3 bg-white text-gray-800 rounded-xl shadow-2xl border border-gray-200 z-[100]"
                         >
                           <p className="text-xs font-black text-emerald-700 mb-2">
                             Meilleur score
@@ -1123,7 +1127,7 @@ export default function Catalogue({ user }) {
                     IMAGE
                 ================================================== */}
 
-                <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+                <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-t-[1.5rem] overflow-hidden">
 
                   <div className="relative h-48 flex items-center justify-center">
 
