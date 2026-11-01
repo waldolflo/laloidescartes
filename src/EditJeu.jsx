@@ -111,6 +111,8 @@ export default function EditJeu({ jeu, onClose, onUpdate }) {
       }
 
       return {
+        // Nom récupéré depuis BoardGameGeek
+        nom: data.name || data.title || null,
         // URL Supabase Storage
         couverture_url:
           data.image || null,
