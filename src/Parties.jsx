@@ -1296,6 +1296,7 @@ export default function Parties({ user, authUser }) {
                   </a>
                 )}
                 
+                
                 {/* Couvertures des extensions en bas à droite */}
                 {p.jeux?.extensions?.length > 0 && (
                   <div className="absolute bottom-3 right-3 z-20 flex items-end justify-end">
@@ -1307,7 +1308,7 @@ export default function Parties({ user, authUser }) {
                         <div
                           key={extension.id || index}
                           title={extension.nom || "Extension sans nom"}
-                          className="relative -ml-3 rounded-md border-2 border-white shadow-lg overflow-hidden bg-white"
+                          className="relative -ml-3 rounded-md border-2 border-white shadow-lg bg-white transition-all duration-200 hover:scale-125 hover:-translate-y-2 hover:z-[100]"
                           style={{
                             rotate: `${
                               (index - (Math.min(p.jeux.extensions.length, 5) - 1) / 2) * 7
@@ -1319,10 +1320,10 @@ export default function Parties({ user, authUser }) {
                             <img
                               src={image}
                               alt={extension.nom}
-                              className="h-16 w-12 object-cover"
+                              className="h-16 w-12 object-cover rounded-sm"
                             />
                           ) : (
-                            <div className="h-16 w-12 flex items-center justify-center bg-purple-100">
+                            <div className="h-16 w-12 flex items-center justify-center bg-purple-100 rounded-sm">
                               <Dices size={18} className="text-purple-500" />
                             </div>
                           )}
