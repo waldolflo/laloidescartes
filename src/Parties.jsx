@@ -1295,9 +1295,8 @@ export default function Parties({ user, authUser }) {
                     Règles
                   </a>
                 )}
-
                 
-                {/* Couvertures des extensions en bas à droite avec survol */}
+                {/* Couvertures des extensions en bas à droite */}
                 {p.jeux?.extensions?.length > 0 && (
                   <div className="absolute bottom-3 right-3 z-20 flex items-end justify-end">
                     {p.jeux.extensions.slice(0, 5).map((extension, index) => {
@@ -1307,7 +1306,8 @@ export default function Parties({ user, authUser }) {
                       return (
                         <div
                           key={extension.id || index}
-                          className="group relative -ml-3 rounded-md border-2 border-white shadow-lg overflow-visible bg-white"
+                          title={extension.nom || "Extension sans nom"}
+                          className="relative -ml-3 rounded-md border-2 border-white shadow-lg overflow-hidden bg-white"
                           style={{
                             rotate: `${
                               (index - (Math.min(p.jeux.extensions.length, 5) - 1) / 2) * 7
@@ -1315,43 +1315,21 @@ export default function Parties({ user, authUser }) {
                             zIndex: index + 1,
                           }}
                         >
-                          {/* Couverture */}
                           {image ? (
                             <img
                               src={image}
                               alt={extension.nom}
-                              className="h-16 w-12 object-cover rounded-sm"
+                              className="h-16 w-12 object-cover"
                             />
                           ) : (
-                            <div className="h-16 w-12 flex items-center justify-center bg-purple-100 rounded-sm">
+                            <div className="h-16 w-12 flex items-center justify-center bg-purple-100">
                               <Dices size={18} className="text-purple-500" />
                             </div>
                           )}
-
-                          {/* Infobulle au survol */}
-                          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-[100] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                            <div className="w-48 rounded-xl bg-gray-900 text-white text-xs p-3 shadow-2xl text-center">
-                              {image && (
-                                <img
-                                  src={image}
-                                  alt={extension.nom}
-                                  className="w-16 h-20 object-cover rounded-md mx-auto mb-2 shadow"
-                                />
-                              )}
-
-                              <p className="font-semibold leading-snug">
-                                {extension.nom || "Extension sans nom"}
-                              </p>
-                            </div>
-
-                            {/* Petite flèche */}
-                            <div className="w-3 h-3 bg-gray-900 rotate-45 mx-auto -mt-1.5" />
-                          </div>
                         </div>
                       );
                     })}
 
-                    {/* Nombre d'extensions supplémentaires */}
                     {p.jeux.extensions.length > 5 && (
                       <span className="relative z-10 ml-1 px-2 py-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow">
                         +{p.jeux.extensions.length - 5}
@@ -1359,6 +1337,7 @@ export default function Parties({ user, authUser }) {
                     )}
                   </div>
                 )}
+
               </div>
 
                 {/* ==================================================
