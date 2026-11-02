@@ -1023,7 +1023,7 @@ export default function Catalogue({ user }) {
                 key={j.id}
                 className={`group relative bg-white rounded-[1.5rem] shadow-lg border border-gray-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
                   scoresOuverts === j.id || extensionsOuvertes === j.id
-                    ? "z-50"
+                    ? "z-[90]"
                     : "z-0"
                 }`}
               >
@@ -1127,7 +1127,7 @@ export default function Catalogue({ user }) {
                     IMAGE
                 ================================================== */}
 
-                <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-t-[1.5rem] overflow-hidden">
+                <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-t-[1.5rem] overflow-visible">
 
                   <div className="relative h-48 flex items-center justify-center">
 
@@ -1244,7 +1244,7 @@ export default function Catalogue({ user }) {
                         <div
                           onMouseEnter={() => setExtensionsOuvertes(j.id)}
                           onMouseLeave={() => setExtensionsOuvertes(null)}
-                          className="absolute left-0 top-full mt-2 w-64 max-h-64 overflow-y-auto rounded-xl bg-white shadow-2xl border border-gray-200 p-2"
+                          className="absolute left-0 top-full mt-2 w-64 max-h-64 overflow-y-auto rounded-xl bg-white shadow-2xl border border-gray-200 p-2 z-[100]"
                         >
                           {j.extensions.map((ext) => (
                             <div
