@@ -1254,9 +1254,9 @@ export default function Parties({ user, authUser }) {
                         onClick={() =>
                           setScoresOuverts(scoresOuverts === p.id ? null : p.id)
                         }
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold shadow"
+                        className="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg cursor-pointer hover:bg-emerald-700 transition"
                       >
-                        <Trophy size={13} />
+                        <Trophy size={12} />
                         {p.jeux.best_score}
                       </button>
 
@@ -1264,20 +1264,25 @@ export default function Parties({ user, authUser }) {
                         <div
                           onMouseEnter={() => setScoresOuverts(p.id)}
                           onMouseLeave={() => setScoresOuverts(null)}
-                          className="absolute right-0 top-full mt-2 w-56 p-3 rounded-xl bg-white shadow-xl border border-gray-200 z-[80]"
+                          className="absolute top-full right-0 mt-2 w-52 p-3 bg-white text-gray-800 rounded-xl shadow-2xl border border-gray-200 z-[80]"
                         >
-                          <p className="text-sm font-bold text-gray-800 mb-1">
+                          <p className="text-xs font-black text-emerald-700 mb-2">
                             Meilleur score
                           </p>
-                          <p className="text-sm text-amber-700 font-semibold mb-2">
+                          <p className="text-sm font-bold">
                             🏆 {p.jeux.best_score} points
                           </p>
-
-                          {(p.jeux?.bestUsers || []).map((user, index) => (
-                            <p key={index} className="text-xs text-gray-600">
-                              {user.nom}
-                            </p>
-                          ))}
+                          <ul className="mt-1 space-y-1">
+                            {(p.jeux?.bestUsers || []).map((user, index) => (
+                              <li
+                                key={index}
+                                className="text-xs font-semibold flex items-center gap-2"
+                              >
+                                <span className="text-emerald-500">◆</span>
+                                {user.nom}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                     </div>

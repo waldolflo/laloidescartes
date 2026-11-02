@@ -1100,10 +1100,6 @@ export default function Catalogue({ user }) {
                             🏆 {j.bestScore} points
                           </p>
 
-                          <p className="text-xs text-gray-600 mt-1">
-                            Réalisé par :
-                          </p>
-
                           <ul className="mt-1 space-y-1">
                             {(j.bestUsers || []).map((nom, index) => (
                               <li
