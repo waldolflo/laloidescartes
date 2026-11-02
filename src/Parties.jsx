@@ -1187,7 +1187,8 @@ export default function Parties({ user, authUser }) {
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-600 text-white text-xs font-semibold shadow-lg hover:bg-purple-700 transition"
                     >
                       <Dices size={14} />
-                      +{p.jeux.extensions.length} extensions
+                      +{p.jeux.extensions.length} extension
+                      {p.jeux.extensions.length > 1 ? "s" : ""}
                     </button>
 
                     {extensionsOuvertes === p.id && (
@@ -1291,7 +1292,7 @@ export default function Parties({ user, authUser }) {
                     rel="noopener noreferrer"
                     className="absolute bottom-3 left-3 z-[40] flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-600 text-white text-xs font-semibold shadow-lg hover:bg-red-700 transition"
                   >
-                    <BookOpen size={14} />
+                    <Play size={14} />
                     Règles
                   </a>
                 )}

@@ -1234,7 +1234,7 @@ export default function Catalogue({ user }) {
                         }
                         className="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-xs font-black shadow-lg hover:bg-indigo-700 transition"
                       >
-                        +{j.extensions.length} extension
+                        <Dices size={14} />+{j.extensions.length} extension
                         {j.extensions.length > 1 ? "s" : ""}
                       </button>
 
@@ -1245,23 +1245,29 @@ export default function Catalogue({ user }) {
                           onMouseLeave={() => setExtensionsOuvertes(null)}
                           className="absolute top-full left-0 mt-2 w-56 p-3 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-200"
                         >
-                          <p className="text-xs font-black text-indigo-700 mb-2">
-                            Extensions disponibles
-                          </p>
+                          {j.extensions.map((ext) => (
+                            <div
+                              key={ext.id}
+                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
+                            >
+                              {ext.couverture_url || ext.couverture_bgg_url ? (
+                                <img
+                                  src={ext.couverture_url || ext.couverture_bgg_url}
+                                  alt={ext.nom}
+                                  className="w-10 h-14 object-cover rounded shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-10 h-14 flex items-center justify-center bg-gray-100 rounded">
+                                  <Dices size={18} className="text-gray-400" />
+                                </div>
+                              )}
+  
+                              <span className="text-sm font-medium text-gray-700">
+                                {ext.nom || "Extension sans nom"}
+                              </span>
+                            </div>
+                          ))}
 
-                          <ul className="space-y-2">
-                            {j.extensions.map((ext) => (
-                              <li
-                                key={ext.id}
-                                className="text-xs font-semibold flex items-start gap-2"
-                              >
-                                <span className="text-indigo-500">◆</span>
-                                <span>
-                                  {ext.nom || `Extension BGG ${ext.bgg_id}`}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
                         </div>
                       )}
 
