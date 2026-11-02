@@ -1168,6 +1168,48 @@ export default function Parties({ user, authUser }) {
                       <span className="text-sm mt-2">Pas de couverture</span>
                     </div>
                   )}
+
+                  {/* Couvertures des extensions en bas à droite de la couverture */}
+                  {p.jeux?.extensions?.length > 0 && (
+                    <div className="absolute bottom-2 right-2 z-20 flex items-end justify-end">
+                      {p.jeux.extensions.slice(0, 5).map((extension, index) => {
+                        const image =
+                          extension.couverture_url || extension.couverture_bgg_url;
+
+                        return (
+                          <div
+                            key={extension.id || index}
+                            title={extension.nom || "Extension sans nom"}
+                            className="relative -ml-3 rounded-md border-2 border-white shadow-lg bg-white transition-all duration-200 hover:scale-125 hover:-translate-y-2 hover:z-[100]"
+                            style={{
+                              rotate: `${
+                                (index - (Math.min(p.jeux.extensions.length, 5) - 1) / 2) * 7
+                              }deg`,
+                              zIndex: index + 1,
+                            }}
+                          >
+                            {image ? (
+                              <img
+                                src={image}
+                                alt={extension.nom}
+                                className="h-16 w-12 object-cover rounded-sm"
+                              />
+                            ) : (
+                              <div className="h-16 w-12 flex items-center justify-center bg-purple-100 rounded-sm">
+                                <Dices size={18} className="text-purple-500" />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {p.jeux.extensions.length > 5 && (
+                        <span className="relative z-10 ml-1 px-2 py-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow">
+                          +{p.jeux.extensions.length - 5}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Compteur des extensions avec infobulle */}
@@ -1300,49 +1342,6 @@ export default function Parties({ user, authUser }) {
                     <Play size={14} />
                     Règles
                   </a>
-                )}
-                
-                
-                {/* Couvertures des extensions en bas à droite */}
-                {p.jeux?.extensions?.length > 0 && (
-                  <div className="absolute bottom-3 right-3 z-20 flex items-end justify-end">
-                    {p.jeux.extensions.slice(0, 5).map((extension, index) => {
-                      const image =
-                        extension.couverture_url || extension.couverture_bgg_url;
-
-                      return (
-                        <div
-                          key={extension.id || index}
-                          title={extension.nom || "Extension sans nom"}
-                          className="relative -ml-3 rounded-md border-2 border-white shadow-lg bg-white transition-all duration-200 hover:scale-125 hover:-translate-y-2 hover:z-[100]"
-                          style={{
-                            rotate: `${
-                              (index - (Math.min(p.jeux.extensions.length, 5) - 1) / 2) * 7
-                            }deg`,
-                            zIndex: index + 1,
-                          }}
-                        >
-                          {image ? (
-                            <img
-                              src={image}
-                              alt={extension.nom}
-                              className="h-16 w-12 object-cover rounded-sm"
-                            />
-                          ) : (
-                            <div className="h-16 w-12 flex items-center justify-center bg-purple-100 rounded-sm">
-                              <Dices size={18} className="text-purple-500" />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {p.jeux.extensions.length > 5 && (
-                      <span className="relative z-10 ml-1 px-2 py-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow">
-                        +{p.jeux.extensions.length - 5}
-                      </span>
-                    )}
-                  </div>
                 )}
 
               </div>
