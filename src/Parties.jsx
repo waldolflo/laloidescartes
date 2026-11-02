@@ -49,6 +49,8 @@ export default function Parties({ user, authUser }) {
   // Référence de l'image générée pour le partage
   const partagePartieRef = useRef(null);
   const [partieAPartager, setPartieAPartager] = useState(null);
+  const [extensionsOuvertes, setExtensionsOuvertes] = useState(null);
+  const [scoreOuvert, setScoreOuvert] = useState(null);
 
   // ============================================================
   // COULEUR GÉNÉRALE
@@ -149,7 +151,34 @@ export default function Parties({ user, authUser }) {
         .from("profils")
         .select("id, nom");
 
-      // 4️⃣ Assemblage
+      // 4️⃣ Récupération des extensions
+      const jeuIds = [
+        ...new Set(
+          upcomingParties
+            .map((p) => p.jeux?.id)
+            .filter(Boolean)
+        ),
+      ];
+
+      let extensionsData = [];
+
+      if (jeuIds.length > 0) {
+        const { data, error: extensionsError } = await supabase
+          .from("extensions_jeux")
+          .select("*")
+          .in("jeu_id", jeuIds);
+
+        if (extensionsError) {
+          console.error(
+            "Erreur récupération extensions :",
+            extensionsError
+          );
+        } else {
+          extensionsData = data || [];
+        }
+      }
+
+      // 5️⃣ Assemblage des parties, inscrits et extensions
       const partiesFull = upcomingParties.map((p) => {
         const inscrits = (allInscriptions || [])
           .filter((i) => i.partie_id === p.id)
@@ -160,9 +189,19 @@ export default function Parties({ user, authUser }) {
             ),
           }));
 
+        const extensions = extensionsData.filter(
+          (ext) => String(ext.jeu_id) === String(p.jeux?.id)
+        );
+
         return {
           ...p,
           inscrits,
+          jeux: p.jeux
+            ? {
+                ...p.jeux,
+                extensions,
+              }
+            : p.jeux,
         };
       });
 
@@ -1095,67 +1134,15 @@ export default function Parties({ user, authUser }) {
               >
 
                 {/* ==================================================
-                    BADGES
+                    COUVERTURE + BADGES SUPERPOSÉS
                     ================================================== */}
 
-                <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1.5">
+                <div className="relative isolate z-30 bg-gradient-to-br from-gray-50 to-gray-100 p-4">
 
-                  {p.jeux?.fav > 0 && (
-                    <span className="inline-flex items-center gap-1 bg-red-600 text-white text-xs font-black rounded-full px-2.5 py-1 shadow-lg">
-                      <Heart size={12} fill="currentColor" />
-                      {p.jeux.fav}
-                    </span>
-                  )}
-
-                  {p.jeux?.note && p.jeux?.note > 0 && (
-                    <span className="inline-flex items-center gap-1 bg-yellow-400 text-gray-900 text-xs font-black px-2.5 py-1 rounded-full shadow-lg">
-                      <Star size={12} fill="currentColor" />
-                      {parseFloat(p.jeux.note).toFixed(1)}
-                    </span>
-                  )}
-
-                  {p.jeux?.poids && p.jeux?.poids > 0 && (
-                    <span className="inline-flex items-center gap-1 bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
-                      <Scale size={12} />
-                      {parseFloat(p.jeux.poids).toFixed(2)}
-                    </span>
-                  )}
-
-                  {p.jeux?.best_score &&
-                    p.jeux?.best_score > 0 && (
-                      <span
-                        className="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg cursor-pointer hover:scale-105 transition"
-                        title={
-                          Array.isArray(p.jeux.best_users)
-                            ? p.jeux.best_users.join(", ")
-                            : p.jeux.best_users
-                        }
-                        onClick={() =>
-                          alert(
-                            `Meilleur score par ${
-                              Array.isArray(p.jeux.best_users)
-                                ? p.jeux.best_users.join(", ")
-                                : p.jeux.best_users
-                            }`
-                          )
-                        }
-                      >
-                        <Trophy size={12} />
-                        {p.jeux.best_score}
-                      </span>
-                    )}
-
-                </div>
-
-                {/* ==================================================
-                    IMAGE DU JEU
-                    ================================================== */}
-
-                <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-
-                  {p.jeux?.couverture_url ? (
-                    <>
-                      {p.jeux.bgg_api ? (
+                  {/* Couverture principale */}
+                  <div className="relative z-0">
+                    {p.jeux?.couverture_url ? (
+                      p.jeux.bgg_api ? (
                         <a
                           href={`https://boardgamegeek.com/boardgame/${p.jeux.bgg_api}`}
                           target="_blank"
@@ -1164,41 +1151,209 @@ export default function Parties({ user, authUser }) {
                         >
                           <img
                             src={p.jeux.couverture_url}
-                            alt={p.jeux?.nom}
+                            alt={p.jeux?.nom || "Jeu"}
                             className="w-full h-48 object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
                           />
                         </a>
                       ) : (
                         <img
                           src={p.jeux.couverture_url}
-                          alt={p.jeux?.nom}
+                          alt={p.jeux?.nom || "Jeu"}
                           className="w-full h-48 object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
                         />
+                      )
+                    ) : (
+                      <div className="h-48 flex flex-col items-center justify-center text-gray-300">
+                        <Dices size={48} />
+                        <span className="mt-2 text-sm font-semibold">Pas d'image</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Badge extensions : en haut à gauche */}
+                  {p.jeux?.extensions?.length > 0 && (
+                    <div
+                      className="absolute top-3 left-3 z-[70]"
+                      onMouseEnter={() => setExtensionsOuvertes(p.id)}
+                      onMouseLeave={() => setExtensionsOuvertes(null)}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExtensionsOuvertes((current) =>
+                            current === p.id ? null : p.id
+                          )
+                        }
+                        aria-expanded={extensionsOuvertes === p.id}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-black text-white shadow-xl ring-1 ring-white/40 transition hover:bg-indigo-700 hover:scale-105"
+                      >
+                        <Dices size={15} />
+                        +{p.jeux.extensions.length} extension
+                        {p.jeux.extensions.length > 1 ? "s" : ""}
+                      </button>
+
+                      {/* Infobulle avec la liste des extensions */}
+                      {extensionsOuvertes === p.id && (
+                        <div className="absolute left-0 top-full mt-2 w-64 max-w-[75vw] rounded-2xl border border-indigo-100 bg-white p-3 shadow-2xl">
+                          <p className="mb-2 text-xs font-black uppercase tracking-wide text-indigo-700">
+                            Extensions du jeu
+                          </p>
+
+                          <div className="max-h-48 space-y-2 overflow-y-auto">
+                            {p.jeux.extensions.map((extension) => (
+                              <div
+                                key={extension.id || extension.bgg_id || extension.nom}
+                                className="flex items-center gap-2"
+                              >
+                                {(
+                                  extension.couverture_url ||
+                                  extension.couverture_bgg_url
+                                ) ? (
+                                  <img
+                                    src={
+                                      extension.couverture_url ||
+                                      extension.couverture_bgg_url
+                                    }
+                                    alt=""
+                                    className="h-10 w-8 flex-shrink-0 rounded-md border border-gray-200 object-contain"
+                                  />
+                                ) : (
+                                  <div className="flex h-10 w-8 flex-shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-400">
+                                    <Dices size={16} />
+                                  </div>
+                                )}
+
+                                <span className="text-xs font-bold text-gray-700">
+                                  {extension.nom || "Extension sans nom"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
-
-                      {/* Règles YouTube */}
-                      {p.jeux?.regle_youtube && (
-                        <a
-                          href={p.jeux.regle_youtube}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="absolute bottom-5 right-5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition"
-                        >
-                          <BookOpen size={14} />
-                          Règles
-                        </a>
-                      )}
-                    </>
-                  ) : (
-                    <div className="h-48 flex flex-col items-center justify-center text-gray-300">
-
-                      <Dices size={48} />
-
-                      <span className="mt-2 text-sm font-semibold">
-                        Pas d'image
-                      </span>
-
                     </div>
+                  )}
+
+                  {/* Badges de statistiques : en haut à droite */}
+                  <div className="absolute top-3 right-3 z-[60] flex flex-col items-end gap-1.5">
+
+                    {Number(p.jeux?.fav) > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2.5 py-1 text-xs font-black text-white shadow-lg">
+                        <Heart size={12} fill="currentColor" />
+                        {p.jeux.fav}
+                      </span>
+                    )}
+
+                    {Number(p.jeux?.note) > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2.5 py-1 text-xs font-black text-gray-900 shadow-lg">
+                        <Star size={12} fill="currentColor" />
+                        {Number(p.jeux.note).toFixed(1)}
+                      </span>
+                    )}
+
+                    {Number(p.jeux?.poids) > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
+                        <Scale size={12} />
+                        {Number(p.jeux.poids).toFixed(2)}
+                      </span>
+                    )}
+
+                    {/* Badge meilleur score avec infobulle */}
+                    {Number(p.jeux?.best_score) > 0 && (
+                      <div
+                        className="relative"
+                        onMouseEnter={() => setScoreOuvert(p.id)}
+                        onMouseLeave={() => setScoreOuvert(null)}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setScoreOuvert((current) =>
+                              current === p.id ? null : p.id
+                            )
+                          }
+                          aria-expanded={scoreOuvert === p.id}
+                          className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg transition hover:scale-105 hover:bg-emerald-700"
+                        >
+                          <Trophy size={12} />
+                          {p.jeux.best_score}
+                        </button>
+
+                        {scoreOuvert === p.id && (
+                          <div className="absolute right-0 top-full z-[100] mt-2 w-56 rounded-xl border border-emerald-100 bg-white p-3 text-left shadow-2xl">
+                            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+                              Meilleur score
+                            </p>
+
+                            <p className="mt-1 text-lg font-black text-gray-900">
+                              {p.jeux.best_score} points
+                            </p>
+
+                            <p className="mt-1 text-xs font-semibold leading-relaxed text-gray-600">
+                              Par{" "}
+                              {Array.isArray(p.jeux.best_users)
+                                ? p.jeux.best_users.join(", ")
+                                : p.jeux.best_users || "Joueur inconnu"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Miniatures superposées à la couverture */}
+                  {p.jeux?.extensions?.length > 0 && (
+                    <div className="absolute bottom-3 left-3 z-20 flex items-end">
+                      {p.jeux.extensions.slice(0, 5).map((extension, index) => {
+                        const image =
+                          extension.couverture_url ||
+                          extension.couverture_bgg_url;
+
+                        return (
+                          <div
+                            key={extension.id || extension.bgg_id || extension.nom}
+                            title={extension.nom || "Extension"}
+                            className="relative -mr-3 transition-all duration-300 hover:z-50 hover:-translate-y-2 hover:scale-110"
+                            style={{
+                              rotate: `${(index - (Math.min(p.jeux.extensions.length, 5) - 1) / 2) * 7}deg`,
+                              zIndex: index + 1,
+                            }}
+                          >
+                            {image ? (
+                              <img
+                                src={image}
+                                alt={extension.nom || "Extension"}
+                                loading="lazy"
+                                className="h-16 w-12 rounded-lg border-2 border-white bg-white object-cover shadow-xl"
+                              />
+                            ) : (
+                              <div className="flex h-16 w-12 items-center justify-center rounded-lg border-2 border-white bg-indigo-100 text-indigo-500 shadow-xl">
+                                <Dices size={20} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {p.jeux.extensions.length > 5 && (
+                        <span className="relative z-10 ml-1 rounded-full border-2 border-white bg-indigo-600 px-2 py-1 text-[10px] font-black text-white shadow-lg">
+                          +{p.jeux.extensions.length - 5}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Règles YouTube */}
+                  {p.jeux?.regle_youtube && (
+                    <a
+                      href={p.jeux.regle_youtube}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-5 right-5 z-[40] inline-flex items-center gap-1.5 rounded-xl bg-red-600/95 px-3 py-1.5 text-xs font-bold text-white shadow-lg transition hover:scale-105 hover:bg-red-700"
+                    >
+                      <BookOpen size={14} />
+                      Règles
+                    </a>
                   )}
 
                 </div>
