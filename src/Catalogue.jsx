@@ -1221,7 +1221,7 @@ export default function Catalogue({ user }) {
 
                   {/* Nombre d'extensions */}
                   {j.extensions?.length > 0 && (
-                    <div className="absolute top-5 left-5 z-30">
+                    <div className="absolute top-3 left-3 z-[70]">
 
                       <button
                         type="button"
@@ -1232,9 +1232,10 @@ export default function Catalogue({ user }) {
                             extensionsOuvertes === j.id ? null : j.id
                           )
                         }
-                        className="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-xs font-black shadow-lg hover:bg-indigo-700 transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-600 text-white text-xs font-semibold shadow-lg hover:bg-purple-700 transition"
                       >
-                        <Dices size={14} />+{j.extensions.length} extension
+                        <Dices size={14} />
+                        +{j.extensions.length} extension
                         {j.extensions.length > 1 ? "s" : ""}
                       </button>
 
@@ -1243,7 +1244,7 @@ export default function Catalogue({ user }) {
                         <div
                           onMouseEnter={() => setExtensionsOuvertes(j.id)}
                           onMouseLeave={() => setExtensionsOuvertes(null)}
-                          className="absolute top-full left-0 mt-2 w-56 p-3 bg-white text-gray-800 rounded-xl shadow-xl border border-gray-200"
+                          className="absolute left-0 top-full mt-2 w-64 max-h-64 overflow-y-auto rounded-xl bg-white shadow-2xl border border-gray-200 p-2"
                         >
                           {j.extensions.map((ext) => (
                             <div
