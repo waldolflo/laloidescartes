@@ -22,6 +22,8 @@ import {
   Scale,
   X,
   Dices,
+  Play,
+  ExternalLink,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 
@@ -50,7 +52,7 @@ export default function Parties({ user, authUser }) {
   const partagePartieRef = useRef(null);
   const [partieAPartager, setPartieAPartager] = useState(null);
   const [extensionsOuvertes, setExtensionsOuvertes] = useState(null);
-  const [scoreOuvert, setScoreOuvert] = useState(null);
+  const [scoresOuverts, setScoresOuverts] = useState(null);
 
   // ============================================================
   // COULEUR GÉNÉRALE
@@ -1260,43 +1262,56 @@ export default function Parties({ user, authUser }) {
 
                     {/* Badge meilleur score avec infobulle */}
                     {Number(p.jeux?.best_score) > 0 && (
-                      <div
-                        className="relative"
-                        onMouseEnter={() => setScoreOuvert(p.id)}
-                        onMouseLeave={() => setScoreOuvert(null)}
-                      >
+                      <div className="relative isolate">
+  
                         <button
                           type="button"
+                          onMouseEnter={() => setScoresOuverts(j.id)}
+                          onMouseLeave={() => setScoresOuverts(null)}
                           onClick={() =>
-                            setScoreOuvert((current) =>
-                              current === p.id ? null : p.id
+                            setScoresOuverts(
+                              scoresOuverts === j.id ? null : j.id
                             )
                           }
-                          aria-expanded={scoreOuvert === p.id}
-                          className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg transition hover:scale-105 hover:bg-emerald-700"
+                          className="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg cursor-pointer hover:bg-emerald-700 transition"
                         >
                           <Trophy size={12} />
-                          {p.jeux.best_score}
+                          {p.jeux?.best_score}
                         </button>
-
-                        {scoreOuvert === p.id && (
-                          <div className="absolute right-0 top-full z-[100] mt-2 w-56 rounded-xl border border-emerald-100 bg-white p-3 text-left shadow-2xl">
-                            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+  
+                        {/* Info-bulle du meilleur score */}
+                        {scoresOuverts === j.id && (
+                          <div
+                            onMouseEnter={() => setScoresOuverts(j.id)}
+                            onMouseLeave={() => setScoresOuverts(null)}
+                            className="absolute top-full right-0 mt-2 w-52 p-3 bg-white text-gray-800 rounded-xl shadow-2xl border border-gray-200 z-[100]"
+                          >
+                            <p className="text-xs font-black text-emerald-700 mb-2">
                               Meilleur score
                             </p>
-
-                            <p className="mt-1 text-lg font-black text-gray-900">
-                              {p.jeux.best_score} points
+  
+                            <p className="text-sm font-bold">
+                              🏆 {p.jeux?.best_score} points
                             </p>
-
-                            <p className="mt-1 text-xs font-semibold leading-relaxed text-gray-600">
-                              Par{" "}
-                              {Array.isArray(p.jeux.best_users)
-                                ? p.jeux.best_users.join(", ")
-                                : p.jeux.best_users || "Joueur inconnu"}
+  
+                            <p className="text-xs text-gray-600 mt-1">
+                              Réalisé par :
                             </p>
+  
+                            <ul className="mt-1 space-y-1">
+                              {(p.jeux?.bestUsers || []).map((nom, index) => (
+                                <li
+                                  key={index}
+                                  className="text-xs font-semibold flex items-center gap-2"
+                                >
+                                  <span className="text-emerald-500">◆</span>
+                                  {nom}
+                                </li>
+                              ))}
+                            </ul>
                           </div>
                         )}
+  
                       </div>
                     )}
                   </div>
