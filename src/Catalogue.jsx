@@ -1195,25 +1195,25 @@ export default function Catalogue({ user }) {
                       href={j.regle_youtube}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="absolute bottom-[4.5rem] left-5 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition"
+                      className="absolute bottom-5 left-5 z-20 inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-600/95 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 hover:scale-105 transition"
                     >
                       <Play size={14} fill="currentColor" />
                       Règles
                     </a>
                   )}
 
-                  {/* BGG */}
+                  {/* BGG 
                   {j.bgg_api && (
                     <a
                       href={`https://boardgamegeek.com/boardgame/${j.bgg_api}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="absolute bottom-5 left-5 z-20 inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/90 backdrop-blur text-gray-700 text-xs font-bold rounded-xl shadow hover:bg-white transition"
+                      className="absolute bottom-[4.5rem] left-5 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur text-gray-700 text-xs font-bold rounded-xl shadow hover:bg-white transition"
                     >
                       BGG
                       <ExternalLink size={12} />
                     </a>
-                  )}
+                  )} */}
 
                   {/* Nombre d'extensions */}
                   {j.extensions?.length > 0 && (
