@@ -1135,243 +1135,210 @@ export default function Parties({ user, authUser }) {
                 }`}
               >
 
-                {/* ==================================================
-                    COUVERTURE + BADGES SUPERPOSÉS
-                    ================================================== */}
+                
+              {/* COUVERTURE + BADGES SUPERPOSÉS */}
+              <div className="relative isolate z-30 bg-gradient-to-br from-gray-50 to-gray-100 p-4">
 
-                <div className="relative isolate z-30 bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-
-                  {/* Couverture principale */}
-                  <div className="relative z-0">
-                    {p.jeux?.couverture_url ? (
-                      p.jeux.bgg_api ? (
-                        <a
-                          href={`https://boardgamegeek.com/boardgame/${p.jeux.bgg_api}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          <img
-                            src={p.jeux.couverture_url}
-                            alt={p.jeux?.nom || "Jeu"}
-                            className="w-full h-48 object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
-                          />
-                        </a>
-                      ) : (
+                {/* Couverture principale */}
+                <div className="relative z-0">
+                  {p.jeux?.couverture_url ? (
+                    p.jeux.bgg_api ? (
+                      <a
+                        href={`https://boardgamegeek.com/boardgame/${p.jeux.bgg_api}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
                         <img
                           src={p.jeux.couverture_url}
-                          alt={p.jeux?.nom || "Jeu"}
-                          className="w-full h-48 object-contain rounded-xl transition-transform duration-300 group-hover:scale-[1.02]"
+                          alt={p.jeux.nom}
+                          className="w-full h-48 object-contain rounded-xl"
                         />
-                      )
+                      </a>
                     ) : (
-                      <div className="h-48 flex flex-col items-center justify-center text-gray-300">
-                        <Dices size={48} />
-                        <span className="mt-2 text-sm font-semibold">Pas d'image</span>
+                      <img
+                        src={p.jeux.couverture_url}
+                        alt={p.jeux.nom}
+                        className="w-full h-48 object-contain rounded-xl"
+                      />
+                    )
+                  ) : (
+                    <div className="h-48 flex flex-col items-center justify-center text-gray-400">
+                      <Dices size={40} />
+                      <span className="text-sm mt-2">Pas de couverture</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Compteur des extensions avec infobulle */}
+                {p.jeux?.extensions?.length > 0 && (
+                  <div
+                    className="absolute top-3 left-3 z-[70]"
+                    onMouseEnter={() => setExtensionsOuvertes(p.id)}
+                    onMouseLeave={() => setExtensionsOuvertes(null)}
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExtensionsOuvertes(current =>
+                          current === p.id ? null : p.id
+                        )
+                      }
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-600 text-white text-xs font-semibold shadow-lg hover:bg-purple-700 transition"
+                    >
+                      <Dices size={14} />
+                      +{p.jeux.extensions.length} extensions
+                    </button>
+
+                    {extensionsOuvertes === p.id && (
+                      <div className="absolute left-0 top-full mt-2 w-64 max-h-64 overflow-y-auto rounded-xl bg-white shadow-2xl border border-gray-200 p-2">
+                        {p.jeux.extensions.map((extension, index) => (
+                          <div
+                            key={extension.id || index}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
+                          >
+                            {extension.couverture_url || extension.couverture_bgg_url ? (
+                              <img
+                                src={extension.couverture_url || extension.couverture_bgg_url}
+                                alt={extension.nom}
+                                className="w-10 h-14 object-cover rounded shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-10 h-14 flex items-center justify-center bg-gray-100 rounded">
+                                <Dices size={18} className="text-gray-400" />
+                              </div>
+                            )}
+
+                            <span className="text-sm font-medium text-gray-700">
+                              {extension.nom || "Extension sans nom"}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
+                )}
 
-                  {/* Badge extensions : en haut à gauche */}
-                  {p.jeux?.extensions?.length > 0 && (
-                    <div
-                      className="absolute top-3 left-3 z-[70]"
-                      onMouseEnter={() => setExtensionsOuvertes(p.id)}
-                      onMouseLeave={() => setExtensionsOuvertes(null)}
-                    >
+                {/* Statistiques en haut à droite */}
+                <div className="absolute top-3 right-3 z-[60] flex flex-col items-end gap-1.5">
+
+                  {Number(p.jeux?.fav) > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2.5 py-1 text-xs font-black text-white shadow-lg">
+                      <Heart size={12} fill="currentColor" />
+                      {p.jeux.fav}
+                    </span>
+                  )}
+
+                  {Number(p.jeux?.note) > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2.5 py-1 text-xs font-black text-gray-900 shadow-lg">
+                      <Star size={12} fill="currentColor" />
+                      {Number(p.jeux.note).toFixed(1)}
+                    </span>
+                  )}
+
+                  {Number(p.jeux?.poids) > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
+                      <Scale size={12} />
+                      {Number(p.jeux.poids).toFixed(2)}
+                    </span>
+                  )}
+
+                  {/* Meilleur score */}
+                  {Number(p.jeux?.best_score) > 0 && (
+                    <div className="relative isolate">
                       <button
                         type="button"
+                        onMouseEnter={() => setScoresOuverts(p.id)}
+                        onMouseLeave={() => setScoresOuverts(null)}
                         onClick={() =>
-                          setExtensionsOuvertes((current) =>
-                            current === p.id ? null : p.id
-                          )
+                          setScoresOuverts(scoresOuverts === p.id ? null : p.id)
                         }
-                        aria-expanded={extensionsOuvertes === p.id}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-black text-white shadow-xl ring-1 ring-white/40 transition hover:bg-indigo-700 hover:scale-105"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold shadow"
                       >
-                        <Dices size={15} />
-                        +{p.jeux.extensions.length} extension
-                        {p.jeux.extensions.length > 1 ? "s" : ""}
+                        <Trophy size={13} />
+                        {p.jeux.best_score}
                       </button>
 
-                      {/* Infobulle avec la liste des extensions */}
-                      {extensionsOuvertes === p.id && (
-                        <div className="absolute left-0 top-full mt-2 w-64 max-w-[75vw] rounded-2xl border border-indigo-100 bg-white p-3 shadow-2xl">
-                          <p className="mb-2 text-xs font-black uppercase tracking-wide text-indigo-700">
-                            Extensions du jeu
+                      {scoresOuverts === p.id && (
+                        <div
+                          onMouseEnter={() => setScoresOuverts(p.id)}
+                          onMouseLeave={() => setScoresOuverts(null)}
+                          className="absolute right-0 top-full mt-2 w-56 p-3 rounded-xl bg-white shadow-xl border border-gray-200 z-[80]"
+                        >
+                          <p className="text-sm font-bold text-gray-800 mb-1">
+                            Meilleur score
+                          </p>
+                          <p className="text-sm text-amber-700 font-semibold mb-2">
+                            🏆 {p.jeux.best_score} points
                           </p>
 
-                          <div className="max-h-48 space-y-2 overflow-y-auto">
-                            {p.jeux.extensions.map((extension) => (
-                              <div
-                                key={extension.id || extension.bgg_id || extension.nom}
-                                className="flex items-center gap-2"
-                              >
-                                {(
-                                  extension.couverture_url ||
-                                  extension.couverture_bgg_url
-                                ) ? (
-                                  <img
-                                    src={
-                                      extension.couverture_url ||
-                                      extension.couverture_bgg_url
-                                    }
-                                    alt=""
-                                    className="h-10 w-8 flex-shrink-0 rounded-md border border-gray-200 object-contain"
-                                  />
-                                ) : (
-                                  <div className="flex h-10 w-8 flex-shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-400">
-                                    <Dices size={16} />
-                                  </div>
-                                )}
-
-                                <span className="text-xs font-bold text-gray-700">
-                                  {extension.nom || "Extension sans nom"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                          {(p.jeux?.bestUsers || []).map((user, index) => (
+                            <p key={index} className="text-xs text-gray-600">
+                              {user.nom}
+                            </p>
+                          ))}
                         </div>
                       )}
                     </div>
                   )}
+                </div>
 
-                  {/* Badges de statistiques : en haut à droite */}
-                  <div className="absolute top-3 right-3 z-[60] flex flex-col items-end gap-1.5">
+                {/* Badge Règles en bas à gauche */}
+                {p.jeux?.regle_youtube && (
+                  <a
+                    href={p.jeux.regle_youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-3 left-3 z-[40] flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-600 text-white text-xs font-semibold shadow-lg hover:bg-red-700 transition"
+                  >
+                    <BookOpen size={14} />
+                    Règles
+                  </a>
+                )}
 
-                    {Number(p.jeux?.fav) > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2.5 py-1 text-xs font-black text-white shadow-lg">
-                        <Heart size={12} fill="currentColor" />
-                        {p.jeux.fav}
-                      </span>
-                    )}
+                {/* Couvertures des extensions en bas à droite */}
+                {p.jeux?.extensions?.length > 0 && (
+                  <div className="absolute bottom-3 right-3 z-20 flex items-end justify-end">
+                    {p.jeux.extensions.slice(0, 5).map((extension, index) => {
+                      const image =
+                        extension.couverture_url || extension.couverture_bgg_url;
 
-                    {Number(p.jeux?.note) > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2.5 py-1 text-xs font-black text-gray-900 shadow-lg">
-                        <Star size={12} fill="currentColor" />
-                        {Number(p.jeux.note).toFixed(1)}
-                      </span>
-                    )}
-
-                    {Number(p.jeux?.poids) > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
-                        <Scale size={12} />
-                        {Number(p.jeux.poids).toFixed(2)}
-                      </span>
-                    )}
-
-                    {/* Badge meilleur score avec infobulle */}
-                    {Number(p.jeux?.best_score) > 0 && (
-                      <div className="relative isolate">
-  
-                        <button
-                          type="button"
-                          onMouseEnter={() => setScoresOuverts(j.id)}
-                          onMouseLeave={() => setScoresOuverts(null)}
-                          onClick={() =>
-                            setScoresOuverts(
-                              scoresOuverts === j.id ? null : j.id
-                            )
-                          }
-                          className="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg cursor-pointer hover:bg-emerald-700 transition"
+                      return (
+                        <div
+                          key={extension.id || index}
+                          title={extension.nom}
+                          className="relative -ml-3 rounded-md border-2 border-white shadow-lg overflow-hidden bg-white"
+                          style={{
+                            rotate: `${
+                              (index - (Math.min(p.jeux.extensions.length, 5) - 1) / 2) * 7
+                            }deg`,
+                            zIndex: index + 1,
+                          }}
                         >
-                          <Trophy size={12} />
-                          {p.jeux?.best_score}
-                        </button>
-  
-                        {/* Info-bulle du meilleur score */}
-                        {scoresOuverts === j.id && (
-                          <div
-                            onMouseEnter={() => setScoresOuverts(j.id)}
-                            onMouseLeave={() => setScoresOuverts(null)}
-                            className="absolute top-full right-0 mt-2 w-52 p-3 bg-white text-gray-800 rounded-xl shadow-2xl border border-gray-200 z-[100]"
-                          >
-                            <p className="text-xs font-black text-emerald-700 mb-2">
-                              Meilleur score
-                            </p>
-  
-                            <p className="text-sm font-bold">
-                              🏆 {p.jeux?.best_score} points
-                            </p>
-  
-                            <p className="text-xs text-gray-600 mt-1">
-                              Réalisé par :
-                            </p>
-  
-                            <ul className="mt-1 space-y-1">
-                              {(p.jeux?.bestUsers || []).map((nom, index) => (
-                                <li
-                                  key={index}
-                                  className="text-xs font-semibold flex items-center gap-2"
-                                >
-                                  <span className="text-emerald-500">◆</span>
-                                  {nom}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-  
-                      </div>
+                          {image ? (
+                            <img
+                              src={image}
+                              alt={extension.nom}
+                              className="h-16 w-12 object-cover"
+                            />
+                          ) : (
+                            <div className="h-16 w-12 flex items-center justify-center bg-purple-100">
+                              <Dices size={18} className="text-purple-500" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {p.jeux.extensions.length > 5 && (
+                      <span className="relative z-10 ml-1 px-2 py-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow">
+                        +{p.jeux.extensions.length - 5}
+                      </span>
                     )}
                   </div>
+                )}
 
-                  {/* Miniatures superposées à la couverture */}
-                  {p.jeux?.extensions?.length > 0 && (
-                    <div className="absolute bottom-3 left-3 z-20 flex items-end">
-                      {p.jeux.extensions.slice(0, 5).map((extension, index) => {
-                        const image =
-                          extension.couverture_url ||
-                          extension.couverture_bgg_url;
-
-                        return (
-                          <div
-                            key={extension.id || extension.bgg_id || extension.nom}
-                            title={extension.nom || "Extension"}
-                            className="relative -mr-3 transition-all duration-300 hover:z-50 hover:-translate-y-2 hover:scale-110"
-                            style={{
-                              rotate: `${(index - (Math.min(p.jeux.extensions.length, 5) - 1) / 2) * 7}deg`,
-                              zIndex: index + 1,
-                            }}
-                          >
-                            {image ? (
-                              <img
-                                src={image}
-                                alt={extension.nom || "Extension"}
-                                loading="lazy"
-                                className="h-16 w-12 rounded-lg border-2 border-white bg-white object-cover shadow-xl"
-                              />
-                            ) : (
-                              <div className="flex h-16 w-12 items-center justify-center rounded-lg border-2 border-white bg-indigo-100 text-indigo-500 shadow-xl">
-                                <Dices size={20} />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-
-                      {p.jeux.extensions.length > 5 && (
-                        <span className="relative z-10 ml-1 rounded-full border-2 border-white bg-indigo-600 px-2 py-1 text-[10px] font-black text-white shadow-lg">
-                          +{p.jeux.extensions.length - 5}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Règles YouTube */}
-                  {p.jeux?.regle_youtube && (
-                    <a
-                      href={p.jeux.regle_youtube}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute bottom-5 right-5 z-[40] inline-flex items-center gap-1.5 rounded-xl bg-red-600/95 px-3 py-1.5 text-xs font-bold text-white shadow-lg transition hover:scale-105 hover:bg-red-700"
-                    >
-                      <BookOpen size={14} />
-                      Règles
-                    </a>
-                  )}
-
-                </div>
+              </div>
 
                 {/* ==================================================
                     CONTENU
