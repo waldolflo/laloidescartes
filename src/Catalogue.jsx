@@ -161,29 +161,7 @@ export default function Catalogue({ user }) {
 
   const shareJeu = async (jeu) => {
     const lienJeu = `${window.location.origin}/catalogue?jeu=${encodeURIComponent(jeu.id)}`;
-    const proprietaireNom =
-      profils.find(
-        (profil) => String(profil.id) === String(jeu.proprietaire)
-      )?.nom || "Non renseigné";
-
-    const extensions = jeu.extensions || [];
-    const message = [
-      `🎲 *${jeu.nom}* — La Loi des Cartes`,
-      jeu.type ? `Type : ${jeu.type}` : null,
-      jeu.min_joueurs || jeu.max_joueurs
-        ? `Joueurs : ${jeu.min_joueurs || "?"} à ${jeu.max_joueurs || "?"}`
-        : null,
-      jeu.duree ? `Durée : ${jeu.duree} min` : null,
-      jeu.note ? `Note BGG : ${Number(jeu.note).toFixed(1)}/10` : null,
-      extensions.length
-        ? `Extensions : ${extensions.map((ext) => ext.nom).filter(Boolean).join(", ")}`
-        : null,
-      `Propriétaire : ${proprietaireNom}`,
-      "",
-      `Découvrir la fiche : ${lienJeu}`,
-    ]
-      .filter((ligne) => ligne !== null)
-      .join("\\n");
+    const message = `🎲 ${jeu.nom} — La Loi des Cartes : ${lienJeu}`;
 
     try {
       setJeuAPartager(jeu);
