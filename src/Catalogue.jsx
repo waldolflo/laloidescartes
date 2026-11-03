@@ -201,11 +201,29 @@ export default function Catalogue({ user }) {
         backgroundColor: "#ffffff",
       });
 
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-      const fichier = new File([blob], `jeu-${jeu.nom || "ludotheque"}.png`, {
-        type: "image/png",
-      });
+      // Même conversion que dans Parties.jsx : pas de fetch(dataUrl),
+      // afin d'éviter les blocages CSP ou navigateur.
+      const base64 = dataUrl.split(",")[1];
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
+
+      for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+        const slice = byteCharacters.slice(offset, offset + 1024);
+        const byteNumbers = new Array(slice.length);
+
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+
+        byteArrays.push(new Uint8Array(byteNumbers));
+      }
+
+      const blob = new Blob(byteArrays, { type: "image/png" });
+      const fichier = new File(
+        [blob],
+        `jeu-${jeu.nom || "ludotheque"}.png`,
+        { type: "image/png" }
+      );
 
       if (
         navigator.share &&
@@ -1635,12 +1653,18 @@ export default function Catalogue({ user }) {
           ref={partageJeuRef}
           style={{
             position: "fixed",
-            left: "-10000px",
-            top: 0,
+            left: "0",
+            top: "0",
             width: "900px",
+            minWidth: "900px",
+            maxWidth: "900px",
+            overflow: "visible",
+            borderRadius: "24px",
             background: "#ffffff",
             color: "#111827",
             padding: "42px",
+            zIndex: "-1",
+            pointerEvents: "none",
             fontFamily: "Arial, sans-serif",
           }}
         >
