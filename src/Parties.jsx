@@ -1342,7 +1342,7 @@ export default function Parties({ user, authUser }) {
                     <Play size={14} />
                     Règles
                   </a>
-                )}        tr(mmmmmmmmmmmmmmmmmmmmmmmmmmmm)
+                )}
 
               </div>
 

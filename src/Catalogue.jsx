@@ -1160,56 +1160,47 @@ export default function Catalogue({ user }) {
                       </div>
                     )}
 
-                    {/* Compteur des extensions avec infobulle */}
-                    {j.extensions?.length > 0 && (
-                      <div
-                        className="absolute top-3 left-3 z-[70]"
-                        onMouseEnter={() => setExtensionsOuvertes(j.id)}
-                        onMouseLeave={() => setExtensionsOuvertes(null)}
-                      >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExtensionsOuvertes(current =>
-                              current === j.id ? null : j.id
-                            )
-                          }
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-600 text-white text-xs font-semibold shadow-lg hover:bg-purple-700 transition"
-                        >
-                          <Dices size={14} />
-                          +{j.extensions.length} extension
-                          {j.extensions.length > 1 ? "s" : ""}
-                        </button>
-    
-                        {extensionsOuvertes === j.id && (
-                          <div className="absolute left-0 top-full mt-2 w-64 max-h-64 overflow-y-auto rounded-xl bg-white shadow-2xl border border-gray-200 p-2">
-                            {j.extensions.map((extension, index) => (
-                              <div
-                                key={extension.id || index}
-                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
-                              >
-                                {extension.couverture_url || extension.couverture_bgg_url ? (
-                                  <img
-                                    src={extension.couverture_url || extension.couverture_bgg_url}
-                                    alt={extension.nom}
-                                    className="w-7 h-7 object-cover rounded shadow-sm"
-                                  />
-                                ) : (
-                                  <div className="w-10 h-14 flex items-center justify-center bg-gray-100 rounded">
-                                    <Dices size={18} className="text-gray-400" />
-                                  </div>
-                                )}
-    
-                                <span className="text-sm font-medium text-gray-700">
-                                  {extension.nom || "Extension sans nom"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                    {/* Extensions au premier plan */}
+                    {(j.extensions || []).length > 0 && (
+                      <div className="absolute bottom-2 right-2 z-20 flex items-end justify-end">
+                        {j.extensions.slice(0, 5).map((extension, index) => {
+                          const image =
+                            extension.couverture_url || extension.couverture_bgg_url;
+
+                          return (
+                            <div
+                              key={extension.id || index}
+                              title={extension.nom || "Extension sans nom"}
+                              className="relative -ml-3 rounded-md border-2 border-white shadow-lg bg-white transition-all duration-200 hover:scale-125 hover:-translate-y-2 hover:z-[100]"
+                              style={{
+                                rotate: `${
+                                  (index - (Math.min(j.extensions.length, 5) - 1) / 2) * 7
+                                }deg`,
+                                zIndex: index + 1,
+                              }}
+                            >
+                              {image ? (
+                                <img
+                                  src={image}
+                                  alt={extension.nom || "Extension"}
+                                  className="h-16 w-12 object-cover rounded-sm"
+                                />
+                              ) : (
+                                <div className="h-16 w-12 flex items-center justify-center bg-purple-100 rounded-sm">
+                                  <Dices size={18} className="text-purple-500" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {j.extensions.length > 5 && (
+                          <span className="relative z-10 ml-1 px-2 py-1 rounded-full bg-purple-600 text-white text-xs font-bold shadow">
+                            +{j.extensions.length - 5}
+                          </span>
                         )}
                       </div>
                     )}
-
                   </div>
 
                   {/* Règles */}
