@@ -24,6 +24,9 @@ import {
   Share2,
 } from "lucide-react";
 
+const LOGO_URL =
+  "https://laloidescartes.vercel.app/logo_loidc_Complet_250.png";
+
 export default function Catalogue({ user }) {
   // Partage et accès direct à une fiche via /catalogue?jeu=ID
   const [searchParams] = useSearchParams();
@@ -865,8 +868,9 @@ export default function Catalogue({ user }) {
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
 
           <img
-            src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
-            alt=""
+            src={LOGO_URL}
+            alt="La Loi des Cartes"
+            crossOrigin="anonymous"
             className="absolute -right-24 top-1/4 w-[500px] opacity-[0.035] rotate-[-12deg]"
           />
 
@@ -889,8 +893,9 @@ export default function Catalogue({ user }) {
               <div className="bg-white rounded-2xl px-5 py-3 shadow-2xl">
 
                 <img
-                  src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                  src={LOGO_URL}
                   alt="La Loi des Cartes"
+                  crossOrigin="anonymous"
                   className="h-20 md:h-24 w-auto object-contain"
                 />
 
@@ -1679,7 +1684,7 @@ export default function Catalogue({ user }) {
           >
             <div style={{ display: "flex", alignItems: "center", gap: "22px" }}>
               <img
-                src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                src={LOGO_URL}
                 alt="La Loi des Cartes"
                 crossOrigin="anonymous"
                 style={{
@@ -1696,7 +1701,7 @@ export default function Catalogue({ user }) {
                   LA LOI DES CARTES
                 </div>
                 <div style={{ fontSize: "42px", fontWeight: 900, marginTop: "8px" }}>
-                  FICHE JEU
+                  FICHE <span className="text-purple-300">JEU</span>
                 </div>
               </div>
             </div>
