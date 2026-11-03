@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import EditJeu from "./EditJeu";
 import CreatePartieModal from "./CreatePartieModal";
+import { toPng } from "html-to-image";
 import {
   Search,
   ArrowUpDown,
@@ -19,9 +21,16 @@ import {
   Dices,
   Library,
   X,
+  Share2,
 } from "lucide-react";
 
 export default function Catalogue({ user }) {
+  // Partage et accès direct à une fiche via /catalogue?jeu=ID
+  const [searchParams] = useSearchParams();
+  const jeuIdFromUrl = searchParams.get("jeu");
+  const [highlightedJeu, setHighlightedJeu] = useState(null);
+  const partageJeuRef = useRef(null);
+  const [jeuAPartager, setJeuAPartager] = useState(null);
   const [jeux, setJeux] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [filteredJeux, setFilteredJeux] = useState([]);
@@ -116,6 +125,117 @@ export default function Catalogue({ user }) {
     fetchRole();
     fetchJeux();
   }, [user]);
+
+  // ============================================================
+  // OUVERTURE DIRECTE D'UNE FICHE DEPUIS UN LIEN PARTAGÉ
+  // ============================================================
+
+  useEffect(() => {
+    if (!jeuIdFromUrl || !jeux.length) return;
+
+    const jeuCible = jeux.find(
+      (jeu) => String(jeu.id) === String(jeuIdFromUrl)
+    );
+
+    if (!jeuCible) return;
+
+    // Le lien doit rester prioritaire sur un éventuel filtre déjà actif.
+    setSearchText("");
+    setHighlightedJeu(jeuCible.id);
+
+    const timeout = window.setTimeout(() => {
+      document
+        .getElementById(`jeu-${jeuCible.id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 350);
+
+    return () => window.clearTimeout(timeout);
+  }, [jeux, jeuIdFromUrl]);
+
+  // ============================================================
+  // PARTAGE D'UNE FICHE DE JEU
+  // ============================================================
+
+  const shareJeu = async (jeu) => {
+    const lienJeu = `${window.location.origin}/catalogue?jeu=${encodeURIComponent(jeu.id)}`;
+    const proprietaireNom =
+      profils.find(
+        (profil) => String(profil.id) === String(jeu.proprietaire)
+      )?.nom || "Non renseigné";
+
+    const extensions = jeu.extensions || [];
+    const message = [
+      `🎲 *${jeu.nom}* — La Loi des Cartes`,
+      jeu.type ? `Type : ${jeu.type}` : null,
+      jeu.min_joueurs || jeu.max_joueurs
+        ? `Joueurs : ${jeu.min_joueurs || "?"} à ${jeu.max_joueurs || "?"}`
+        : null,
+      jeu.duree ? `Durée : ${jeu.duree} min` : null,
+      jeu.note ? `Note BGG : ${Number(jeu.note).toFixed(1)}/10` : null,
+      extensions.length
+        ? `Extensions : ${extensions.map((ext) => ext.nom).filter(Boolean).join(", ")}`
+        : null,
+      `Propriétaire : ${proprietaireNom}`,
+      "",
+      `Découvrir la fiche : ${lienJeu}`,
+    ]
+      .filter((ligne) => ligne !== null)
+      .join("\\n");
+
+    try {
+      setJeuAPartager(jeu);
+
+      // Laisse React afficher la fiche hors écran avant la capture.
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+
+      const element = partageJeuRef.current;
+      if (!element) throw new Error("La fiche de partage est introuvable.");
+
+      const dataUrl = await toPng(element, {
+        width: 900,
+        height: element.scrollHeight,
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const fichier = new File([blob], `jeu-${jeu.nom || "ludotheque"}.png`, {
+        type: "image/png",
+      });
+
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [fichier] })
+      ) {
+        await navigator.share({
+          title: `Découvrir ${jeu.nom}`,
+          text: message,
+          files: [fichier],
+        });
+      } else {
+        // WhatsApp permet de transmettre le texte et le lien.
+        // Le navigateur ne permet pas de joindre automatiquement le PNG à wa.me.
+        window.location.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      }
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        console.error("Erreur partage jeu :", error);
+        const confirmer = window.confirm(
+          "La création de l'image a échoué. Voulez-vous tout de même partager le lien du jeu sur WhatsApp ?"
+        );
+        if (confirmer) {
+          window.location.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        }
+      }
+    } finally {
+      setJeuAPartager(null);
+    }
+  };
 
   // ============================================================
   // MEILLEURS SCORES
@@ -1020,8 +1140,13 @@ export default function Catalogue({ user }) {
             return (
 
               <div
+                id={`jeu-${j.id}`}
                 key={j.id}
-                className={`group relative bg-white rounded-[1.5rem] shadow-lg border border-gray-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+                className={`group relative bg-white rounded-[1.5rem] shadow-lg border transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl ${
+                  highlightedJeu === j.id
+                    ? "border-yellow-400 ring-4 ring-yellow-300 shadow-yellow-200"
+                    : "border-gray-100"
+                } ${
                   scoresOuverts === j.id || extensionsOuvertes === j.id
                     ? "z-[90]"
                     : "z-0"
@@ -1432,6 +1557,19 @@ export default function Catalogue({ user }) {
                     </div>
                   )}
 
+                  {/* Partage : disponible aussi pour les visiteurs non connectés */}
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => shareJeu(j)}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-3 py-2.5 text-sm font-bold text-purple-700 hover:bg-purple-100 hover:border-purple-300 transition"
+                      title={`Partager la fiche de ${j.nom}`}
+                    >
+                      <Share2 size={17} />
+                      Partager la fiche
+                    </button>
+                  </div>
+
                 </div>
 
               </div>
@@ -1486,6 +1624,202 @@ export default function Catalogue({ user }) {
 
         </div>
 
+      )}
+
+      {/* ========================================================
+          FICHE IMAGE POUR LE PARTAGE (rendu hors écran)
+      ======================================================== */}
+
+      {jeuAPartager && (
+        <div
+          ref={partageJeuRef}
+          style={{
+            position: "fixed",
+            left: "-10000px",
+            top: 0,
+            width: "900px",
+            background: "#ffffff",
+            color: "#111827",
+            padding: "42px",
+            fontFamily: "Arial, sans-serif",
+          }}
+        >
+          <div
+            style={{
+              borderRadius: "30px",
+              overflow: "hidden",
+              background: "linear-gradient(135deg, #2e1065, #312e81, #1e1b4b)",
+              padding: "34px",
+              color: "#ffffff",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "22px" }}>
+              <img
+                src="https://laloidescartes.vercel.app/logo_loidc_Complet_250.png"
+                alt="La Loi des Cartes"
+                crossOrigin="anonymous"
+                style={{
+                  width: "150px",
+                  height: "auto",
+                  objectFit: "contain",
+                  background: "#ffffff",
+                  borderRadius: "18px",
+                  padding: "10px",
+                }}
+              />
+              <div>
+                <div style={{ fontSize: "18px", fontWeight: 700, color: "#ddd6fe", letterSpacing: "3px" }}>
+                  LA LOI DES CARTES
+                </div>
+                <div style={{ fontSize: "42px", fontWeight: 900, marginTop: "8px" }}>
+                  FICHE JEU
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: "28px",
+                borderRadius: "22px",
+                background: "#ffffff",
+                color: "#111827",
+                padding: "28px",
+                display: "flex",
+                gap: "28px",
+                alignItems: "flex-start",
+              }}
+            >
+              <div style={{ width: "290px", flexShrink: 0 }}>
+                {jeuAPartager.couverture_url || jeuAPartager.couverture_bgg_url ? (
+                  <img
+                    src={jeuAPartager.couverture_url || jeuAPartager.couverture_bgg_url}
+                    alt={jeuAPartager.nom}
+                    crossOrigin="anonymous"
+                    style={{
+                      width: "290px",
+                      height: "340px",
+                      objectFit: "contain",
+                      borderRadius: "14px",
+                      background: "#f3f4f6",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "290px",
+                      height: "340px",
+                      borderRadius: "14px",
+                      background: "#f3f4f6",
+                      color: "#7c3aed",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "28px",
+                      fontWeight: 800,
+                    }}
+                  >
+                    🎲 Ludothèque
+                  </div>
+                )}
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2 style={{ fontSize: "38px", lineHeight: 1.1, fontWeight: 900, margin: "0 0 14px" }}>
+                  {jeuAPartager.nom}
+                </h2>
+                {jeuAPartager.type && (
+                  <div
+                    style={{
+                      display: "inline-block",
+                      background: "#ede9fe",
+                      color: "#6d28d9",
+                      borderRadius: "999px",
+                      padding: "8px 16px",
+                      fontSize: "17px",
+                      fontWeight: 800,
+                      marginBottom: "22px",
+                    }}
+                  >
+                    {jeuAPartager.type}
+                  </div>
+                )}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {[
+                    ["Joueurs", `${jeuAPartager.min_joueurs || "?"} à ${jeuAPartager.max_joueurs || "?"}`],
+                    ["Durée", jeuAPartager.duree ? `${jeuAPartager.duree} min` : "—"],
+                    ["Note BGG", jeuAPartager.note ? `${Number(jeuAPartager.note).toFixed(1)}/10` : "—"],
+                    ["Poids", jeuAPartager.poids ? Number(jeuAPartager.poids).toFixed(2) : "—"],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      style={{
+                        background: "#f3f4f6",
+                        borderRadius: "13px",
+                        padding: "14px",
+                      }}
+                    >
+                      <div style={{ fontSize: "13px", color: "#6b7280", fontWeight: 700, textTransform: "uppercase" }}>
+                        {label}
+                      </div>
+                      <div style={{ fontSize: "21px", color: "#111827", fontWeight: 900, marginTop: "5px" }}>
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {jeuAPartager.bestScore > 0 && (
+                  <div style={{ marginTop: "14px", color: "#047857", fontSize: "18px", fontWeight: 800 }}>
+                    🏆 Meilleur score : {jeuAPartager.bestScore}
+                    {jeuAPartager.bestUsers?.length
+                      ? ` — ${jeuAPartager.bestUsers.join(", ")}`
+                      : ""}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {jeuAPartager.extensions?.length > 0 && (
+              <div style={{ marginTop: "22px", background: "rgba(255,255,255,0.12)", borderRadius: "18px", padding: "18px 22px" }}>
+                <div style={{ fontSize: "17px", fontWeight: 900, marginBottom: "12px", color: "#e9d5ff" }}>
+                  EXTENSIONS ({jeuAPartager.extensions.length})
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                  {jeuAPartager.extensions.map((extension, index) => {
+                    const image = extension.couverture_url || extension.couverture_bgg_url;
+                    return (
+                      <div
+                        key={extension.id || extension.bgg_id || index}
+                        style={{ display: "flex", alignItems: "center", gap: "10px", background: "#ffffff", color: "#1f2937", borderRadius: "12px", padding: "8px 12px", maxWidth: "390px" }}
+                      >
+                        {image ? (
+                          <img
+                            src={image}
+                            alt=""
+                            crossOrigin="anonymous"
+                            style={{ width: "48px", height: "58px", objectFit: "cover", borderRadius: "6px" }}
+                          />
+                        ) : (
+                          <div style={{ width: "48px", height: "58px", background: "#ede9fe", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            🎲
+                          </div>
+                        )}
+                        <span style={{ fontSize: "15px", fontWeight: 800 }}>
+                          {extension.nom || "Extension"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: "24px", textAlign: "center", fontSize: "18px", color: "#e9d5ff", fontWeight: 700 }}>
+              Retrouvez ce jeu sur laloidescartes.vercel.app
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ========================================================
