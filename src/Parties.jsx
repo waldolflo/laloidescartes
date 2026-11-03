@@ -1244,7 +1244,7 @@ export default function Parties({ user, authUser }) {
                               <img
                                 src={extension.couverture_url || extension.couverture_bgg_url}
                                 alt={extension.nom}
-                                className="w-10 h-14 object-cover rounded shadow-sm"
+                                className="w-7 h-7 object-cover rounded shadow-sm"
                               />
                             ) : (
                               <div className="w-10 h-14 flex items-center justify-center bg-gray-100 rounded">
@@ -1342,7 +1342,7 @@ export default function Parties({ user, authUser }) {
                     <Play size={14} />
                     Règles
                   </a>
-                )}
+                )}        tr(mmmmmmmmmmmmmmmmmmmmmmmmmmmm)
 
               </div>
 

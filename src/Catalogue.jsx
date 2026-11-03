@@ -1160,32 +1160,55 @@ export default function Catalogue({ user }) {
                       </div>
                     )}
 
-                    {/* Extensions au premier plan */}
-                    {(j.extensions || [])
-                      .filter((ext) => ext.couverture_url)
-                      .slice(0, 3)
-                      .map((ext, index) => {
-                        const positions = [
-                          { x: 40, y: 48, rotate: -8 },
-                          { x: 80, y: 48, rotate: 5 },
-                          { x: 120, y: 48, rotate: -5 },
-                        ];
-
-                        const position = positions[index];
-
-                        return (
-                          <img
-                            key={ext.id}
-                            src={ext.couverture_url}
-                            alt={ext.nom || `Extension ${ext.bgg_id}`}
-                            title={ext.nom || `Extension BGG ${ext.bgg_id}`}
-                            className="absolute z-20 h-16 w-12 object-cover rounded-md shadow-lg border-2 border-white transition-transform duration-300 group-hover:scale-110"
-                            style={{
-                              transform: `translate(${position.x}px, ${position.y}px) rotate(${position.rotate}deg)`,
-                            }}
-                          />
-                        );
-                      })}
+                    {/* Compteur des extensions avec infobulle */}
+                    {j.extensions?.length > 0 && (
+                      <div
+                        className="absolute top-3 left-3 z-[70]"
+                        onMouseEnter={() => setExtensionsOuvertes(j.id)}
+                        onMouseLeave={() => setExtensionsOuvertes(null)}
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExtensionsOuvertes(current =>
+                              current === j.id ? null : j.id
+                            )
+                          }
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-600 text-white text-xs font-semibold shadow-lg hover:bg-purple-700 transition"
+                        >
+                          <Dices size={14} />
+                          +{j.extensions.length} extension
+                          {j.extensions.length > 1 ? "s" : ""}
+                        </button>
+    
+                        {extensionsOuvertes === j.id && (
+                          <div className="absolute left-0 top-full mt-2 w-64 max-h-64 overflow-y-auto rounded-xl bg-white shadow-2xl border border-gray-200 p-2">
+                            {j.extensions.map((extension, index) => (
+                              <div
+                                key={extension.id || index}
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
+                              >
+                                {extension.couverture_url || extension.couverture_bgg_url ? (
+                                  <img
+                                    src={extension.couverture_url || extension.couverture_bgg_url}
+                                    alt={extension.nom}
+                                    className="w-7 h-7 object-cover rounded shadow-sm"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-14 flex items-center justify-center bg-gray-100 rounded">
+                                    <Dices size={18} className="text-gray-400" />
+                                  </div>
+                                )}
+    
+                                <span className="text-sm font-medium text-gray-700">
+                                  {extension.nom || "Extension sans nom"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   </div>
 
@@ -1240,7 +1263,7 @@ export default function Catalogue({ user }) {
                         <div
                           onMouseEnter={() => setExtensionsOuvertes(j.id)}
                           onMouseLeave={() => setExtensionsOuvertes(null)}
-                          className="absolute left-0 top-full mt-2 w-64 max-h-64 overflow-y-auto rounded-xl bg-white shadow-2xl border border-gray-200 p-2 z-[100]"
+                          className="absolute left-0 top-full mt-2 w-64 max-h-64 overflow-y-auto rounded-xl bg-white shadow-2xl border border-gray-200 p-2"
                         >
                           {j.extensions.map((ext) => (
                             <div
@@ -1251,7 +1274,7 @@ export default function Catalogue({ user }) {
                                 <img
                                   src={ext.couverture_url || ext.couverture_bgg_url}
                                   alt={ext.nom}
-                                  className="w-10 h-14 object-cover rounded shadow-sm"
+                                  className="w-7 h-7 object-cover rounded shadow-sm"
                                 />
                               ) : (
                                 <div className="w-10 h-14 flex items-center justify-center bg-gray-100 rounded">
